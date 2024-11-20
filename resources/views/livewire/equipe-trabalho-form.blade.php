@@ -8,11 +8,11 @@
                         <p class="mt-8 uppercase font-bold text-2xl">Agradecemos a sua inscrição!</p>
                         <div class="flex justify-center">
                             <figure class="flex justify-center items-center mb-4 w-3/5 h-3/5">
-                                <img src="{{ asset('img/equipe.svg') }}" alt="" class="h-96">
+                                <img src="{{ asset('img/campista.svg') }}" alt="" class="h-96">
                             </figure>
                         </div>
                         <p class="text-center mx-4 text-yellow-500 text-sm xl:text-xl">
-                            <span>Muito obrigado, sua participação não somente ajudará o acampamento Trekking, como marcará na vida dos nossos campistas!</span>
+                            <span>Muito obrigado, sua participação não somente ajudará o acampamento Juvenil, como marcará na vida dos nossos campistas!</span>
                             <br/>
                             <span class="text-white mt-4">Deus abençoe pelo seu sim !</span>
                         </p>
