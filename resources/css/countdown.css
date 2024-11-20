@@ -1,0 +1,149 @@
+/* ==========================================================================
+   Countdown Style Start
+   ========================================================================== */
+.bg-wraper {
+    position: fixed;
+    top: 0;
+    height: 100%;
+    min-height: 700px;
+    width: 100%;
+}
+
+.countdown-timer {
+    color: #fff;
+    position: absolute;
+    margin: 0 auto;
+    top: 28%;
+    text-align: center;
+    width: 100%;
+}
+
+.countdown-timer .heading-count {
+    padding: 10px 68px;
+    text-align: center;
+}
+
+.countdown-timer .heading-count h2 {
+    font-size: 42px;
+    color: #fff;
+    line-height: 30px;
+    margin-bottom: 15px;
+}
+
+.countdown-timer p {
+    font-size: 14px;
+    color: #fff;
+    line-height: 22px;
+}
+
+.countdown-timer .button-group {
+    margin-top: 30px;
+}
+
+.countdown-timer .btn {
+    margin: 10px;
+}
+
+.time-count div {
+    text-align: center;
+}
+
+.time-entry {
+    display: inline-block;
+    margin: 0px;
+    padding: 0px;
+    border-radius: 0px;
+    text-align: center;
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 15px;
+    line-height: 22px;
+    width: 23% !important;
+}
+
+@media (max-width: 767px) {
+    .time-entry span {
+        width: 85px;
+    }
+}
+
+.time-entry span {
+    font-size: 45px;
+    font-family: 'Montserrat', sans-serif;
+    line-height: 45px;
+    text-align: center;
+    font-weight: 800;
+    display: block;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.time-entry:first-child {
+    border-left: none;
+}
+
+.countdown {
+    width: 100%;
+    margin: 25px auto;
+    display: inline-block;
+}
+
+.countdown .time-count {
+    padding: 0;
+    position: relative;
+    display: inline-block;
+    text-align: center;
+}
+
+.countdown .time-count .time-entry {
+    position: relative;
+    display: inline-block;
+    width: 130px;
+    height: 115px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 5px 50px -10px #000;
+}
+
+.countdown .time-count .time-entry span {
+    font-size: 45px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'Montserrat', sans-serif;
+    display: block;
+    width: 100%;
+}
+
+.line-right {
+    margin: 30px 0;
+}
+
+.line-right .time-count {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+}
+
+.line-right .time-count .time-entry {
+    position: relative;
+    display: inline-block;
+    width: 130px;
+    height: 115px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+    background: #e9a91e;
+    box-shadow: 0 5px 50px -10px #fff;
+}
+
+.line-right .time-count .time-entry span {
+    font-size: 45px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    color: #ffffff;
+    display: block;
+    width: 100%;
+}
