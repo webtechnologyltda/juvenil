@@ -10,18 +10,18 @@
         <header
             class="container hidden lg:flex justify-between h-[60px]  items-center py-[45px] border-b-[1px] border-gray-700 border-opacity-40">
             <figure class="w-[60px] lg:w-[80px] h-[60px] lg:h-[80px]">
-                <img src="{{asset('img/logo_simple.png')}}" class=" mt-4 w-full">
+{{--                <img src="{{asset('img/logo_simple.png')}}" class=" mt-4 w-full">--}}
             </figure>
             <nav class="h-[100%] md:w-[70%]">
             </nav>
         </header>
         <!-- header for mobile -->
-        <header
-            class="w-[80%] sm:w-[70%] md:w-[80%] container flex h-[60px] justify-between  items-center  lg:hidden  py-[45px] relative border-b-[1px] border-gray-700 border-opacity-40 ">
-            <figure class="w-[80px]">
-                <img src={{asset('img/logo_simple.png')}} alt="" class="w-[100%]">
-            </figure>
-        </header>
+{{--        <header--}}
+{{--            class="w-[80%] sm:w-[70%] md:w-[80%] container flex h-[60px] justify-between  items-center  lg:hidden  py-[45px] relative border-b-[1px] border-gray-700 border-opacity-40 ">--}}
+{{--            <figure class="w-[80px]">--}}
+{{--                <img src={{asset('img/logo_simple.png')}} alt="" class="w-[100%]">--}}
+{{--            </figure>--}}
+{{--        </header>--}}
         <!-- end header mobile  -->
     </section>
     <x-home-banner></x-home-banner>

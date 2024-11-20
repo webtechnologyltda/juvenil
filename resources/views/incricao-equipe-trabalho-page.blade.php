@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{config('app.name')}}</title>
-    <link rel="icon" type="image/png" href="{{ asset('img/logo_light.png') }}">
+{{--    <link rel="icon" type="image/png" href="{{ asset('img/logo_light.png') }}">--}}
     @filamentStyles
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -16,7 +16,7 @@
     <section
         class="relative w-full h-[100vh] overflow-hidden bg-gray-900  bg-blend-multiply bg-opacity-25  ">
         <video autoplay="autoplay" autoplay="autoplay" loop muted playsinline preload="auto" class="absolute inset-0 w-full h-full object-cover opacity-80 -z-10 bg-center">
-            <source src="{{asset('img/video.mp4')}}" type="video/mp4" />
+            <source src="{{asset('img/barraca.mp4')}}" type="video/mp4" />
             Seu navegador não suporta reprodução de videos, tente atualizar para a versão mais recente ou usar
             outro.
         </video>
@@ -25,7 +25,7 @@
             <header
                 class="container hidden lg:flex justify-between h-[60px]  items-center py-[45px] border-b-[1px] border-gray-700 border-opacity-40">
                 <figure class="w-[60px] lg:w-[80px] h-[60px] lg:h-[80px]">
-                    <img src="{{asset('img/logo_simple.png')}}" class=" mt-4 w-full">
+{{--                    <img src="{{asset('img/logo_simple.png')}}" class=" mt-4 w-full">--}}
                 </figure>
                 <nav class="h-[100%] md:w-[70%]">
                 </nav>
@@ -34,23 +34,33 @@
             <header
                 class="w-[80%] sm:w-[70%] md:w-[80%] container flex h-[60px] justify-between  items-center  lg:hidden  py-[45px] relative border-b-[1px] border-gray-700 border-opacity-40 ">
                 <figure class="w-[80px]">
-                    <img src={{asset('img/logo_simple.png')}} alt="" class="w-[100%]">
+{{--                    <img src={{asset('img/logo_simple.png')}} alt="" class="w-[100%]">--}}
                 </figure>
             </header>
             <!-- end header mobile  -->
         </section>
         <section class="relative  w-full flex justify-center mt-[120px]">
-            <div class="w-[700px] md:w-[900px] container h-auto  ">
-                <h1 class="w-full text-center text-white md:text-2xl font-secondary uppercase tracking-widest">
-                    <h1 class="w-full mt-12 text-center text-white text-7xl md:text-[120px] font-secondary uppercase tracking-widest">
-                        <span class="travol text-color1 font-rustic">1º Trekking</span>
+            <div class="w-[700px] md:w-[1000px] container h-auto  ">
+                <h1 class="w-full text-center text-white md:text-md font-secondary  ">
+                    <h1 class="w-full  text-center text-white text-md md:text-[68px] font-secondary  ">
+                        <span class=" text-white font-mono font-bold text-4xl md:text-7xl">Acampamento</span>
                     </h1>.
                 </h1>
-                <p class="w-full mt-2 text-center font-bold uppercase text-sm text-white tracking-widest [word-spacing:8px]">
-                    ¨Viver na santidade também é ser radical¨ João Paulo II</p>
+                <h1 class="w-full text-center text-white md:text-md font-secondary  ">
+                    <h1 class="w-full  text-center text-white text-md md:text-[68px] font-secondary  ">
+                        <span class=" text-color1 font-mono font-bold text-3xl md:text-7xl">Juvenil Senior</span>
+                    </h1>.
+                </h1>
+                <h1 class="w-full text-center text-white md:text-md font-secondary  ">
+                    <h1 class="w-full mt-20 text-center text-white text-md md:text-md font-secondary  ">
+                        <span class="font-bold text-color1 font-mono  ">Inscrição para equipe de trabalho</span>
+                    </h1>.
+                </h1>
+{{--                <p class="w-full mt-2 text-center font-bold uppercase text-sm text-white tracking-widest [word-spacing:8px]">--}}
+{{--                    ¨Viver na santidade também é ser radical¨ João Paulo II</p>--}}
 
 
-                <p class="w-full mt-12 text-center uppercase  font-bold text-sm text-white tracking-widest [word-spacing:8px] mb-4"> Dias 14 a 17 de Novembro</p>
+                <p class="w-full mt-2 text-center uppercase  font-bold text-sm text-white tracking-widest [word-spacing:8px] mb-4"> Dias 26 à 30 de Dezembro</p>
 
 
                 <div class="mt-8 grid justify-items-center">
@@ -59,7 +69,7 @@
                         class=" bg-color3 rounded mt-8 mb-8 p-2 w-[50%]  hover:text-white text-gray-950
                                    flex items-center justify-center text-[12px] hover:bg-amber-700
                                    transition-all duration-500">
-                        <span class="relative text-2xl text-center font-rustic uppercase">Increver-se para Trabalhar</span>
+                        <span class="relative text-sm  text-center font-mono uppercase">Increver-se para Trabalhar</span>
                     </a>
                 </div>
             </div>

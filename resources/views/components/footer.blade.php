@@ -3,15 +3,15 @@
     <footer class="w-full container h-auto flex flex-col 2xl:px-36 pt-40">
         <div class="flex flex-wrap lg:flex-nowrap   px-6  justify-center items-center">
                 <div>
-                    <img src={{asset('img/logo_light.png')}} alt="" class="w-28 lg:w-36 lg:mb-0  lg:mr-12 ">
+{{--                    <img src={{asset('img/logo_light.png')}} alt="" class="w-28 lg:w-36 lg:mb-0  lg:mr-12 ">--}}
                 </div>
                 <div class="">
                     <img src={{asset('img/carmo.png')}} alt="" class="w-40  lg:w-64">
                 </div>
                 <div >
-                    <p class="text-gray-200 p-4 mt-10 font-bold">
-                        Venha viver uma aventura de fé e superação no Acampamento Trekking!
-                        Desafie seus limites e descubra a radicalidade do amor de Deus!.</p>
+{{--                    <p class="text-gray-200 p-4 mt-10 font-bold">--}}
+{{--                        Venha viver uma aventura de fé e superação no Acampamento Trekking!--}}
+{{--                        Desafie seus limites e descubra a radicalidade do amor de Deus!.</p>--}}
                 </div>
 
         </div>
