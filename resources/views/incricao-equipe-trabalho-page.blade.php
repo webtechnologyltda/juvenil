@@ -48,7 +48,7 @@
                 </h1>
                 <h1 class="w-full text-center text-white md:text-md font-secondary  ">
                     <h1 class="w-full  text-center text-white text-md md:text-[68px] font-secondary  ">
-                        <span class=" text-color1 font-mono font-bold text-3xl md:text-7xl">Juvenil Senior</span>
+                        <span class=" text-color1 font-mono font-bold text-3xl md:text-7xl">Juvenil Sênior</span>
                     </h1>.
                 </h1>
                 <h1 class="w-full text-center text-white md:text-md font-secondary  ">
