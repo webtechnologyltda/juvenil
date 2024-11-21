@@ -6,9 +6,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     $settings = app(\App\Settings\GeneralSettings::class);
 //    dd($settings);
-    return view('welcome', compact('settings'));
+//    return view('welcome', compact('settings'));
+    return redirect()->route('inscricao-equipe-trabalho');
 })->name('welcome');
-Route::get('/campista', CampistaForm::class,);
+//Route::get('/campista', CampistaForm::class,);
 
 Route::get('/politica-privacidade', function () {
     return view('politica-privacidade');
