@@ -35,13 +35,14 @@ class ParoquiaSantaLuziaWidget extends ApexChartWidget
         $data = Campista::select('form_data')->where('status', '<>', StatusInscricao::Cancelado->value)->get();
 
         foreach ($data as $value) {
+            if(array_key_exists('comunidade', $value->form_data)) {
+                $comunidadeId = $value->form_data['comunidade'];
 
-            $comunidadeId = $value->form_data['comunidade'];
-
-            if($value->form_data['paroquia'] == 1) {
-                if (array_key_exists($comunidadeId, $comunidadeMap)) {
-                    $comunidadeNome = $comunidadeMap[$comunidadeId];
-                    $comunidades[$comunidadeNome]++;
+                if ($value->form_data['paroquia'] == 1) {
+                    if (array_key_exists($comunidadeId, $comunidadeMap)) {
+                        $comunidadeNome = $comunidadeMap[$comunidadeId];
+                        $comunidades[$comunidadeNome]++;
+                    }
                 }
             }
         }

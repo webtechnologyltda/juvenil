@@ -34,12 +34,14 @@ class ParoquiaSaoDomingosWidget extends ApexChartWidget
         $data = Campista::select('form_data')->where('status', '<>', StatusInscricao::Cancelado->value)->get();
 
         foreach ($data as $value) {
-            $comunidadeId = $value->form_data['comunidade'];
+            if(array_key_exists('comunidade', $value->form_data)) {
+                $comunidadeId = $value->form_data['comunidade'];
 
-            if($value->form_data['paroquia'] == 0) {
-                if (array_key_exists($comunidadeId, $comunidadeMap)) {
-                    $comunidadeNome = $comunidadeMap[$comunidadeId];
-                    $comunidades[$comunidadeNome]++;
+                if ($value->form_data['paroquia'] == 0) {
+                    if (array_key_exists($comunidadeId, $comunidadeMap)) {
+                        $comunidadeNome = $comunidadeMap[$comunidadeId];
+                        $comunidades[$comunidadeNome]++;
+                    }
                 }
             }
         }
