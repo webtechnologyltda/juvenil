@@ -6,6 +6,7 @@ use App\Filament\Resources\EquipeTrabalhoResource\EquipeTrabalhoForm;
 use App\Filament\Resources\EquipeTrabalhoResource\EquipeTrabalhoTable;
 use App\Filament\Resources\EquipeTrabalhoResource\Pages;
 use App\Filament\Resources\EquipeTrabalhoResource\RelationManagers;
+use App\Filament\Resources\EquipeTrabalhoResource\Widgets\EquipeTrabalhoStatsWidget;
 use App\Models\EquipeTrabalho;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -67,6 +68,13 @@ class EquipeTrabalhoResource extends Resource
             'index' => Pages\ListEquipeTrabalhos::route('/'),
             'create' => Pages\CreateEquipeTrabalho::route('/create'),
             'edit' => Pages\EditEquipeTrabalho::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            EquipeTrabalhoStatsWidget::class
         ];
     }
 }

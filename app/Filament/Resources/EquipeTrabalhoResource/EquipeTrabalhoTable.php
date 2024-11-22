@@ -43,6 +43,15 @@ abstract class EquipeTrabalhoTable
                 ->options(StatusInscricaoEquipeTrabalho::class)
                 ->label('Status'),
 
+            SelectColumn::make('data_form.sexo')
+                ->alignCenter()
+                ->toggleable(isToggledHiddenByDefault: true)
+                ->options([
+                    'M' => 'Masculino',
+                    'F' => 'Feminino',
+                ])
+                ->label('Sexo'),
+
             TextColumn::make('data_form.tamanho_camiseta')
                 ->label('Tamanho da Camiseta')
                 ->alignCenter()

@@ -65,6 +65,28 @@ abstract class EquipeTrabalhoForm
                         ->columnSpan(1)
                         ->label('Data de Nascimento'),
 
+                    ToggleButtons::make('data_form.sexo')
+                        ->required()
+                        ->inline(true)
+                        ->inlineLabel(false)
+                        ->columnSpan([
+                            'default' => 1,
+                            'lg' => 'full',
+                        ])
+                        ->colors([
+                            'M' => Color::Blue,
+                            'F' => Color::Pink
+                        ])
+                        ->icons([
+                            'M' => 'eos-male',
+                            'F' => 'eos-female',
+                        ])
+                        ->options([
+                            'M' => 'Masculino',
+                            'F' => 'Feminino',
+                        ])
+                        ->label('Sexo'),
+
                     TextInput::make('data_form.rede_social')
                         ->columnSpan([
                             'default' => 1,

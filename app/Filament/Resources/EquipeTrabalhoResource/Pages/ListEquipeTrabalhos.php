@@ -16,4 +16,11 @@ class ListEquipeTrabalhos extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            EquipeTrabalhoResource\Widgets\EquipeTrabalhoStatsWidget::class
+        ];
+    }
 }
