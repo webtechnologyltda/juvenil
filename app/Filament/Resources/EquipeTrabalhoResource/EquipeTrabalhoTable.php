@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EquipeTrabalhoResource;
 
 use Carbon\Carbon;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 
 abstract class EquipeTrabalhoTable
@@ -36,8 +37,7 @@ abstract class EquipeTrabalhoTable
                 ->formatStateUsing(fn($state) => Carbon::createFromFormat('d/m/Y', $state)->age)
                 ->toggleable(isToggledHiddenByDefault: true),
 
-            TextColumn::make('status')
-                ->badge()
+            SelectColumn::make('status')
                 ->alignCenter()
                 ->label('Status'),
 
