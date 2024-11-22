@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EquipeTrabalhoResource;
 
+use App\Enums\StatusInscricaoEquipeTrabalho;
 use Carbon\Carbon;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\SelectColumn;
@@ -39,6 +40,7 @@ abstract class EquipeTrabalhoTable
 
             SelectColumn::make('status')
                 ->alignCenter()
+                ->options(StatusInscricaoEquipeTrabalho::class)
                 ->label('Status'),
 
             TextColumn::make('data_form.tamanho_camiseta')
