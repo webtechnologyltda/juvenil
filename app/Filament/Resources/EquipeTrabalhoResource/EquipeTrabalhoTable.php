@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EquipeTrabalhoResource;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use Carbon\Carbon;
+use Filament\Support\Colors\Color;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -43,13 +44,14 @@ abstract class EquipeTrabalhoTable
                 ->options(StatusInscricaoEquipeTrabalho::class)
                 ->label('Status'),
 
-            SelectColumn::make('data_form.sexo')
+            TextColumn::make('data_form.sexo')
                 ->alignCenter()
+                ->badge()
                 ->toggleable(isToggledHiddenByDefault: true)
-                ->options([
-                    'M' => 'Masculino',
-                    'F' => 'Feminino',
-                ])
+                ->icon(fn ($state) => $state === 'M' ? 'eos-male' : 'eos-female')
+                ->formatStateUsing(fn ($state) => $state === 'M' ? 'Masculino' : 'Feminino')
+                ->color(fn ($state) => $state === 'M' ? Color::Blue : Color::Pink)
+                ->sortable()
                 ->label('Sexo'),
 
             TextColumn::make('data_form.tamanho_camiseta')
