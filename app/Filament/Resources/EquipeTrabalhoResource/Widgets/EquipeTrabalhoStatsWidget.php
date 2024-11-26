@@ -28,6 +28,7 @@ class EquipeTrabalhoStatsWidget extends BaseWidget
         ];
 
         foreach ($data as $value) {
+
             if($value->data_form['sexo'] == 'F') {
                 $sexo['F']++;
             } else {
