@@ -114,7 +114,7 @@ class EquipeTrabalhoResource extends Resource
                                 ->formatStateUsing(fn($state) => $state ? 'Sim' : 'Não'),
 
                             Column::make('data_form.pode_missas_diarias')
-                                ->heading('Ja Participou de Retiro')
+                                ->heading('Pode participar de Missas Diarias')
                                 ->formatStateUsing(fn($state) => $state ? 'Sim' : 'Não'),
 
                             Column::make('data_form.retiro_que_participou')
