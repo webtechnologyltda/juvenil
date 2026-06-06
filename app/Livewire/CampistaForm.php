@@ -67,15 +67,6 @@ class CampistaForm extends Component implements HasForms
                         'xl' => 3,
                     ])
                     ->schema([
-                        Placeholder::make('offset')
-                            ->hiddenLabel()
-                            ->columns([
-                                'default' => 0,
-                                'sm' => 0,
-                                'md' => 1,
-                                'lg' => 1,
-                                'xl' => 1,
-                            ]),
                         FileUpload::make('avatar_url')
                             ->hiddenLabel()
                             ->label('Foto de identificação')
@@ -84,6 +75,11 @@ class CampistaForm extends Component implements HasForms
                             ->imageEditor()
                             ->directory('foto-formulario')
                             ->columnSpan(1)
+                            ->columnStart([
+                                'md' => 2,
+                                'lg' => 2,
+                                'xl' => 2,
+                            ])
                             ->image()
                             ->imagePreviewHeight('400')
                             ->loadingIndicatorPosition('center')
