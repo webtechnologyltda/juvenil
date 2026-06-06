@@ -8,12 +8,12 @@
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <div class="mx-auto max-w-xl text-center">
             <h2 class="text-lg font-semibold leading-8 tracking-tight text-orange-600">Testemunhos</h2>
-            <p class="mt-2 text-3xl font-bold tracking-tight text-green-950 sm:text-4xl">Trekking me aproximou de Deus e me mostrou a força da minha fé!</p>
+            <p class="mt-2 text-3xl font-bold tracking-tight text-green-950 sm:text-4xl">O Acampamento Juvenil me aproximou de Deus e me mostrou a força da minha fé!</p>
         </div>
         <div class="mx-auto mt-16 grid max-w-2xl grid-cols-1 grid-rows-1 gap-8 text-sm leading-6 text-gray-900 sm:mt-20 sm:grid-cols-2 xl:mx-0 xl:max-w-none xl:grid-flow-col xl:grid-cols-4">
             <figure class="rounded-2xl bg-white shadow-lg ring-1 ring-gray-900/5 sm:col-span-2 xl:col-start-2 xl:row-end-1">
                 <blockquote class="p-6 text-lg font-semibold leading-7 tracking-tight text-gray-900 sm:p-12 sm:text-xl sm:leading-8">
-                    <p>“Em busca de me aproximar ainda mais de Deus participei do acampamento trekking, e lá eu entendi que  meu amor e minha fé por Ele, pode ser ainda mais radical.”</p>
+                    <p>“Em busca de me aproximar ainda mais de Deus participei do Acampamento Juvenil, e lá eu entendi que meu amor e minha fé por Ele podem ser ainda mais radicais.”</p>
                 </blockquote>
                 <figcaption class="flex flex-wrap items-center gap-x-4 gap-y-4 border-t border-gray-900/10 px-6 py-4 sm:flex-nowrap">
                     <div class="flex-auto">
@@ -36,7 +36,7 @@
                     <figure class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5">
                         <blockquote class="text-gray-900">
                             <p>“ O amor é uma força transformadora que nos envolve e nos guia em nossos caminhos. Quando pensamos em Maria, mãe de Jesus, podemos ver um exemplo sublime desse amor radical. Ela não apenas aceitou a missão que lhe foi atribuída,
-                                Assim, inspirados pela radicalidade do amor de Deus e pelo exemplo de Maria, somos chamados a viver uma fé que se traduz em ação, que busca a justiça, a paz e a liberdade. E quando vivenciei o Trekking pude experienciar uma amor mais incrível e radical.”</p>
+                                Assim, inspirados pela radicalidade do amor de Deus e pelo exemplo de Maria, somos chamados a viver uma fé que se traduz em ação, que busca a justiça, a paz e a liberdade. E quando vivenciei o Acampamento Juvenil pude experienciar um amor mais incrível e radical.”</p>
                         </blockquote>
                         <figcaption class="mt-6 flex items-center gap-x-4">
                             <div>
@@ -50,7 +50,7 @@
                 <div class="space-y-8 xl:row-start-1">
                     <figure class="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5">
                         <blockquote class="text-gray-900">
-                            <p>“O acampamento trekking foi a oportunidade de me reconectar com Deus, de resgatar sentimentos que com o tempo vão se perdendo, de reascender a chama e viver algo novo, de entender que Deus com toda sua misericórdia está sempre me esperando, e basta eu me abrir pra poder viver seu amor!”</p>
+                            <p>“O Acampamento Juvenil foi a oportunidade de me reconectar com Deus, de resgatar sentimentos que com o tempo vão se perdendo, de reacender a chama e viver algo novo, de entender que Deus com toda sua misericórdia está sempre me esperando, e basta eu me abrir para viver seu amor!”</p>
                         </blockquote>
                         <figcaption class="mt-6 flex items-center gap-x-4">
                             <div>

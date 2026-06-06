@@ -10,7 +10,7 @@
                 </div>
                 <div >
 {{--                    <p class="text-gray-200 p-4 mt-10 font-bold">--}}
-{{--                        Venha viver uma aventura de fé e superação no Acampamento Trekking!--}}
+{{--                        Venha viver uma experiência de fé e amizade no Acampamento Juvenil!--}}
 {{--                        Desafie seus limites e descubra a radicalidade do amor de Deus!.</p>--}}
                 </div>
 

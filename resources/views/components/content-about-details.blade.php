@@ -26,11 +26,11 @@
                     <h1 class="mt-2 text-3xl font-bold tracking-tight text-green-950 sm:text-4xl">Nossa Senhora do Carmo</h1>
                     <div class="max-w-xl">
                         <p class="mt-6">
-                            Nossa Senhora do Carmo, com sua proteção e exemplo de fé, guia os participantes do Acampamento Trekking na superação de seus limites.
-                            Assim como no Monte Carmelo, cada desafio vivido é uma oportunidade de encontro com Deus, buscando a radicalidade espiritual e a coragem.
+                            Nossa Senhora do Carmo, com sua proteção e exemplo de fé, guia os participantes do Acampamento Juvenil na vivência de uma experiência de encontro com Deus.
+                            Assim como no Monte Carmelo, cada momento vivido é uma oportunidade de fortalecer a fé, a amizade e a coragem.
                             Sob seu manto, encontramos força para vencer tanto os desafios físicos quanto os espirituais.
-                            <br>Essa conexão entre Nossa Senhora do Carmo e a caminhada radical do Trekking nos lembra que, assim como o manto protetor de Maria envolve seus filhos,
-                            também somos chamados a enfrentar os desafios da vida com determinação, superando as barreiras com a força que vem do alto.
+                            <br>Essa conexão entre Nossa Senhora do Carmo e o Acampamento Juvenil nos lembra que, assim como o manto protetor de Maria envolve seus filhos,
+                            também somos chamados a enfrentar os desafios da vida com determinação e com a força que vem do alto.
                         </p>
 
                     </div>

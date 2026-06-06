@@ -600,7 +600,7 @@ abstract class CampistaForm
                 ->requiredIf(fn(Get $get) => $get('form_data.algum_parente'), false)
                 ->visible(fn(Get $get) => $get('form_data.algum_parente') ?? false),
             Radio::make('form_data.declaro')
-                ->label('Declaro nunca ter participado de nenhuma edição do acampamento Trekking ?')
+                ->label('Declaro nunca ter participado de nenhuma edição do Acampamento Juvenil ?')
                 ->live()
                 ->columnSpanFull()
                 ->required()

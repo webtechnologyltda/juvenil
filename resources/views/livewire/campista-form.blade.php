@@ -38,7 +38,7 @@
                             <p class="text-center mx-4 text-yellow-500 text-sm xl:text-xl">Para finalizar sua incrição realize o pagamente e envie o comprovante para nosso atendente </p>
                             <div class="mt-2 grid justify-items-center">
                                 <a target="_blank"
-                                   href="https://wa.me/55{{str_replace(['(', ')', '-', ' '], '', $this->settings['telefone_atendente'])}}?text=Ol%C3%A1+tenho+uma+d%C3%BAvida+sobre+o+Trekking%2C+consegue+me+ajudar+%3F"
+                                   href="https://wa.me/55{{str_replace(['(', ')', '-', ' '], '', $this->settings['telefone_atendente'])}}?text={{ rawurlencode('Olá tenho uma dúvida sobre o Acampamento Juvenil, consegue me ajudar?') }}"
                                    class=" bg-color1 rounded mt-8 mb-8 p-2 w-full lg:w-[50%]  sm:p-4sm:max-w-full
                                    flex items-center justify-center text-[12px] hover:bg-amber-600 hover:font-bold
                                    transition-all duration-500 relative text-center text-md text-black font-bold ">

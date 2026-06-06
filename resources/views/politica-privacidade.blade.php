@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Trekking - Politica de Privacidade</title>
+    <title>Acampamento Juvenil - Política de Privacidade</title>
     <!-- Favicon -->
     <link rel="shortcut icon" href="{{ url(asset('img/logo_simple.png')) }}?20231011">
 
@@ -59,7 +59,7 @@
         <h1 class="text-3xl font-bold mb-4 pt-8">Política de Privacidade</h1>
         <p class="mb-4">
             A sua privacidade é importante para nós. É política da Web Technology respeitar a sua privacidade em
-            relação a qualquer informação sua que possamos coletar no site do Trekking, e outros sites que possuímos
+            relação a qualquer informação sua que possamos coletar no site do Acampamento Juvenil, e outros sites que possuímos
             e operamos.
         </p>
 

@@ -551,7 +551,7 @@ class CampistaForm extends Component implements HasForms
                             ->visible(fn (Get $get) => $get('form_data.algum_parente') ?? false),
 
                         Radio::make('form_data.declaro')
-                            ->label('Declaro nunca ter participado de nenhuma edição do acampamento Trekking ?')
+                            ->label('Declaro nunca ter participado de nenhuma edição do Acampamento Juvenil ?')
                             ->live()
                             ->columnSpanFull()
                             ->required()
@@ -586,7 +586,7 @@ class CampistaForm extends Component implements HasForms
         if (! $this->data['form_data']['declaro']) {
             Notification::make()
                 ->title('Inscrição não permitida')
-                ->body('A inscrição não pode ser registrada, pois você já participou do Trekking antes.')
+                ->body('A inscrição não pode ser registrada, pois você já participou do Acampamento Juvenil antes.')
                 ->duration(60000)
                 ->danger()
                 ->send();

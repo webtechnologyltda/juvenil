@@ -100,7 +100,7 @@ abstract class CampistaExport
                 ->formatStateUsing(fn ($state) => $state ? 'Sim' : 'Não'),
 
             ExportColumn::make('form_data.declaro')
-                ->label('Delcaro ter participado do Trekking')
+                ->label('Declaro ter participado do Acampamento Juvenil')
                 ->formatStateUsing(fn ($state) => $state ? 'Sim' : 'Não'),
 
             ExportColumn::make('form_data.retiro_que_participou')

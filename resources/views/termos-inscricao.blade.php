@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Trekking- Termo de Inscrição</title>
+    <title>Acampamento Juvenil - Termo de Inscrição</title>
     <!-- Favicon -->
     <link rel="shortcut icon" href="{{ url(asset('img/logo_simple.png')) }}?20231011">
 
@@ -65,7 +65,7 @@
 <div class="container mx-auto text-black bg-white mt-10 px-8 rounded-xl relative z-10">
     <h1 class="text-3xl font-bold mb-4">Termo de Inscrição</h1>
     <p class="mb-4">
-        Agradecemos o seu interesse e apoio ao acampamento Trekking. É importante esclarecer que, ao realizar a inscrição, você está contribuindo financeiramente para a realização do acampamento, ajudando a cobrir despesas como organização, infraestrutura e materiais necessários para a sua execução.
+        Agradecemos o seu interesse e apoio ao Acampamento Juvenil. É importante esclarecer que, ao realizar a inscrição, você está contribuindo financeiramente para a realização do acampamento, ajudando a cobrir despesas como organização, infraestrutura e materiais necessários para a sua execução.
     </p>
 
     <h2 class="text-2xl font-semibold mb-2">1. Natureza de Doação</h2>
@@ -94,7 +94,7 @@
     </p>
 
     <p class="mt-8 text-md text-center text-gray-600 pb-10">
-        Esta política de não devolução é válida para todas as inscrições realizadas no evento Trekking e está sujeita a alterações sem aviso prévio, conforme necessário para garantir a melhor execução do acampamento.
+        Esta política de não devolução é válida para todas as inscrições realizadas no Acampamento Juvenil e está sujeita a alterações sem aviso prévio, conforme necessário para garantir a melhor execução do acampamento.
     </p>
 </div>
 </body>

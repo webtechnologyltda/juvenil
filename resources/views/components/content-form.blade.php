@@ -47,7 +47,7 @@
                     </p>
                     <div class="mt-2 grid justify-items-center">
                         <a target="_blank"
-                           href="https://wa.me/55{{str_replace(['(', ')', '-', ' '], '', $settings->telefone_atendente)}}?text=Ol%C3%A1+tenho+uma+d%C3%BAvida+sobre+o+Trekking%2C+consegue+me+ajudar+%3F"
+                           href="https://wa.me/55{{str_replace(['(', ')', '-', ' '], '', $settings->telefone_atendente)}}?text={{ rawurlencode('Olá tenho uma dúvida sobre o Acampamento Juvenil, consegue me ajudar?') }}"
                            class=" bg-color3 rounded mt-8 mb-8 p-2 w-full  text-white sm:p-4sm:max-w-full
                                    flex items-center justify-center text-[12px] hover:bg-amber-600 hover:font-bold
                                    transition-all duration-500">
