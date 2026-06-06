@@ -6,19 +6,18 @@ use App\Enums\StatusInscricao;
 use App\Models\Campista;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Widgets\ChartWidget;
-use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class ParoquiaSaoDomingosWidget extends ApexChartWidget
+class ParoquiaSaoDomingosWidget extends ChartWidget
 {
     use HasWidgetShield;
-    protected static ?string $heading = 'Inscrições por Comunidade  - Matriz de São Domingos';
 
-      protected static ?int $contentHeight = 305;
+    protected ?string $heading = 'Inscrições por Comunidade  - Matriz de São Domingos';
 
-      protected  static ?int $sort  = 6;
+    protected ?string $maxHeight = '305px';
 
+    protected static ?int $sort = 6;
 
-    protected function getOptions(): array
+    protected function getData(): array
     {
 
         $comunidadeMap = [
@@ -34,7 +33,7 @@ class ParoquiaSaoDomingosWidget extends ApexChartWidget
         $data = Campista::select('form_data')->where('status', '<>', StatusInscricao::Cancelado->value)->get();
 
         foreach ($data as $value) {
-            if(array_key_exists('comunidade', $value->form_data)) {
+            if (array_key_exists('comunidade', $value->form_data)) {
                 $comunidadeId = $value->form_data['comunidade'];
 
                 if ($value->form_data['paroquia'] == 0) {
@@ -47,18 +46,18 @@ class ParoquiaSaoDomingosWidget extends ApexChartWidget
         }
 
         return [
-            'chart' => [
-                'type' => 'donut',
-                'height' => 300,
-            ],
-            'series' => array_values($comunidades), // Quantidade por comunidade
-            'labels' => array_keys($comunidades),   // Nomes das comunidades
-            'colors' => ['#2f80ed', '#F53BD6', '#FF7F50', '#8A2BE2', '#32CD32'],
-            'legend' => [
-                'labels' => [
-                    'fontFamily' => 'inherit',
+            'datasets' => [
+                [
+                    'data' => array_values($comunidades),
+                    'backgroundColor' => ['#2f80ed', '#F53BD6', '#FF7F50', '#8A2BE2', '#32CD32'],
                 ],
             ],
+            'labels' => array_keys($comunidades),
         ];
+    }
+
+    protected function getType(): string
+    {
+        return 'doughnut';
     }
 }

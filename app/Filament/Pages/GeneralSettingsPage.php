@@ -6,16 +6,13 @@ use App\Enums\LiberacaoInscricoesEquipeTrabalhoStatusEnum;
 use App\Enums\LiberacaoInscricoesStatusEnum;
 use App\Settings\GeneralSettings;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Pages\SettingsPage;
-use FilamentTiptapEditor\Enums\TiptapOutput;
-use FilamentTiptapEditor\TiptapEditor;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Leandrocfe\FilamentPtbrFormFields\PhoneNumber;
 
 class GeneralSettingsPage extends SettingsPage
@@ -23,24 +20,26 @@ class GeneralSettingsPage extends SettingsPage
     use HasPageShield;
 
     protected static ?string $title = 'Configurações Gerais';
-    protected static ?int $navigationSort = 99;
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?string $navigationGroup = 'Configurações';
+    protected static ?int $navigationSort = 99;
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Configurações';
 
     protected static string $settings = GeneralSettings::class;
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Grid::make()
                     ->columns(12)
                     ->schema([
                         Section::make('Contato do Atendente')
                             ->schema([
                                 PhoneNumber::make('telefone_atendente')
-                                ->required()
+                                    ->required(),
                             ])
                             ->columnSpan([
                                 'default' => 'full',
@@ -57,12 +56,12 @@ class GeneralSettingsPage extends SettingsPage
                                     ->native(false)
                                     ->selectablePlaceholder(false)
                                     ->live()
-                                    ->prefixIcon(fn($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getIcon())
-                                    ->prefixIconColor(fn($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getColor())
+                                    ->prefixIcon(fn ($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getIcon())
+                                    ->prefixIconColor(fn ($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getColor())
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => '6',
-                                        'lg' => '4'
+                                        'lg' => '4',
                                     ]),
 
                                 Select::make('liberacao_inscricoes_status')
@@ -71,27 +70,24 @@ class GeneralSettingsPage extends SettingsPage
                                     ->native(false)
                                     ->selectablePlaceholder(false)
                                     ->live()
-                                    ->prefixIcon(fn($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getIcon())
-                                    ->prefixIconColor(fn($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getColor())
+                                    ->prefixIcon(fn ($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getIcon())
+                                    ->prefixIconColor(fn ($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getColor())
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => '6',
-                                        'lg' => '4'
+                                        'lg' => '4',
                                     ]),
 
-                                TiptapEditor::make('liberacao_inscricoes_bloco')
+                                RichEditor::make('liberacao_inscricoes_bloco')
                                     ->label('Conteúdo bloco de inscrições dos campistas')
                                     ->hint('O conteúdo do bloco de inscrições aparece quando o status das inscrições estiver
-                                        diferente de ' . LiberacaoInscricoesStatusEnum::LIBERADO->getLabel())
+                                        diferente de '.LiberacaoInscricoesStatusEnum::LIBERADO->getLabel())
                                     ->hintIcon('heroicon-o-information-circle')
                                     ->hintColor('warning')
-                                    ->profile('default')
                                     ->columnSpanFull()
-                                    ->directory('settings') // optional, defaults to config setting
-                                    ->maxSize(1024) // optional, defaults to config setting
-                                    ->output(TiptapOutput::Html) // optional, change the format for saved data, default is html
-                                    ->maxContentWidth('5xl')
-                                    ->required(fn(Get $get) => LiberacaoInscricoesStatusEnum::tryFrom($get('liberacao_inscricoes_status')) !== LiberacaoInscricoesStatusEnum::LIBERADO)
+                                    ->fileAttachmentsDirectory('settings')
+                                    ->fileAttachmentsMaxSize(1024)
+                                    ->required(fn (Get $get) => LiberacaoInscricoesStatusEnum::tryFrom($get('liberacao_inscricoes_status')) !== LiberacaoInscricoesStatusEnum::LIBERADO),
                             ])
                             ->columnSpan([
                                 'default' => 'full',

@@ -13,9 +13,10 @@ class EquipeTrabalhoStatsWidget extends BaseWidget
 {
     use HasWidgetShield;
 
-    protected static ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '60s';
 
     protected static ?string $label = 'Overview Equipe de Trabalho';
+
     protected function getStats(): array
     {
         $data = EquipeTrabalho::query()
@@ -24,12 +25,12 @@ class EquipeTrabalhoStatsWidget extends BaseWidget
 
         $sexo = [
             'F' => 0,
-            'M' => 0
+            'M' => 0,
         ];
 
         foreach ($data as $value) {
 
-            if($value->data_form['sexo'] == 'F') {
+            if ($value->data_form['sexo'] == 'F') {
                 $sexo['F']++;
             } else {
                 $sexo['M']++;

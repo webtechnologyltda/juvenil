@@ -1,10 +1,11 @@
 /** @type {import('tailwindcss').Config} */
-import preset from './vendor/filament/support/tailwind.config.preset'
+import forms from '@tailwindcss/forms';
+import typography from '@tailwindcss/typography';
+import scrollbar from 'tailwind-scrollbar';
 import colors from "tailwindcss/colors.js";
 
 export default {
     darkMode: ['variant', '&:not(.light *)'],
-    presets: [preset],
     content: [
         './app/**/*.php',
         './resources/**/*.html',
@@ -12,7 +13,6 @@ export default {
         './resources/**/*.php',
         './vendor/filament/**/*.blade.php',
         './app/Filament/**/*.php',
-        './vendor/awcodes/filament-tiptap-editor/resources/**/*.blade.php',
     ],
     theme: {
         extend: {
@@ -32,9 +32,8 @@ export default {
         },
     },
     plugins: [
-        require('@tailwindcss/forms'),
-        require('@tailwindcss/typography'),
-        require('tailwind-scrollbar')({preferredStrategy: 'pseudoelements'}),
+        forms,
+        typography,
+        scrollbar({preferredStrategy: 'pseudoelements'}),
     ],
 }
-

@@ -4,21 +4,21 @@ namespace App\Filament\Resources\EquipeTrabalhoResource;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use Carbon\Carbon;
-use Filament\Forms\Components\Actions;
-use Filament\Forms\Components\Actions\Action as FormAction;
-use Filament\Forms\Components\Fieldset;
+use Filament\Actions\Action as FormAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -323,9 +323,7 @@ abstract class EquipeTrabalhoForm
             FileUpload::make('avatar_url')
                 ->hiddenLabel()
                 ->label('Foto de identificação')
-                ->optimize('webp')
                 ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
-                ->resize(15)
                 ->alignCenter()
                 ->imageEditor()
                 ->directory('foto-formulario-equipe-trabalho')
@@ -348,7 +346,6 @@ abstract class EquipeTrabalhoForm
                     '1:1',
                 ])
                 ->panelLayout('integrated')
-                ->uploadingMessage('Uploading attachment...')
                 ->imageEditorEmptyFillColor('#000000')
                 ->required(),
 

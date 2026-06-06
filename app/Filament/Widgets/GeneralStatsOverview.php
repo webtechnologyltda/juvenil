@@ -12,7 +12,8 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 class GeneralStatsOverview extends BaseWidget
 {
     use HasWidgetShield;
-    protected static ?string $pollingInterval = '60s';
+
+    protected ?string $pollingInterval = '60s';
 
     /**
      * Widget Title

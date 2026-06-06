@@ -6,23 +6,20 @@ use App\Models\Campista;
 use App\Models\User;
 use App\Settings\GeneralSettings;
 use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Split;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
@@ -43,7 +40,6 @@ class CampistaForm extends Component implements HasForms
     #[Session]
     public $comprado = false;
 
-
     public function render()
     {
         return view('livewire.campista-form');
@@ -52,15 +48,15 @@ class CampistaForm extends Component implements HasForms
     public function mount()
     {
         $this->settings = app(GeneralSettings::class)->toArray();
-        //pega o valor de comprado do localstorage
+        // pega o valor de comprado do localstorage
         $this->getForm('form')->fill();
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->statePath('data')
-            ->schema([
+            ->components([
                 Grid::make()
                     ->columns([
                         'default' => 1,
@@ -82,9 +78,7 @@ class CampistaForm extends Component implements HasForms
                         FileUpload::make('avatar_url')
                             ->hiddenLabel()
                             ->label('Foto de identificação')
-                            ->optimize('webp')
-                            ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
-                            ->resize(15)
+                            ->placeholder(fn () => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
                             ->alignCenter()
                             ->imageEditor()
                             ->directory('foto-formulario')
@@ -104,7 +98,6 @@ class CampistaForm extends Component implements HasForms
                                 '1:1',
                             ])
                             ->panelLayout('integrated')
-                            ->uploadingMessage('Uploading attachment...')
                             ->imageEditorEmptyFillColor('#000000')
                             ->required(),
                     ]),
@@ -115,7 +108,7 @@ class CampistaForm extends Component implements HasForms
                     ->columnSpanFull()
                     ->hint('Por favor, envie uma foto SEM óculos escuros ou acessórios que possam dificultar a sua identificação.'),
                 Grid::make()
-                    ->label( 'Informações Pessoais' )
+                    ->label('Informações Pessoais')
                     ->columns([
                         'default' => 1,
                         'sm' => 1,
@@ -180,7 +173,7 @@ class CampistaForm extends Component implements HasForms
                                 'xl' => 1,
                             ])
                             ->suffix('kg')
-                            ->label('Peso'),]),
+                            ->label('Peso'), ]),
                 Grid::make()
                     ->columns([
                         'default' => 1,
@@ -209,7 +202,6 @@ class CampistaForm extends Component implements HasForms
                                 'xl' => 2,
                             ])
                             ->label('Telefone Campista'),
-
 
                     ]),
                 Grid::make()
@@ -268,7 +260,6 @@ class CampistaForm extends Component implements HasForms
                             ])
                             ->label('Nome do Contato'),
 
-
                         Radio::make('form_data.toma_remedio')
                             ->label('Toma algum Remédio?')
                             ->live()
@@ -283,8 +274,8 @@ class CampistaForm extends Component implements HasForms
 
                         Textarea::make('form_data.remedio')
                             ->rows(3)
-                            ->required(fn(Get $get) => $get('form_data.toma_remedio') == true)
-                            ->visible(fn(Get $get) => $get('form_data.toma_remedio') == true)
+                            ->required(fn (Get $get) => $get('form_data.toma_remedio') == true)
+                            ->visible(fn (Get $get) => $get('form_data.toma_remedio') == true)
                             ->label('Por favor, descreva os medicamentos abaixo e os horários de administração caso se aplique')
                             ->columnSpanFull(),
 
@@ -302,8 +293,8 @@ class CampistaForm extends Component implements HasForms
 
                         Textarea::make('form_data.recomendacao')
                             ->label('Qual?')
-                            ->required(fn(Get $get) => $get('form_data.tem_recomendacao') == true)
-                            ->visible(fn(Get $get) => $get('form_data.tem_recomendacao') == true)
+                            ->required(fn (Get $get) => $get('form_data.tem_recomendacao') == true)
+                            ->visible(fn (Get $get) => $get('form_data.tem_recomendacao') == true)
                             ->rows(3)
                             ->columnSpanFull(),
 
@@ -340,8 +331,8 @@ class CampistaForm extends Component implements HasForms
                                 'xl' => 1,
                             ])
                             ->required()
-                            ->visible(fn(Get $get) => $get('form_data.tamanho_camiseta') == 'O')
-                            ->requiredIf('tamanho_camiseta', fn(Get $get) => $get('form_data.tamanho_camiseta') == 'O')
+                            ->visible(fn (Get $get) => $get('form_data.tamanho_camiseta') == 'O')
+                            ->requiredIf('tamanho_camiseta', fn (Get $get) => $get('form_data.tamanho_camiseta') == 'O')
                             ->minLength(1)
                             ->maxLength(3),
                     ]),
@@ -372,7 +363,7 @@ class CampistaForm extends Component implements HasForms
                                 'xl' => 2,
                             ])
                             ->viaCep(
-                            // Determines whether the action should be appended to (suffix) or prepended to (prefix) the cep field, or not included at all (none).
+                                // Determines whether the action should be appended to (suffix) or prepended to (prefix) the cep field, or not included at all (none).
                                 mode: 'suffix',
 
                                 // Error message to display if the CEP is invalid.
@@ -389,7 +380,7 @@ class CampistaForm extends Component implements HasForms
                                     'form_data.ponto_referencia' => 'complemento',
                                     'form_data.bairro' => 'bairro',
                                     'form_data.cidade' => 'localidade',
-                                    'form_data.estado' => 'uf'
+                                    'form_data.estado' => 'uf',
                                 ],
                             ),
 
@@ -478,7 +469,6 @@ class CampistaForm extends Component implements HasForms
                                 $set('form_data.paroquia_visible_luzia', $state == 1);
                                 $set('form_data.paroquia_visible_carmo', $state == 0);
 
-
                             }),
 
                         Radio::make('form_data.comunidade')
@@ -539,13 +529,12 @@ class CampistaForm extends Component implements HasForms
                                 false => 'Não',
                             ]),
 
-
                         TagsInput::make('form_data.retiro_que_participou')
                             ->label('Qual?')
                             ->placeholder('Especifique o qual acampamento')
                             ->columnSpanFull()
-                            ->requiredIf(fn(Get $get) => $get('form_data.ja_participou_retiro'), false)
-                            ->visible(fn(Get $get) => $get('form_data.ja_participou_retiro') ?? false),
+                            ->requiredIf(fn (Get $get) => $get('form_data.ja_participou_retiro'), false)
+                            ->visible(fn (Get $get) => $get('form_data.ja_participou_retiro') ?? false),
 
                         Radio::make('form_data.algum_parente')
                             ->label('Tem algum amigo/parente próximo que irá participar do acampamento ?')
@@ -562,8 +551,8 @@ class CampistaForm extends Component implements HasForms
                             ->label('Especificar o nome')
                             ->placeholder('Especifique o qual acampamento')
                             ->columnSpanFull()
-                            ->requiredIf(fn(Get $get) => $get('form_data.algum_parente'), false)
-                            ->visible(fn(Get $get) => $get('form_data.algum_parente') ?? false),
+                            ->requiredIf(fn (Get $get) => $get('form_data.algum_parente'), false)
+                            ->visible(fn (Get $get) => $get('form_data.algum_parente') ?? false),
 
                         Radio::make('form_data.declaro')
                             ->label('Declaro nunca ter participado de nenhuma edição do acampamento Trekking ?')
@@ -576,8 +565,6 @@ class CampistaForm extends Component implements HasForms
                                 true => 'Declaro nunca ter participado',
                                 false => 'Não, já participei de alguma edição',
                             ]),
-
-
 
                         Placeholder::make('info_termo')
                             ->hint('Necessario aceitar os termos abaixo, para finalizar a inscrição.')
@@ -594,27 +581,27 @@ class CampistaForm extends Component implements HasForms
                             ->columnSpanFull(),
                     ]),
 
-
             ]);
     }
 
     public function submitForm(): void
     {
         $this->validate();
-        if (!$this->data['form_data']['declaro']) {
+        if (! $this->data['form_data']['declaro']) {
             Notification::make()
                 ->title('Inscrição não permitida')
                 ->body('A inscrição não pode ser registrada, pois você já participou do Trekking antes.')
                 ->duration(60000)
                 ->danger()
                 ->send();
+
             return;
         }
         if (
-            !array_key_exists('aceite_termo_inscricao', $this->data['form_data']) ||
-            !$this->data['form_data']['aceite_termo_inscricao'] ||
-            !array_key_exists('aceitar_politica_privacidade', $this->data['form_data']) ||
-            !$this->data['form_data']['aceitar_politica_privacidade']
+            ! array_key_exists('aceite_termo_inscricao', $this->data['form_data']) ||
+            ! $this->data['form_data']['aceite_termo_inscricao'] ||
+            ! array_key_exists('aceitar_politica_privacidade', $this->data['form_data']) ||
+            ! $this->data['form_data']['aceitar_politica_privacidade']
         ) {
 
             Notification::make()
@@ -646,13 +633,12 @@ class CampistaForm extends Component implements HasForms
                 ->send();
             $this->reset(['data']);
 
-
             $recipient = User::all();
 
             Notification::make()
                 ->info()
                 ->title('Nova inscrição')
-                ->body(new HtmlString('Uma nova inscrição foi enviada, para o(a) campista: <strong>' . strtoupper($campista->nome) . '</strong> acesse as inscrições para mais detalhes.'))
+                ->body(new HtmlString('Uma nova inscrição foi enviada, para o(a) campista: <strong>'.strtoupper($campista->nome).'</strong> acesse as inscrições para mais detalhes.'))
                 ->sendToDatabase($recipient);
 
         } catch (\Exception $exception) {
@@ -666,11 +652,8 @@ class CampistaForm extends Component implements HasForms
     }
 
     public function compraNovaPassagem()
-
     {
         $this->comprado = false;
         $this->reset(['data']);
     }
-
-
 }

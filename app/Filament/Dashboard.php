@@ -8,6 +8,5 @@ class Dashboard extends FilamentDashboard
 {
     protected static ?string $title = 'Início';
 
-    protected static ?string $navigationIcon = 'heroicon-o-home';
-
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-home';
 }

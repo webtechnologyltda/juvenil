@@ -5,72 +5,53 @@ namespace App\Filament\Widgets;
 use App\Enums\StatusInscricao;
 use App\Models\Campista;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
-use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
+use Filament\Widgets\ChartWidget;
 
-class InscriptionsByCityChart extends ApexChartWidget
+class InscriptionsByCityChart extends ChartWidget
 {
-
     use HasWidgetShield;
-    /**
-     * Chart Id
-     */
-    protected static ?string $chartId = 'inscriptionsByCityChart';
 
-    /**
-     * Widget Title
-     */
-    protected static ?string $heading = 'Inscrições por Cidade';
+    protected ?string $heading = 'Inscrições por Cidade';
 
-    protected  static ?int $sort  = 1;
+    protected static ?int $sort = 1;
 
-    /**
-     * Chart options (series, labels, types, size, animations...)
-     * https://apexcharts.com/docs/options
-     */
-    protected function getOptions(): array
+    protected function getData(): array
     {
-        $data = $this->getData();
+        $data = $this->getCityData();
 
         return [
-            'chart' => [
-                'type' => 'bar',
-                'height' => 300,
-            ],
-            'series' => [
+            'datasets' => [
                 [
-                    'name' => 'Número de Inscrições',
+                    'label' => 'Número de Inscrições',
                     'data' => array_values($data),
+                    'backgroundColor' => '#f59e0b',
                 ],
             ],
-            'xaxis' => [
-                'categories' => array_keys($data),
-                'labels' => [
-                    'style' => [
-                        'fontFamily' => 'inherit',
+            'labels' => array_keys($data),
+        ];
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'indexAxis' => 'y',
+            'scales' => [
+                'x' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'precision' => 0,
                     ],
-                ],
-                'stepSize' => 1,
-                'min' => 0,
-                'floating' => false,
-            ],
-            'yaxis' => [
-                'labels' => [
-                    'style' => [
-                        'fontFamily' => 'inherit',
-                    ],
-                ],
-            ],
-            'colors' => ['#f59e0b'],
-            'plotOptions' => [
-                'bar' => [
-                    'borderRadius' => 3,
-                    'horizontal' => true,
                 ],
             ],
         ];
     }
 
-    public function getData(): array
+    protected function getType(): string
+    {
+        return 'bar';
+    }
+
+    private function getCityData(): array
     {
         $data = Campista::select('form_data')
             ->where('status', '<>', StatusInscricao::Cancelado->value)

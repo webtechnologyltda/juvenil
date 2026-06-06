@@ -10,13 +10,12 @@ use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Get;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Support\RawJs;
 use Leandrocfe\FilamentPtbrFormFields\Money;
 
@@ -113,7 +112,6 @@ abstract class LancamentoForm
                                               ->openable()
                                               ->multiple()
                                               ->maxSize(2048)
-                                              ->uploadingMessage('Carregando...')
                                               ->acceptedFileTypes(['application/pdf', 'image/*'])
                                               ->previewable(true)
                                               ->columnSpan(2),

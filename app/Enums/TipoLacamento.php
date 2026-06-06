@@ -6,7 +6,7 @@ use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasIcon;
 use Filament\Support\Contracts\HasLabel;
 
-enum TipoLacamento: int  implements HasColor, HasLabel, HasIcon
+enum TipoLacamento: int implements HasColor, HasIcon, HasLabel
 {
     case Receita = 0;
     case Despesa = 1;
@@ -24,8 +24,8 @@ enum TipoLacamento: int  implements HasColor, HasLabel, HasIcon
     public function getIcon(): ?string
     {
         return match ($this) {
-            self::Receita => 'eva-trending-up',
-            self::Despesa => 'eva-trending-down',
+            self::Receita => 'heroicon-m-arrow-trending-up',
+            self::Despesa => 'heroicon-m-arrow-trending-down',
             self::Doacao => 'iconoir-donate'
         };
     }

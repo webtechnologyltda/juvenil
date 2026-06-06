@@ -2,11 +2,8 @@
 
 namespace App\Providers\Filament;
 
-use App\Enums\RoleEnum;
 use App\Filament\Dashboard;
-use Awcodes\FilamentStickyHeader\StickyHeaderPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use EightyNine\Reports\ReportsPlugin;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -15,16 +12,14 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Joaopaulolndev\FilamentGeneralSettings\FilamentGeneralSettingsPlugin;
-use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 
 class AdminPanelProvider extends PanelProvider
@@ -69,12 +64,12 @@ class AdminPanelProvider extends PanelProvider
 
             ])
 //            ->topNavigation()
-            ->maxContentWidth(MaxWidth::ScreenTwoExtraLarge)
+            ->maxContentWidth(Width::ScreenTwoExtraLarge)
             ->favicon(asset('img/logo_simple.png'))
             ->defaultThemeMode(ThemeMode::Light)
             ->brandLogo(asset('img/logo_simple.png'))
             ->darkModeBrandLogo(asset('img/logo_simple.png'))
-            ->brandLogoHeight(  '40px')
+            ->brandLogoHeight('40px')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -89,15 +84,13 @@ class AdminPanelProvider extends PanelProvider
                 StartSession::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
-                VerifyCsrfToken::class,
+                PreventRequestForgery::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
-                FilamentApexChartsPlugin::make(),
                 FilamentShieldPlugin::make(),
-                ReportsPlugin::make(),
                 EnvironmentIndicatorPlugin::make()
                     ->visible(fn () => auth()->user()?->hasRole('Super Administrador'))
                     ->color(fn () => match (app()->environment()) {

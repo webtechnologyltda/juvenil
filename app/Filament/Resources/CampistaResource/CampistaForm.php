@@ -5,28 +5,27 @@ namespace App\Filament\Resources\CampistaResource;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use Carbon\Carbon;
-use Filament\Forms\Components\Actions;
-use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Actions\Action as FormAction;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Split;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Wizard\Step;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Wizard\Step;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -200,11 +199,10 @@ abstract class CampistaForm
             FileUpload::make('avatar_url')
                 ->hiddenLabel()
                 ->label('Foto de identificação')
-                ->optimize('webp')
                 ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
-                ->resize(15)
                 ->alignCenter()
                 ->imageEditor()
+                ->image()
                 ->directory('foto-formulario')
                 ->imagePreviewHeight('250')
                 ->previewable(true)
@@ -702,7 +700,6 @@ abstract class CampistaForm
                                 ->openable()
                                 ->multiple()
                                 ->maxSize(2048)
-                                ->uploadingMessage('Carregando...')
                                 ->acceptedFileTypes(['application/pdf', 'image/*'])
                                 ->previewable(true)
                                 ->columnSpan(2),

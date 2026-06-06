@@ -5,14 +5,13 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
-        "afatmustafa/blade-hugeicons": "^0.0.3",
+        "php": "^8.3",
+        "afatmustafa/blade-hugeicons": "^2.0",
         "andreiio/blade-iconoir": "^4.5",
         "andreiio/blade-remix-icon": "^3.5",
-        "awcodes/filament-sticky-header": "^2.0",
-        "awcodes/filament-tiptap-editor": "^3.0",
-        "aymanalhattami/filament-slim-scrollbar": "^2.0",
-        "bezhansalleh/filament-shield": "^3.2",
+        "awcodes/filament-sticky-header": "^4.0",
+        "aymanalhattami/filament-slim-scrollbar": "^2.1",
+        "bezhansalleh/filament-shield": "^4.0",
         "codeat3/blade-clarity-icons": "^1.9",
         "codeat3/blade-eos-icons": "^1.14",
         "codeat3/blade-fluentui-system-icons": "^1.33",
@@ -20,37 +19,32 @@
         "codeat3/blade-phosphor-icons": "^2.2",
         "codeat3/blade-rpg-awesome-icons": "^1.5",
         "eduard9969/blade-polaris-icons": "^2.6",
-        "faisal50x/blade-ionicons": "^1.0",
         "fakerphp/faker": "^1.23",
-        "filament/filament": "^3.2",
-        "filament/forms": "^3.2",
-        "filament/spatie-laravel-settings-plugin": "^3.2",
-        "hasnayeen/blade-eva-icons": "^2.0",
-        "joshembling/image-optimizer": "^1.4",
-        "larabug/larabug": "^3.1",
-        "laravel/framework": "^11.9",
-        "laravel/tinker": "^2.9",
-        "leandrocfe/filament-apex-charts": "^3.1",
-        "leandrocfe/filament-ptbr-form-fields": "^3.1.0",
-        "livewire/livewire": "^3.5",
-        "owenvoke/blade-fontawesome": "^2.7",
-        "psr/simple-cache": "2.0",
-        "pxlrbt/filament-environment-indicator": "^2.0",
-        "pxlrbt/filament-excel": "^2.3",
-        "ryangjchandler/blade-tabler-icons": "^2.3",
-        "spatie/laravel-ignition": "^2.8",
-        "stechstudio/filament-impersonate": "*",
-        "tapp/filament-auditing": "^3.0",
-        "troccoli/blade-health-icons": "^3.0",
-        "webtechnologyltda/filament-reports": "^1.0"
+        "filament/filament": "^5.0",
+        "filament/forms": "^5.0",
+        "filament/spatie-laravel-settings-plugin": "^5.0",
+        "larabug/larabug": "^3.7",
+        "laravel/framework": "^13.0",
+        "laravel/tinker": "^3.0",
+        "leandrocfe/filament-ptbr-form-fields": "^5.0",
+        "livewire/livewire": "^4.0",
+        "owenvoke/blade-fontawesome": "^3.2",
+        "psr/simple-cache": "^3.0",
+        "pxlrbt/filament-environment-indicator": "^3.5",
+        "secondnetwork/blade-tabler-icons": "^3.44",
+        "stechstudio/filament-impersonate": "^5.5",
+        "tapp/filament-auditing": "^4.0",
+        "troccoli/blade-health-icons": "^6.0"
     },
     "require-dev": {
-        "laravel/pint": "^1.13",
-        "laravel/sail": "^1.26",
+        "laravel/boost": "^2.4",
+        "laravel/pint": "^1.29",
+        "laravel/sail": "^1.46",
         "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^8.0",
-        "pestphp/pest": "^2.34",
-        "pestphp/pest-plugin-laravel": "^2.4"
+        "nunomaduro/collision": "^8.9",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "phpunit/phpunit": "^12.0"
     },
     "autoload": {
         "files": [
@@ -70,8 +64,7 @@
     "scripts": {
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi",
-            "@php artisan filament:upgrade"
+            "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
@@ -99,12 +92,6 @@
             "php-http/discovery": true
         }
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/webtechnologyltda/filament-reports.git"
-        }
-    ],
     "minimum-stability": "stable",
     "prefer-stable": true
 }

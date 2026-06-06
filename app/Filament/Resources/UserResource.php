@@ -5,14 +5,13 @@ namespace App\Filament\Resources;
 use App\Enums\RoleEnum;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
@@ -26,9 +25,9 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
-    protected static ?string $navigationGroup = 'Administrativo';
+    protected static string|\UnitEnum|null $navigationGroup = 'Administrativo';
 
     protected static ?string $navigationLabel = 'Usuários';
 
@@ -38,10 +37,10 @@ class UserResource extends Resource
 
     protected static ?string $slug = 'users';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Grid::make(['default' => 12])->schema([
                     Section::make()
                         ->columnSpan([
@@ -170,7 +169,7 @@ class UserResource extends Resource
             ])
             ->actions([
                 Impersonate::make()
-                    ->visible(fn() => auth()->user()->isSuperAdmin())
+                    ->visible(fn () => auth()->user()->isSuperAdmin())
                     ->label('Simular acesso do usuário')
                     ->color(Color::Amber),
                 Tables\Actions\EditAction::make(),
