@@ -16,6 +16,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -107,8 +108,7 @@ class CampistaForm extends Component implements HasForms
                     ->hintIcon('heroicon-o-exclamation-circle')
                     ->columnSpanFull()
                     ->hint('Por favor, envie uma foto SEM óculos escuros ou acessórios que possam dificultar a sua identificação.'),
-                Grid::make()
-                    ->label('Informações Pessoais')
+                Fieldset::make('Informações Pessoais')
                     ->columns([
                         'default' => 1,
                         'sm' => 1,
@@ -337,7 +337,7 @@ class CampistaForm extends Component implements HasForms
                             ->maxLength(3),
                     ]),
 
-                Grid::make('Endereço')
+                Fieldset::make('Endereço')
                     ->columns([
                         'default' => 1,
                         'sm' => 1,
@@ -449,7 +449,7 @@ class CampistaForm extends Component implements HasForms
                             ->label('Estado'),
 
                     ]),
-                Grid::make('Informações importantes')
+                Fieldset::make('Informações importantes')
                     ->columns(4)
                     ->schema([
 
