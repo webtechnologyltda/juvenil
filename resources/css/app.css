@@ -80,3 +80,12 @@
 .no-tailwind {
     all: unset;
 }
+
+.filament-registration-shell {
+    color-scheme: light;
+}
+
+.filament-registration-shell,
+.filament-registration-shell * {
+    min-width: 0;
+}

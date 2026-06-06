@@ -16,6 +16,7 @@ it('renders the main page with the campista registration form only', function ()
         ->assertOk()
         ->assertSee('Inscrição')
         ->assertSee('Comprar')
+        ->assertSee('filament-registration-shell')
         ->assertDontSee('Inscrição para equipe de trabalho')
         ->assertDontSee('Increver-se para Trabalhar');
 });

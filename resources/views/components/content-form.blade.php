@@ -1,11 +1,11 @@
-<section id="registration" class="relative z-10 pt-32 backdrop-blur-3xl lg:pb-32 lg:pt-0">
-    <div class="mx-auto max-w-7xl  lg:px-12 xl:px-6 2xl:px-0">
+<section id="registration" class="relative z-10 bg-gray-950 py-16 sm:py-20 lg:py-24">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex flex-wrap items-center gap-6">
-            <p class="text-color3 text-5xl font-bold uppercase py-12 font-secondary my-4 ml-4">Inscrição  </p>
+            <p class="text-color3 text-5xl font-bold uppercase py-8 font-secondary">Inscrição</p>
         </div>
-        <div class="flex flex-wrap items-center gap-6 ">
-            <div class="grid gap-6 border-t border-white/30  mb-8 lg:grid-cols-3 lg:gap-20 ">
-                <div class="mt-8 border border-gray-400 bg-gray-400/5 p-8 sm:p-12 mx-4">
+        <div class="w-full">
+            <div class="grid w-full items-start gap-8 border-t border-white/30 pt-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-10">
+                <div class="border border-gray-400 bg-gray-400/5 p-6 sm:p-8">
                     <p class="text-amber-500 text-center text-xl uppercase font-mono">Instruções</p>
                     <ol class="text-gray-400 text-center text-md" type="1">
                         <li class="list-decimal mt-2">Preencha o Formulário com seus dados corretamente.
@@ -60,7 +60,7 @@
                                    flex items-center justify-center text-[12px] hover:bg-amber-600 hover:font-bold
                                    transition-all duration-500 relative text-center text-md text-black font-bold">TERMO RESPONDABILIDADE</a>
                 </div>
-                <div class="mt-8 lg:col-span-2  border border-gray-400 bg-gray-400/5 mx-6">
+                <div class="light filament-registration-shell min-w-0 overflow-visible bg-white p-4 text-gray-950 shadow-2xl ring-1 ring-black/10 sm:p-6 lg:p-8">
                     @livewire('campista-form')
                 </div>
 

@@ -62,7 +62,7 @@
                 </section>
             </form>
         @else
-            <form wire:submit.prevent="submitForm" class="md:p-12 mx-4 p-4">
+            <form wire:submit.prevent="submitForm" class="space-y-6">
                 {{ $this->form }}
                 <button type="submit" role="button"
                         class="bg-color1 rounded mt-8 p-2 w-full text-gray-800 sm:p-4 sm:max-w-full flex items-center justify-center hover:text-[20px] min-h-12 max-h-12 transition-all duration-500 text-[18px] hover:bg-[#f6b53c]">
