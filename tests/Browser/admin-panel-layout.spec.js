@@ -247,6 +247,24 @@ test('authenticated settings page previews PIX QR code as a square image upload'
 
     await page.goto('http://juvenil.test/admin/general-settings-page');
     await page.waitForSelector('.fi-page .fi-section');
+    await page.waitForSelector('.juvenil-pix-qr-upload .filepond--root');
+
+    const emptyUploadState = await page.evaluate(() => {
+        const paymentSection = [...document.querySelectorAll('.fi-section')]
+            .find((section) => section.textContent.includes('Pagamento PIX'));
+        const root = paymentSection?.querySelector('.filepond--root')?.getBoundingClientRect();
+
+        return {
+            rootWidth: root?.width ?? null,
+            rootHeight: root?.height ?? null,
+            rootAspectDelta: root ? Math.abs((root.width / root.height) - 1) : 1,
+        };
+    });
+
+    expect(emptyUploadState.rootWidth).toBeGreaterThan(180);
+    expect(emptyUploadState.rootWidth).toBeLessThanOrEqual(260);
+    expect(emptyUploadState.rootHeight).toBeLessThanOrEqual(260);
+    expect(emptyUploadState.rootAspectDelta).toBeLessThan(0.08);
 
     await page.locator('input[type="file"]').first().setInputFiles('/home/lucas/code/juvenil/public/img/hero-desktop.png');
     await page.waitForSelector('.filepond--item');
@@ -262,6 +280,8 @@ test('authenticated settings page previews PIX QR code as a square image upload'
 
         return {
             hasImagePreview: Boolean(imagePreview),
+            rootWidth: root?.width ?? null,
+            rootHeight: root?.height ?? null,
             rootAspectDelta: root ? Math.abs((root.width / root.height) - 1) : 1,
             itemAspectDelta: item ? Math.abs((item.width / item.height) - 1) : 1,
             editorCount: document.querySelectorAll('.fi-fo-file-upload-editor').length,
@@ -272,6 +292,9 @@ test('authenticated settings page previews PIX QR code as a square image upload'
     });
 
     expect(previewState.hasImagePreview).toBe(true);
+    expect(previewState.rootWidth).toBeGreaterThan(180);
+    expect(previewState.rootWidth).toBeLessThanOrEqual(260);
+    expect(previewState.rootHeight).toBeLessThanOrEqual(260);
     expect(previewState.rootAspectDelta).toBeLessThan(0.08);
     expect(previewState.itemAspectDelta).toBeLessThan(0.08);
     expect(previewState.editorCount).toBe(0);

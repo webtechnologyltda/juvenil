@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\TipoLacamento;
+use App\Filament\Forms\Components\IconPicker;
 use App\Filament\Resources\CategoriaLancamentoResource\Pages;
 use App\Models\CategoriaLancamento;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
@@ -10,13 +11,14 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\ColorPicker;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -84,18 +86,25 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
                         'lg' => 1,
                     ])
                     ->schema([
+                        View::make('filament.app.components.icon-preview')
+                            ->viewData(fn (Get $get): array => [
+                                'currentIcon' => $get('icone'),
+                                'currentColor' => $get('cor'),
+                                'colorStatePath' => 'data.cor',
+                            ]),
+
                         Grid::make(2)
                             ->schema([
                                 ColorPicker::make('cor')
                                     ->label('Cor')
                                     ->hex()
                                     ->required()
+                                    ->live(onBlur: true)
                                     ->default('#f46b12'),
 
-                                Select::make('icone')
+                                IconPicker::make('icone')
                                     ->label('Ícone')
-                                    ->options(self::iconOptions())
-                                    ->searchable()
+                                    ->live()
                                     ->required()
                                     ->default('heroicon-o-tag'),
                             ]),
@@ -186,23 +195,6 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
             'update',
             'delete',
             'delete_any',
-        ];
-    }
-
-    private static function iconOptions(): array
-    {
-        return [
-            'heroicon-o-tag' => 'Etiqueta',
-            'heroicon-o-banknotes' => 'Dinheiro',
-            'heroicon-o-ticket' => 'Inscrições',
-            'heroicon-o-receipt-percent' => 'Recibo',
-            'heroicon-o-shopping-cart' => 'Compras',
-            'heroicon-o-gift' => 'Doação',
-            'heroicon-o-heart' => 'Cuidado',
-            'heroicon-o-users' => 'Pessoas',
-            'heroicon-o-home' => 'Estrutura',
-            'heroicon-o-truck' => 'Transporte',
-            'heroicon-o-sparkles' => 'Especial',
         ];
     }
 }

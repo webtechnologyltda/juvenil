@@ -513,17 +513,21 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-cell .fi-icon {
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row {
-    transition: background-color 160ms ease, box-shadow 160ms ease;
+    transition: background 160ms ease, box-shadow 160ms ease;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row.fi-striped > .fi-ta-cell {
     background: rgba(157, 219, 239, 0.035);
 }
 
-body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) {
     background:
         linear-gradient(90deg, rgba(244, 107, 18, 0.12), rgba(157, 219, 239, 0.055)),
         rgba(157, 219, 239, 0.045);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {
+    background: transparent;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell:first-child {
@@ -623,6 +627,23 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-file-upload .filepond--
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-file-upload .filepond--panel-root {
     background: transparent;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-pix-qr-upload .filepond--root {
+    width: min(100%, 15rem);
+    max-width: 15rem;
+    min-height: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-pix-qr-upload .filepond--drop-label {
+    min-height: 0;
+    padding: 1rem;
+    text-align: center;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-pix-qr-upload .filepond--drop-label label {
+    line-height: 1.35;
+    white-space: normal;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-badge {

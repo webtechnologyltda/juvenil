@@ -1,8 +1,9 @@
 <?php
 
 use App\Enums\TipoLacamento;
+use App\Filament\Forms\Components\IconPicker;
 use App\Filament\Resources\CategoriaLancamentoResource;
-use App\Filament\Resources\LancamentoResource;
+use App\Livewire\IconPickerModal;
 use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
 use App\Models\User;
@@ -47,6 +48,37 @@ it('stores categories with type color icon and active flag', function () {
         ->cor->toBe('#f46b12')
         ->icone->toBe('heroicon-o-ticket')
         ->ativo->toBeTrue();
+});
+
+it('uses the Acampay icon picker in the launch category form', function () {
+    $resource = file_get_contents(app_path('Filament/Resources/CategoriaLancamentoResource.php'));
+
+    expect($resource)
+        ->toContain('use App\Filament\Forms\Components\IconPicker;')
+        ->toContain("IconPicker::make('icone')")
+        ->not->toContain("Select::make('icone')");
+
+    expect(class_exists(IconPicker::class))->toBeTrue()
+        ->and(class_exists(IconPickerModal::class))->toBeTrue()
+        ->and(view()->exists('filament.forms.components.icon-picker'))->toBeTrue()
+        ->and(view()->exists('livewire.icon-picker-modal'))->toBeTrue()
+        ->and(trans('icon_picker.title', locale: 'pt_BR'))->toBe('Selecionar ícone');
+});
+
+it('renders the copied icon picker modal and dispatches the selected icon', function () {
+    $statePath = 'data.icone';
+
+    Livewire\Livewire::withoutLazyLoading()
+        ->test(IconPickerModal::class, [
+            'statePath' => $statePath,
+            'customIcons' => ['heroicon-o-ticket'],
+        ])
+        ->assertSee('heroicon-o-ticket')
+        ->call('select', 'heroicon-o-ticket')
+        ->assertDispatched(
+            'icon-picker-selected-'.IconPickerModal::eventToken($statePath),
+            icon: 'heroicon-o-ticket',
+        );
 });
 
 it('links a financial entry to a launch category', function () {

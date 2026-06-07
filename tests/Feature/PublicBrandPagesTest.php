@@ -118,6 +118,17 @@ it('configures the authenticated Filament panel with the Juvenil site theme', fu
         ->toBeEmpty();
 });
 
+it('renders selected table row highlight as one continuous row layer', function () {
+    $adminCss = file_get_contents(resource_path('css/filament/admin/theme.css'));
+
+    expect($adminCss)
+        ->toContain('.fi-ta-row:is(:hover, .fi-selected) {')
+        ->toContain('linear-gradient(90deg, rgba(244, 107, 18, 0.12), rgba(157, 219, 239, 0.055))')
+        ->toContain('.fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {')
+        ->toContain('background: transparent;')
+        ->not->toContain(".fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {\n    background:\n        linear-gradient");
+});
+
 it('renders branded error pages', function () {
     $this->withoutVite();
 

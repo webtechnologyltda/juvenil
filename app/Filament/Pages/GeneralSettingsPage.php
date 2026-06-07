@@ -222,7 +222,8 @@ class GeneralSettingsPage extends SettingsPage
                                     ->panelAspectRatio('1:1')
                                     ->itemPanelAspectRatio('1:1')
                                     ->panelLayout('integrated')
-                                    ->imagePreviewHeight('220')
+                                    ->imagePreviewHeight('180')
+                                    ->extraAttributes(['class' => 'juvenil-pix-qr-upload'])
                                     ->columnSpan([
                                         'default' => 'full',
                                         'lg' => '8',

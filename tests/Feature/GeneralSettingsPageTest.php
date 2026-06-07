@@ -101,7 +101,8 @@ it('configures the pix qr code upload as a square public image preview', functio
         ->toContain("->panelAspectRatio('1:1')")
         ->toContain("->itemPanelAspectRatio('1:1')")
         ->toContain("->panelLayout('integrated')")
-        ->toContain("->imagePreviewHeight('220')");
+        ->toContain("->imagePreviewHeight('180')")
+        ->toContain("'class' => 'juvenil-pix-qr-upload'");
 });
 
 it('saves registration status settings as scalar values', function () {

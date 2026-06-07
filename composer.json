@@ -37,7 +37,8 @@
         "spatie/laravel-cookie-consent": "^3.4",
         "stechstudio/filament-impersonate": "^5.5",
         "tapp/filament-auditing": "^4.0",
-        "troccoli/blade-health-icons": "^6.0"
+        "troccoli/blade-health-icons": "^6.0",
+        "webtechnologyltda/tracefy-sdk": "^1.1"
     },
     "require-dev": {
         "laravel/boost": "^2.4",
@@ -96,5 +97,10 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [{
+        "name": "tracefy-sdk",
+        "type": "vcs",
+        "url": "https://github.com/webtechnologyltda/tracefy-sdk.git"
+    }]
 }
