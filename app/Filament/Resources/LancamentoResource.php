@@ -8,6 +8,7 @@ use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages;
 use App\Filament\Resources\LancamentoResource\Widgets\StatsFinanceiro;
 use App\Models\Lancamento;
+use App\Support\IconBadge;
 use Carbon\Carbon;
 use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
@@ -72,8 +73,15 @@ class LancamentoResource extends Resource
 
                 TextColumn::make('categoria.nome')
                     ->label('Categoria')
+                    ->html()
+                    ->formatStateUsing(fn (?string $state, Lancamento $record) => IconBadge::tileIcon(
+                        $record->categoria,
+                        $state ?? 'Sem categoria',
+                        fallbackIcon: 'heroicon-o-tag',
+                    ))
+                    ->tooltip(fn (?string $state): string => $state ?? 'Sem categoria')
                     ->placeholder('Sem categoria')
-                    ->badge()
+                    ->alignCenter()
                     ->sortable(),
 
                 TextColumn::make('status')

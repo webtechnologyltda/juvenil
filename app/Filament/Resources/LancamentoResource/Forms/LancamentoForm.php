@@ -6,6 +6,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
 use App\Models\CategoriaLancamento;
+use App\Support\IconBadge;
 use Carbon\Carbon;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
@@ -29,117 +30,114 @@ abstract class LancamentoForm
     public static function getFormSchema(): array
     {
         return [
-          Grid::make([
-              'default' => 1,
-              'lg' => 3,
-          ])
-              ->schema([
-               Section::make('Lançamento')
-                   ->description('Controle financeiro do acampamento')
-                   ->columns([
-                       'sm' => 2,
-                   ])
-                   ->columnSpan([
-                       'default' => 1,
-                       'lg' => 2
-                   ])
-                   ->schema([
+            Grid::make([
+                'default' => 1,
+                'lg' => 3,
+            ])
+                ->schema([
+                    Section::make('Lançamento')
+                        ->description('Controle financeiro do acampamento')
+                        ->columns([
+                            'sm' => 2,
+                        ])
+                        ->columnSpan([
+                            'default' => 1,
+                            'lg' => 2,
+                        ])
+                        ->schema([
 
-                       TextInput::make('nome')
-                           ->label('Nome')
-                           ->required(),
+                            TextInput::make('nome')
+                                ->label('Nome')
+                                ->required(),
 
-                       Money::make('valor')
-                           ->label('Valor')
-                           ->columns(1)
-                           ->intFormat()
-                           ->prefix(RawJs::make('R$'))
-                           ->required(),
+                            Money::make('valor')
+                                ->label('Valor')
+                                ->columns(1)
+                                ->intFormat()
+                                ->prefix(RawJs::make('R$'))
+                                ->required(),
 
-                       ToggleButtons::make('tipo')
-                           ->label('Tipo de Lançamento')
-                           ->options(TipoLacamento::class)
-                           ->inline()
-                           ->live()
-                           ->afterStateUpdated(fn (Set $set): mixed => $set('categoria_lancamento_id', null))
-                           ->required(),
+                            ToggleButtons::make('tipo')
+                                ->label('Tipo de Lançamento')
+                                ->options(TipoLacamento::class)
+                                ->inline()
+                                ->live()
+                                ->afterStateUpdated(fn (Set $set): mixed => $set('categoria_lancamento_id', null))
+                                ->required(),
 
-                       Select::make('categoria_lancamento_id')
-                           ->label('Categoria')
-                           ->options(fn (Get $get): array => self::categoryOptions($get('tipo')))
-                           ->searchable()
-                           ->preload()
-                           ->placeholder('Selecione uma categoria')
-                           ->helperText('As opções acompanham o tipo do lançamento.')
-                           ->disabled(fn (Get $get): bool => blank($get('tipo'))),
+                            Select::make('categoria_lancamento_id')
+                                ->label('Categoria')
+                                ->options(fn (Get $get): array => self::categoryOptions($get('tipo')))
+                                ->allowHtml()
+                                ->searchable()
+                                ->preload()
+                                ->placeholder('Selecione uma categoria')
+                                ->helperText('As opções acompanham o tipo do lançamento.')
+                                ->disabled(fn (Get $get): bool => blank($get('tipo'))),
 
-                       DatePicker::make('data')
-                           ->label('Data de Lançamento')
-                           ->required()
-                           ->format('Y-m-d')
-                           ->displayFormat('d/m/Y')
-                           ->default(Carbon::now()->format('Y-m-d')),
+                            DatePicker::make('data')
+                                ->label('Data de Lançamento')
+                                ->required()
+                                ->format('Y-m-d')
+                                ->displayFormat('d/m/Y')
+                                ->default(Carbon::now()->format('Y-m-d')),
 
+                            Select::make('status')
+                                ->label('Status')
+                                ->options(StatusLacamento::class)
+                                ->searchable()
+                                ->required(),
 
+                            Select::make('forma_pagamento')
+                                ->label('Forma de Pagamento')
+                                ->options(FormaPagamento::class)
+                                ->searchable()
+                                ->required(),
 
-                       Select::make('status')
-                           ->label('Status')
-                           ->options(StatusLacamento::class)
-                           ->searchable()
-                           ->required(),
+                            TextInput::make('comprador')
+                                ->label('Comprador')
+                                ->required(),
 
-                       Select::make('forma_pagamento')
-                           ->label('Forma de Pagamento')
-                           ->options(FormaPagamento::class)
-                           ->searchable()
-                           ->required(),
+                            Textarea::make('descricao')
+                                ->label('Descricão')
+                                ->required(),
+                        ]),
 
-                       TextInput::make('comprador')
-                           ->label('Comprador')
-                           ->required(),
+                    Section::make('Comprovantes')
+                        ->description('Anexar comprovantes do lançamento')
+                        ->columnSpan(1)
+                        ->schema([
+                            Builder::make('comprovante')
+                                ->label('Comprovates')
+                                ->required()
+                                ->afterStateHydrated(static function (Builder $component): void {
+                                    $component->rawState(self::normalizeComprovanteState($component->getRawState()));
+                                    $component->hydrateItems();
+                                })
+                                ->blocks([
+                                    Block::make(self::COMPROVANTE_BLOCK)
+                                        ->label('Comprovante')
+                                        ->schema([
+                                            TextInput::make('comprovante_nome')
+                                                ->label('Nome Comprovante')
+                                                ->required(),
+                                            FileUpload::make('url')
+                                                ->placeholder('Tamanho max.: 2MB')
+                                                ->hint('Tamanho máximo: 2MB')
+                                                ->label('Documento')
+                                                ->required()
+                                                ->downloadable()
+                                                ->openable()
+                                                ->multiple()
+                                                ->maxSize(2048)
+                                                ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                                ->previewable(true)
+                                                ->columnSpan(2),
+                                        ]),
+                                ]),
+                        ]),
 
-                       Textarea::make('descricao')
-                           ->label('Descricão')
-                           ->required(),
-                   ]),
-
-
-
-                  Section::make( 'Comprovantes' )
-                      ->description('Anexar comprovantes do lançamento')
-                      ->columnSpan(1)
-                      ->schema([
-                          Builder::make('comprovante')
-                              ->label('Comprovates')
-                              ->required()
-                              ->afterStateHydrated(static function (Builder $component): void {
-                                  $component->rawState(self::normalizeComprovanteState($component->getRawState()));
-                                  $component->hydrateItems();
-                              })
-                              ->blocks([
-                                  Block::make(self::COMPROVANTE_BLOCK)
-                                      ->label('Comprovante')
-                                      ->schema([
-                                          TextInput::make('comprovante_nome')
-                                              ->label('Nome Comprovante')
-                                              ->required(),
-                                          FileUpload::make('url')
-                                              ->placeholder( 'Tamanho max.: 2MB')
-                                              ->hint('Tamanho máximo: 2MB')
-                                              ->label('Documento')
-                                              ->required()
-                                              ->downloadable()
-                                              ->openable()
-                                              ->multiple()
-                                              ->maxSize(2048)
-                                              ->acceptedFileTypes(['application/pdf', 'image/*'])
-                                              ->previewable(true)
-                                              ->columnSpan(2),
-                                      ])
-                              ])
-                      ]),
-
-              ]),
+                ]),
         ];
     }
 
@@ -254,7 +252,10 @@ abstract class LancamentoForm
             ->where('ativo', true)
             ->where('tipo', (int) $type)
             ->orderBy('nome')
-            ->pluck('nome', 'id')
+            ->get()
+            ->mapWithKeys(fn (CategoriaLancamento $category): array => [
+                $category->id => (string) IconBadge::tile($category, $category->nome, fallbackIcon: 'heroicon-o-tag'),
+            ])
             ->all();
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\TipoLacamento;
 use App\Filament\Forms\Components\IconPicker;
 use App\Filament\Resources\CategoriaLancamentoResource\Pages;
+use App\Filament\Tables\Columns\ColoredIconColumn;
 use App\Models\CategoriaLancamento;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Actions\BulkActionGroup;
@@ -117,10 +118,11 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
         return $table
             ->defaultSort('nome')
             ->columns([
+                ColoredIconColumn::make('icone')
+                    ->label('Ícone'),
+
                 TextColumn::make('nome')
                     ->label('Categoria')
-                    ->icon(fn (CategoriaLancamento $record): string => $record->icone ?: 'heroicon-o-tag')
-                    ->iconColor(fn (CategoriaLancamento $record): string => $record->tipo?->getColor() ?? 'primary')
                     ->searchable()
                     ->sortable(),
 
@@ -134,12 +136,6 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
                     ->counts('lancamentos')
                     ->numeric()
                     ->sortable(),
-
-                TextColumn::make('cor')
-                    ->label('Cor')
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state): string => $state ?: '#f46b12')
-                    ->color('gray'),
 
                 IconColumn::make('ativo')
                     ->label('Ativa')

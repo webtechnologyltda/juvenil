@@ -129,6 +129,21 @@ it('renders selected table row highlight as one continuous row layer', function 
         ->not->toContain(".fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {\n    background:\n        linear-gradient");
 });
 
+it('styles authenticated Filament buttons with the Juvenil action pattern', function () {
+    $adminCss = file_get_contents(resource_path('css/filament/admin/theme.css'));
+
+    expect($adminCss)
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-btn {')
+        ->toContain('min-height: 3rem;')
+        ->toContain('border-radius: 0;')
+        ->toContain('text-transform: uppercase;')
+        ->toContain('letter-spacing: 0.12em;')
+        ->toContain('font-weight: 900;')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-btn .fi-icon {')
+        ->toContain('width: 1.125rem;')
+        ->toContain('height: 1.125rem;');
+});
+
 it('renders branded error pages', function () {
     $this->withoutVite();
 
