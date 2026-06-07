@@ -32,6 +32,29 @@ it('renders the general settings page with registration payment controls', funct
         ->assertSee('Fim das Inscrições');
 });
 
+it('renders the general settings page with configured registration dates', function () {
+    $this->seed(ShieldSeeder::class);
+
+    DB::table('settings')
+        ->where('group', 'general')
+        ->where('name', 'data_inicio_inscricoes')
+        ->update(['payload' => json_encode('2026-06-10 19:00:00')]);
+
+    DB::table('settings')
+        ->where('group', 'general')
+        ->where('name', 'data_final_inscricoes')
+        ->update(['payload' => json_encode('2026-06-20 19:00:00')]);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+
+    $this->actingAs($user)
+        ->get(route('filament.admin.pages.general-settings-page'))
+        ->assertOk()
+        ->assertSee('Início das Inscrições')
+        ->assertSee('Fim das Inscrições');
+});
+
 it('organizes the general settings form by operational responsibility', function () {
     $settingsPage = file_get_contents(app_path('Filament/Pages/GeneralSettingsPage.php'));
 
