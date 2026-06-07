@@ -6,6 +6,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Storage;
 
 class DemoRegistrationData
 {
@@ -86,7 +87,7 @@ class DemoRegistrationData
 
         return [
             'nome' => self::personName($index),
-            'avatar_url' => sprintf('foto-formulario/campista-%03d.jpg', $index),
+            'avatar_url' => self::campistaAvatarPath($index),
             'form_data' => self::campistaFormData($index, $status),
             'status' => $status->value,
             'forma_pagamento' => self::campistaPaymentMethod($index, $status)?->value,
@@ -106,7 +107,7 @@ class DemoRegistrationData
 
         return [
             'nome' => self::personName($index, 'Equipe'),
-            'avatar_url' => sprintf('foto-formulario-equipe-trabalho/equipe-%03d.jpg', $index),
+            'avatar_url' => self::equipeTrabalhoAvatarPath($index),
             'data_form' => self::equipeTrabalhoFormData($index),
             'status' => self::equipeTrabalhoStatus($index)->value,
             'descricao' => self::DEMO_OBSERVATION,
@@ -134,8 +135,6 @@ class DemoRegistrationData
             'telefone_campista' => self::phone($index),
             'telefone_reponsavel_1' => self::phone($index, 100),
             'telefone_reponsavel_nome_1' => self::personName($index + 30, 'Responsável'),
-            'telefone_reponsavel_2' => self::phone($index, 200),
-            'telefone_reponsavel_nome_2' => self::personName($index + 60, 'Responsável'),
             'cep' => $address['cep'],
             'rua' => $address['rua'],
             'numero' => (string) (100 + $index),
@@ -258,6 +257,81 @@ class DemoRegistrationData
     private static function sex(int $index): string
     {
         return ($index % 2) === 0 ? 'M' : 'F';
+    }
+
+    public static function ensureCampistaAvatarFiles(): void
+    {
+        foreach (range(1, self::CAMPISTA_TOTAL) as $index) {
+            self::putDemoAvatar(self::campistaAvatarPath($index), $index);
+        }
+    }
+
+    public static function ensureEquipeTrabalhoAvatarFiles(): void
+    {
+        foreach (range(1, self::EQUIPE_TRABALHO_TOTAL) as $index) {
+            self::putDemoAvatar(self::equipeTrabalhoAvatarPath($index), $index + self::CAMPISTA_TOTAL);
+        }
+    }
+
+    private static function campistaAvatarPath(int $index): string
+    {
+        return sprintf('foto-formulario/campista-%03d.png', $index);
+    }
+
+    private static function equipeTrabalhoAvatarPath(int $index): string
+    {
+        return sprintf('foto-formulario-equipe-trabalho/equipe-%03d.png', $index);
+    }
+
+    private static function putDemoAvatar(string $path, int $index): void
+    {
+        Storage::disk('public')->put($path, self::demoAvatarPng($index));
+    }
+
+    private static function demoAvatarPng(int $index): string
+    {
+        $size = 96;
+        $image = imagecreatetruecolor($size, $size);
+
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
+
+        [$red, $green, $blue] = self::avatarColor($index);
+        [$accentRed, $accentGreen, $accentBlue] = self::avatarColor($index + 7);
+
+        $background = imagecolorallocate($image, $red, $green, $blue);
+        $accent = imagecolorallocate($image, $accentRed, $accentGreen, $accentBlue);
+        $light = imagecolorallocate($image, 245, 251, 253);
+        $dark = imagecolorallocate($image, 5, 47, 53);
+
+        imagefilledrectangle($image, 0, 0, $size, $size, $background);
+        imagefilledellipse($image, 48, 32, 34, 34, $light);
+        imagefilledrectangle($image, 24, 56, 72, 95, $light);
+        imagefilledpolygon($image, [0, 96, 96, 0, 96, 96], 3, $accent);
+        imagefilledrectangle($image, 12, 76, 84, 95, $dark);
+        imagestring($image, 5, 30, 78, str_pad((string) ($index % 1000), 3, '0', STR_PAD_LEFT), $light);
+
+        ob_start();
+        imagepng($image);
+        $contents = (string) ob_get_clean();
+
+        imagedestroy($image);
+
+        return $contents;
+    }
+
+    private static function avatarColor(int $index): array
+    {
+        $palette = [
+            [244, 107, 18],
+            [5, 94, 110],
+            [157, 219, 239],
+            [103, 57, 214],
+            [16, 126, 98],
+            [208, 65, 90],
+        ];
+
+        return $palette[($index - 1) % count($palette)];
     }
 
     private static function birthDate(int $index, int $minimumYear = 1998, int $yearSpan = 14): string

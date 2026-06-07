@@ -37,5 +37,7 @@ class CampistaSeeder extends Seeder
                 triboId: $tribeIds[($index - 1) % $tribeIds->count()],
             ));
         }
+
+        DemoRegistrationData::ensureCampistaAvatarFiles();
     }
 }

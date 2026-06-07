@@ -73,7 +73,7 @@ abstract class CampistaExport
             ExportColumn::make('form_data.telefone_campista')
                 ->label('Telefone Campista'),
 
-            ExportColumn::make('form_data.telefone_reponsavel')
+            ExportColumn::make('form_data.telefone_reponsavel_1')
                 ->label('Telefone Responsável'),
 
             ExportColumn::make('form_data.rua')

@@ -201,7 +201,7 @@ abstract class CampistaForm
                 ->label('Foto de identificação')
                 ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
                 ->alignCenter()
-                ->imageEditor()
+                ->disk('public')
                 ->image()
                 ->acceptedFileTypes([
                     'image/jpeg',
@@ -219,15 +219,18 @@ abstract class CampistaForm
                 ])
                 ->loadingIndicatorPosition('center')
                 ->panelAspectRatio('1:1')
+                ->itemPanelAspectRatio('1:1')
                 ->removeUploadedFileButtonPosition('top-center')
                 ->uploadButtonPosition('center')
                 ->uploadProgressIndicatorPosition('center')
-                ->imageEditorMode(2)
                 ->panelLayout('integrated')
                 ->imageAspectRatio('1:1')
-                ->automaticallyOpenImageEditorForAspectRatio()
-                ->imageEditorAspectRatioOptions(['1:1'])
-                ->imageEditorEmptyFillColor('#000000')
+                ->automaticallyCropImagesToAspectRatio()
+                ->automaticallyResizeImagesMode('cover')
+                ->automaticallyResizeImagesToWidth('500')
+                ->automaticallyResizeImagesToHeight('500')
+                ->automaticallyUpscaleImagesWhenResizing(false)
+                ->extraAttributes(['class' => 'juvenil-photo-upload'])
                 ->validationMessages([
                     'mimetypes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
                     'mimes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
@@ -240,7 +243,7 @@ abstract class CampistaForm
                     ->label('Visualizar foto')
                     ->requiresConfirmation()
                     ->visible(fn(string $operation, array $data) => $operation !== 'create')
-                    ->url(fn(Model $record) => Storage::url($record->avatar_url), shouldOpenInNewTab: true),
+                    ->url(fn(Model $record) => Storage::disk('public')->url($record->avatar_url), shouldOpenInNewTab: true),
             ])
                 ->alignCenter()
                 ->columnSpanFull(),
@@ -315,23 +318,12 @@ abstract class CampistaForm
                 ->required()
                 ->mask('(99) 9 9999-9999')
                 ->columnSpan(1)
-                ->label('Telefone do responsável para contato'),
+                ->label('Telefone Responsável'),
 
             TextInput::make('form_data.telefone_reponsavel_nome_1')
                 ->required()
                 ->columnSpan(1)
-                ->label('Nome do contato'),
-
-            TextInput::make('form_data.telefone_reponsavel_2')
-                ->required()
-                ->mask('(99) 9 9999-9999')
-                ->columnSpan(1)
-                ->label('Telefone do responsável para contato'),
-
-            TextInput::make('form_data.telefone_reponsavel_nome_2')
-                ->required()
-                ->columnSpan(1)
-                ->label('Nome do contato'),
+                ->label('Nome do Contato'),
         ];
     }
 

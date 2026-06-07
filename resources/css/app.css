@@ -167,44 +167,44 @@
     --color-950: var(--primary-950);
 }
 
-.fi-fo-file-upload-editor {
-    overflow: hidden;
+.filament-registration-shell .fi-fo-file-upload {
+    width: min(100%, 18rem);
+    margin-inline: auto;
 }
 
-.fi-fo-file-upload-editor .fi-fo-file-upload-editor-window {
-    max-width: min(72rem, calc(100vw - 1.5rem));
-    max-height: calc(100dvh - 1.5rem);
-}
-
-.fi-fo-file-upload-editor .fi-fo-file-upload-editor-image-ctn {
-    min-width: 0;
+.filament-registration-shell .fi-fo-file-upload .filepond--root {
+    width: min(100%, 18rem);
     min-height: 0;
-    overflow: hidden;
+    margin-inline: auto;
+    aspect-ratio: 1 / 1;
 }
 
-.fi-fo-file-upload-editor .cropper-container {
-    max-width: 100%;
-    max-height: 100%;
+.filament-registration-shell .fi-fo-file-upload .filepond--drop-label {
+    min-height: 0;
+    height: 100%;
+    padding: 1rem;
+    text-align: center;
 }
 
-.fi-fo-file-upload-editor .cropper-container img {
-    max-width: none !important;
-    height: 100% !important;
+.filament-registration-shell .fi-fo-file-upload .filepond--drop-label label {
+    line-height: 1.35;
+    white-space: normal;
 }
 
-@media (max-width: 1023px) {
-    .fi-fo-file-upload-editor {
-        padding: 0.75rem !important;
-        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+.filament-registration-shell .fi-fo-file-upload .filepond--panel-root,
+.filament-registration-shell .fi-fo-file-upload .filepond--item-panel {
+    border-radius: 0.875rem;
+}
+
+@media (max-width: 639px) {
+    .filament-registration-shell .fi-fo-file-upload {
+        width: 100%;
+        max-width: 18rem;
     }
 
-    .fi-fo-file-upload-editor .fi-fo-file-upload-editor-window {
-        max-height: calc(100dvh - 1.5rem - env(safe-area-inset-bottom));
+    .filament-registration-shell .fi-fo-file-upload .filepond--drop-label {
+        padding-inline: 0.875rem;
     }
-}
-
-body:has(.fi-fo-file-upload-editor:not([style*='display: none'])) .js-cookie-consent {
-    display: none;
 }
 
 .juvenil-poster-title {

@@ -76,6 +76,8 @@ it('renders the main page with the campista registration form only', function ()
         ->assertDontSee('Increver-se para Trabalhar')
         ->assertDontSee('Info endereco')
         ->assertDontSee('Ponto Referência')
+        ->assertDontSee('duas pessoas responsáveis')
+        ->assertSee('uma pessoa responsável')
         ->assertSee('Complemento');
 });
 

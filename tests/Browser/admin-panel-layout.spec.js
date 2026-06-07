@@ -101,6 +101,29 @@ test('authenticated Filament panel keeps branded layout clear of visual obstruct
 
     expect(brokenVisibleTableImages).toEqual([]);
 
+    const tableSurface = await page.evaluate(() => {
+        const table = document.querySelector('.fi-ta');
+        const content = document.querySelector('.fi-ta-content-ctn');
+        const head = document.querySelector('.fi-ta-table thead');
+        const tableStyle = getComputedStyle(table);
+        const contentStyle = getComputedStyle(content);
+        const headStyle = getComputedStyle(head);
+
+        return {
+            tableBackground: tableStyle.backgroundColor,
+            tableBackgroundImage: tableStyle.backgroundImage,
+            contentBackground: contentStyle.backgroundColor,
+            headBackground: headStyle.backgroundColor,
+            headBackgroundImage: headStyle.backgroundImage,
+        };
+    });
+
+    expect(tableSurface.tableBackground).toBe('rgb(4, 31, 35)');
+    expect(tableSurface.tableBackgroundImage).toContain('rgba(4, 31, 35, 0.96)');
+    expect(tableSurface.contentBackground).toBe('rgba(4, 31, 35, 0.66)');
+    expect(tableSurface.headBackground).toBe('rgb(4, 31, 35)');
+    expect(tableSurface.headBackgroundImage).toContain('rgba(7, 61, 69, 0.86)');
+
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-campistas-layout.png',
         fullPage: false,

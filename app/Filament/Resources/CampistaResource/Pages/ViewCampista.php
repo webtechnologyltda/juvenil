@@ -119,13 +119,11 @@ class ViewCampista extends ViewRecord
                     ],
                 ],
                 [
-                    'title' => 'Contato e responsáveis',
+                    'title' => 'Contato e responsável',
                     'icon' => 'ri-parent-fill',
                     'fields' => [
-                        ['label' => 'Contato 1', 'value' => data_get($formData, 'telefone_reponsavel_nome_1') ?? data_get($formData, 'nome_mae')],
-                        ['label' => 'Telefone 1', 'value' => data_get($formData, 'telefone_reponsavel_1') ?? data_get($formData, 'telefone_reponsavel')],
-                        ['label' => 'Contato 2', 'value' => data_get($formData, 'telefone_reponsavel_nome_2') ?? data_get($formData, 'nome_pai')],
-                        ['label' => 'Telefone 2', 'value' => data_get($formData, 'telefone_reponsavel_2')],
+                        ['label' => 'Responsável', 'value' => data_get($formData, 'telefone_reponsavel_nome_1') ?? data_get($formData, 'nome_mae')],
+                        ['label' => 'Telefone do responsável', 'value' => data_get($formData, 'telefone_reponsavel_1') ?? data_get($formData, 'telefone_reponsavel')],
                     ],
                 ],
                 [
@@ -216,7 +214,7 @@ class ViewCampista extends ViewRecord
 
         return Str::startsWith($avatar, ['http://', 'https://', '/'])
             ? $avatar
-            : Storage::url($avatar);
+            : Storage::disk('public')->url($avatar);
     }
 
     private function documentLinks(mixed $documents): array

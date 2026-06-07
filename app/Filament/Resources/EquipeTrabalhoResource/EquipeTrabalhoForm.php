@@ -308,28 +308,33 @@ abstract class EquipeTrabalhoForm
                 ->label('Foto de identificação')
                 ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
                 ->alignCenter()
-                ->imageEditor()
+                ->disk('public')
+                ->image()
                 ->directory('foto-formulario-equipe-trabalho')
                 ->columnStart([
                     'default' => 1,
                     'lg' => 3,
                 ])
-                ->acceptedFileTypes(['image/png', 'image/jpg', 'image/jpeg', 'image/webp'])
-                ->imagePreviewHeight('400')
+                ->acceptedFileTypes([
+                    'image/jpeg',
+                    'image/png',
+                    'image/webp',
+                ])
+                ->rules(['mimes:jpg,jpeg,png,webp'])
                 ->loadingIndicatorPosition('center')
                 ->panelAspectRatio('1:1')
+                ->itemPanelAspectRatio('1:1')
                 ->removeUploadedFileButtonPosition('top-center')
                 ->uploadProgressIndicatorPosition('center')
-                ->imageEditorMode(2)
-                ->imageCropAspectRatio('1:1')
-                ->orientImagesFromExif(false)
-                ->extraAttributes(['rounded'])
+                ->imageAspectRatio('1:1')
+                ->automaticallyCropImagesToAspectRatio()
+                ->automaticallyResizeImagesMode('cover')
+                ->automaticallyResizeImagesToWidth('500')
+                ->automaticallyResizeImagesToHeight('500')
+                ->automaticallyUpscaleImagesWhenResizing(false)
+                ->extraAttributes(['class' => 'juvenil-photo-upload'])
                 ->imagePreviewHeight('250')
-                ->imageEditorAspectRatios([
-                    '1:1',
-                ])
                 ->panelLayout('integrated')
-                ->imageEditorEmptyFillColor('#000000')
                 ->required(),
 
             Actions::make([
@@ -338,7 +343,7 @@ abstract class EquipeTrabalhoForm
                     ->label('Visualizar foto')
                     ->requiresConfirmation()
                     ->visible(fn(string $operation, array $data) => $operation !== 'create')
-                    ->url(fn(Model $record) => Storage::url($record->avatar_url), shouldOpenInNewTab: true),
+                    ->url(fn(Model $record) => Storage::disk('public')->url($record->avatar_url), shouldOpenInNewTab: true),
             ])
                 ->visibleOn(['edit', 'view'])
                 ->alignCenter()
