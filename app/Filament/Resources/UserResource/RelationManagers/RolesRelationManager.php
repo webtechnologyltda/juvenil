@@ -3,10 +3,11 @@
 namespace App\Filament\Resources\UserResource\RelationManagers;
 
 use App\Enums\RoleEnum;
+use Filament\Actions\AttachAction;
+use Filament\Actions\DetachAction;
 use Filament\Forms\Components\Select;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
-use Filament\Tables\Actions\AttachAction;
 use Filament\Tables\Table;
 
 class RolesRelationManager extends RelationManager
@@ -37,13 +38,13 @@ class RolesRelationManager extends RelationManager
                     ->preloadRecordSelect(),
             ])
             ->actions([
-                Tables\Actions\DetachAction::make()
+                DetachAction::make()
                     ->hidden(fn ($record) => ($record->id === RoleEnum::Financeiro->value
                         && ($record->user_id === auth()->user()->id || $record->user_id === 1))),
             ])
             ->bulkActions([])
             ->emptyStateActions([
-                Tables\Actions\AttachAction::make()->preloadRecordSelect(),
+                AttachAction::make()->preloadRecordSelect(),
             ]);
     }
 }

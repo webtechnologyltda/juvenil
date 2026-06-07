@@ -2,22 +2,24 @@
 
 namespace App\Livewire;
 
-use App\Models\Campista;
 use App\Models\EquipeTrabalho;
 use App\Models\User;
 use App\Settings\GeneralSettings;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Session;
 use Livewire\Component;
 
-class EquipeTrabalhoForm extends Component implements HasForms
+class EquipeTrabalhoForm extends Component implements HasActions, HasForms
 {
+    use InteractsWithActions;
     use InteractsWithForms;
 
     public ?array $data = [];
@@ -28,7 +30,6 @@ class EquipeTrabalhoForm extends Component implements HasForms
     #[Session]
     public $inscrito = false;
 
-
     public function render()
     {
         return view('livewire.equipe-trabalho-form');
@@ -37,15 +38,15 @@ class EquipeTrabalhoForm extends Component implements HasForms
     public function mount()
     {
         $this->settings = app(GeneralSettings::class)->toArray();
-        //pega o valor de comprado do localstorage
+        // pega o valor de comprado do localstorage
         $this->getForm('form')->fill();
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->statePath('data')
-            ->schema(\App\Filament\Resources\EquipeTrabalhoResource\EquipeTrabalhoForm::getFormCreate());
+            ->components(\App\Filament\Resources\EquipeTrabalhoResource\EquipeTrabalhoForm::getFormCreate());
     }
 
     public function submitForm(): void
@@ -70,14 +71,13 @@ class EquipeTrabalhoForm extends Component implements HasForms
                 ->send();
             $this->reset(['data']);
 
-
             $recipient = User::all();
 
             Notification::make()
                 ->info()
                 ->title('Nova inscrição')
                 ->body(new HtmlString('Uma nova inscrição para equipe de trabalho foi enviada, para o(a) voluntário:
-                    <strong>' . strtoupper($voluntario->nome) . '</strong> acesse as inscrições da equipe de trabalho para mais detalhes.'))
+                    <strong>'.strtoupper($voluntario->nome).'</strong> acesse as inscrições da equipe de trabalho para mais detalhes.'))
                 ->sendToDatabase($recipient);
 
         } catch (\Exception $exception) {
@@ -91,11 +91,8 @@ class EquipeTrabalhoForm extends Component implements HasForms
     }
 
     public function realizarNovaInscricao()
-
     {
         $this->inscrito = false;
         $this->reset(['data']);
     }
-
-
 }

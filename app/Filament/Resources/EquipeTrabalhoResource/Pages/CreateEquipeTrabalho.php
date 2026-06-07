@@ -4,18 +4,17 @@ namespace App\Filament\Resources\EquipeTrabalhoResource\Pages;
 
 use App\Filament\Resources\EquipeTrabalhoResource;
 use App\Filament\Resources\EquipeTrabalhoResource\EquipeTrabalhoForm;
-use Filament\Actions;
-use Filament\Forms\Form;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Schemas\Schema;
 
 class CreateEquipeTrabalho extends CreateRecord
 {
     protected static string $resource = EquipeTrabalhoResource::class;
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema(
+        return $schema
+            ->components(
                 EquipeTrabalhoForm::getFormCreate(),
             );
     }

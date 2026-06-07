@@ -4,6 +4,7 @@ namespace App\Filament\Resources\LancamentoResource\Pages;
 
 use App\Enums\TipoLacamento;
 use App\Filament\Resources\LancamentoResource;
+use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -16,6 +17,13 @@ class EditLancamento extends EditRecord
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['comprovante'] = LancamentoForm::normalizeComprovanteState($data['comprovante'] ?? null);
+
+        return parent::mutateFormDataBeforeFill($data);
     }
 
     public function mutateFormDataBeforeSave(array $data): array

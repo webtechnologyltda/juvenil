@@ -1,4 +1,1006 @@
-@import '/vendor/filament/filament/resources/css/theme.css';
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@config './tailwind.config.js';
+@source '../../../../app/Filament';
+@source '../../../../resources/views/filament';
+@source '../../../../resources/views/vendor/filament';
+@source '../../../../resources/views/vendor/cookie-consent';
+@source '../../../../vendor/bezhansalleh/filament-shield/resources/views';
+@source '../../../../vendor/tapp/filament-auditing/resources/views';
 
+@font-face {
+    font-family: 'Barlow';
+    font-display: swap;
+    font-style: normal;
+    font-weight: 400;
+    src: url('../../../../resources/fonts/Barlow-Regular.ttf') format('truetype');
+}
 
-@config 'tailwind.config.js';
+@font-face {
+    font-family: 'Luckiest Guy';
+    font-display: swap;
+    font-style: normal;
+    font-weight: 400;
+    src: url('../../../../node_modules/@fontsource/luckiest-guy/files/luckiest-guy-latin-400-normal.woff2') format('woff2'),
+        url('../../../../node_modules/@fontsource/luckiest-guy/files/luckiest-guy-latin-400-normal.woff') format('woff');
+}
+
+:root {
+    --juvenil-camp-ink: #03181c;
+    --juvenil-camp-base: #052f35;
+    --juvenil-camp-surface: #073d45;
+    --juvenil-camp-panel: #092930;
+    --juvenil-camp-panel-deep: #041f23;
+    --juvenil-camp-line: rgba(157, 219, 239, 0.22);
+    --juvenil-camp-line-strong: rgba(157, 219, 239, 0.36);
+    --juvenil-camp-sky: #9ddbef;
+    --juvenil-camp-text: #f4fbfd;
+    --juvenil-camp-muted: #d8f2fa;
+    --juvenil-camp-orange: #f46b12;
+    --juvenil-camp-orange-hover: #ff8a2a;
+}
+
+.juvenil-admin-auth-body {
+    background: #03181c;
+}
+
+.juvenil-admin-auth-body .fi-simple-layout,
+.juvenil-admin-auth-body .fi-simple-main-ctn {
+    min-height: 100dvh;
+    background: #03181c;
+}
+
+.juvenil-admin-auth-body .fi-simple-main-ctn,
+.juvenil-admin-auth-body .fi-simple-main {
+    width: 100%;
+    padding: 0;
+}
+
+.juvenil-admin-auth-body .fi-simple-main {
+    max-width: none;
+}
+
+.juvenil-admin-login .juvenil-poster-title {
+    font-family: 'Luckiest Guy', var(--font-family), sans-serif;
+    letter-spacing: 0;
+}
+
+.juvenil-admin-login-card .fi-sc-form,
+.juvenil-admin-login-card form {
+    gap: 1.05rem;
+}
+
+.juvenil-admin-login-card .fi-fo-field-wrp-label span,
+.juvenil-admin-login-card .fi-fo-field-wrp-label,
+.juvenil-admin-login-card label,
+.juvenil-admin-login-card label span {
+    color: #f4fbfd !important;
+    font-weight: 800;
+}
+
+.juvenil-admin-login-card .fi-input-wrp {
+    border-color: rgba(157, 219, 239, 0.22);
+    background: rgba(3, 24, 28, 0.62);
+    box-shadow: none;
+}
+
+.juvenil-admin-login-card .fi-input-wrp:focus-within {
+    border-color: #f46b12;
+    outline: 2px solid rgba(244, 107, 18, 0.22);
+    outline-offset: 0;
+}
+
+.juvenil-admin-login-card .fi-input {
+    color: #ffffff;
+}
+
+.juvenil-admin-login-card .fi-input::placeholder {
+    color: rgba(216, 242, 250, 0.45);
+}
+
+.juvenil-admin-login-card .fi-checkbox-input {
+    color: #f46b12;
+}
+
+.juvenil-admin-login-card .fi-btn-color-primary {
+    min-height: 3rem;
+    border-radius: 0;
+    background: #f46b12;
+    color: #052f35;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    box-shadow: none;
+}
+
+.juvenil-admin-login-card .fi-btn-color-primary:hover {
+    background: #ff8a2a;
+}
+
+@media (min-width: 1024px) {
+    .juvenil-admin-auth-body .js-cookie-consent {
+        top: 1rem !important;
+        right: auto !important;
+        bottom: auto !important;
+        left: 50% !important;
+        width: min(19.5rem, calc(100vw - 3rem)) !important;
+        padding: 1rem !important;
+        transform: translateX(-50%) !important;
+    }
+
+    .juvenil-admin-auth-body .js-cookie-consent img {
+        display: none !important;
+    }
+
+    .juvenil-admin-auth-body .js-cookie-consent .cookie-consent__message {
+        margin-top: 0.35rem !important;
+        font-size: 0.72rem !important;
+        line-height: 1.25rem !important;
+    }
+
+    .juvenil-admin-auth-body .js-cookie-consent .cookie-consent__agree {
+        min-height: 2.5rem !important;
+    }
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) {
+    color: var(--juvenil-camp-text);
+    background:
+        radial-gradient(circle at 16% 12%, rgba(157, 219, 239, 0.18), transparent 28rem),
+        radial-gradient(circle at 90% 2%, rgba(244, 107, 18, 0.08), transparent 24rem),
+        linear-gradient(135deg, var(--juvenil-camp-base) 0%, var(--juvenil-camp-ink) 72%);
+    color-scheme: dark;
+    font-family: 'Barlow', var(--font-family), sans-serif;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-layout {
+    min-height: 100dvh;
+    background: transparent;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .js-cookie-consent {
+    display: none !important;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-main {
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-main,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-page {
+    background: transparent;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-main {
+    padding-inline: clamp(1rem, 2vw, 2rem);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar {
+    border-right: 1px solid var(--juvenil-camp-line);
+    background:
+        linear-gradient(180deg, rgba(7, 61, 69, 0.98), rgba(3, 24, 28, 0.98)),
+        var(--juvenil-camp-base);
+    box-shadow: 22px 0 80px rgba(0, 0, 0, 0.24);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-header {
+    border-bottom: 1px solid var(--juvenil-camp-line);
+    background: rgba(3, 24, 28, 0.44);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-header-logo-ctn a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 4.5rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-logo {
+    width: auto;
+    max-width: 11rem;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.34));
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-topbar {
+    border-top: 3px solid var(--juvenil-camp-orange);
+    border-bottom: 1px solid var(--juvenil-camp-line);
+    background: rgba(3, 24, 28, 0.86);
+    color: var(--juvenil-camp-text);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(18px);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-icon-btn, .fi-topbar .fi-icon-btn) {
+    color: var(--juvenil-camp-muted);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-icon-btn, .fi-topbar .fi-icon-btn):hover {
+    color: var(--juvenil-camp-orange);
+    background: rgba(244, 107, 18, 0.1);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-group-label,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-item-label {
+    color: var(--juvenil-camp-muted);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-group-label {
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-item-btn {
+    border: 1px solid transparent;
+    border-radius: 0;
+    color: var(--juvenil-camp-muted);
+    transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-item-btn:hover {
+    border-color: rgba(244, 107, 18, 0.28);
+    background: rgba(244, 107, 18, 0.1);
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-item.fi-active .fi-sidebar-item-btn {
+    border-color: rgba(244, 107, 18, 0.52);
+    background: linear-gradient(90deg, rgba(244, 107, 18, 0.24), rgba(244, 107, 18, 0.06));
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-item.fi-active .fi-sidebar-item-label {
+    color: var(--juvenil-camp-orange);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-item-icon,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-group-icon {
+    color: var(--juvenil-camp-sky);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-header-heading {
+    color: var(--juvenil-camp-text);
+    font-size: clamp(1.75rem, 2.6vw, 2.75rem);
+    font-weight: 900;
+    letter-spacing: 0;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-header-subheading {
+    color: var(--juvenil-camp-muted);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-header-edit {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(244, 107, 18, 0.72);
+    border-radius: 0;
+    background: var(--juvenil-camp-orange);
+    padding: 0.75rem 1rem;
+    color: var(--juvenil-camp-ink);
+    font-size: 0.78rem;
+    font-weight: 900;
+    gap: 0.5rem;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+    box-shadow: none;
+    transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-header-edit:hover,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-header-edit:focus-visible {
+    border-color: var(--juvenil-camp-orange-hover);
+    background: var(--juvenil-camp-orange-hover);
+    color: var(--juvenil-camp-ink);
+    box-shadow: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-header-edit .fi-icon {
+    color: currentColor;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section, .fi-ta, .fi-wi-stats-overview-stat, .fi-in-entry-wrp, .fi-modal-window) {
+    border: 1px solid var(--juvenil-camp-line);
+    border-radius: 0;
+    background: rgba(7, 61, 69, 0.78);
+    color: var(--juvenil-camp-text);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(14px);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-header, .fi-ta-header, .fi-ta-toolbar, .fi-modal-header, .fi-modal-footer) {
+    border-color: var(--juvenil-camp-line);
+    background: rgba(3, 24, 28, 0.34);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-header-heading, .fi-ta-heading, .fi-modal-heading, .fi-wi-stats-overview-stat-value) {
+    color: var(--juvenil-camp-text);
+    font-weight: 900;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-header-description, .fi-ta-description, .fi-wi-stats-overview-stat-description, .fi-modal-description) {
+    color: var(--juvenil-camp-muted);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview-stat {
+    overflow: hidden;
+    position: relative;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview :is(.fi-sc, .fi-section) {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview .fi-section-header {
+    border: 0;
+    background: transparent;
+    padding-inline: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview .fi-section-has-header > .fi-section-content-ctn {
+    border-top: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview .fi-sc {
+    gap: clamp(0.85rem, 1.4vw, 1.25rem);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview-stat {
+    background:
+        radial-gradient(circle at 12% 0%, rgba(157, 219, 239, 0.12), transparent 9rem),
+        linear-gradient(135deg, rgba(7, 61, 69, 0.46), rgba(3, 24, 28, 0.34)),
+        rgba(7, 61, 69, 0.46);
+    box-shadow:
+        inset 0 1px 0 rgba(244, 251, 253, 0.04),
+        0 18px 54px rgba(0, 0, 0, 0.16);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview-stat::after {
+    position: absolute;
+    inset: auto 0 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--juvenil-camp-orange), rgba(157, 219, 239, 0.72));
+    content: '';
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-input-wrp, .fi-select-input, .fi-textarea, .fi-tags-input, .fi-fo-date-time-picker) {
+    border-color: var(--juvenil-camp-line);
+    background: rgba(3, 24, 28, 0.58);
+    color: var(--juvenil-camp-text);
+    box-shadow: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-input-wrp:focus-within {
+    border-color: var(--juvenil-camp-orange);
+    outline: 2px solid rgba(244, 107, 18, 0.2);
+    outline-offset: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-input, .fi-select-input, .fi-textarea) {
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-input::placeholder, .fi-textarea::placeholder) {
+    color: rgba(216, 242, 250, 0.46);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-fo-field-wrp-label, .fi-fo-field-wrp-label span, .fi-ta-text, .fi-in-text, .fi-breadcrumbs-item-label) {
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-fo-field-wrp-helper-text, .fi-fo-field-wrp-hint, .fi-ta-header-cell-label, .fi-ta-empty-state-description) {
+    color: var(--juvenil-camp-muted);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta {
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(157, 219, 239, 0.34);
+    background:
+        linear-gradient(180deg, rgba(15, 28, 46, 0.82), rgba(12, 25, 41, 0.76)),
+        radial-gradient(circle at 0% 0%, rgba(157, 219, 239, 0.12), transparent 21rem),
+        rgba(7, 61, 69, 0.78);
+    box-shadow:
+        inset 0 1px 0 rgba(244, 251, 253, 0.05),
+        0 30px 90px rgba(0, 0, 0, 0.26);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta::before {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--juvenil-camp-orange), rgba(157, 219, 239, 0.72), transparent);
+    content: '';
+    pointer-events: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header {
+    border-color: rgba(157, 219, 239, 0.18);
+    background:
+        linear-gradient(90deg, rgba(3, 24, 28, 0.82), rgba(7, 61, 69, 0.52)),
+        rgba(3, 24, 28, 0.4);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-heading {
+    color: var(--juvenil-camp-text);
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-description {
+    max-width: 44rem;
+    color: rgba(216, 242, 250, 0.78);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-toolbar {
+    gap: 0.85rem;
+    border-color: rgba(157, 219, 239, 0.18);
+    background:
+        linear-gradient(90deg, rgba(3, 24, 28, 0.7), rgba(7, 61, 69, 0.32)),
+        rgba(3, 24, 28, 0.42);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-toolbar :is(.fi-input-wrp, .fi-select-input) {
+    min-height: 2.35rem;
+    border-color: rgba(157, 219, 239, 0.12);
+    background: rgba(3, 24, 28, 0.72);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-toolbar :is(.fi-input-wrp, .fi-select-input):focus-within {
+    border-color: rgba(244, 107, 18, 0.72);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-grouping-settings > .fi-ta-grouping-settings-fields {
+    overflow: hidden;
+    border: 1px solid rgba(157, 219, 239, 0.12);
+    background: rgba(3, 24, 28, 0.42);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-grouping-settings-fields label {
+    color: rgba(216, 242, 250, 0.76);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-content-ctn {
+    border-color: rgba(157, 219, 239, 0.16);
+    background: rgba(11, 21, 36, 0.62);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-ta-table, .fi-ta-content, .fi-ta-row, .fi-ta-cell, .fi-ta-header-cell) {
+    border-color: rgba(157, 219, 239, 0.15);
+    background: transparent;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-table thead {
+    background:
+        linear-gradient(180deg, rgba(29, 36, 56, 0.96), rgba(25, 32, 50, 0.92)),
+        rgba(3, 24, 28, 0.72);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-cell {
+    color: rgba(244, 251, 253, 0.94);
+    font-size: 0.76rem;
+    font-weight: 900;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-cell-label {
+    color: rgba(244, 251, 253, 0.95);
+    font-weight: 900;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-cell .fi-icon {
+    color: rgba(157, 219, 239, 0.46);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row {
+    transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row.fi-striped > .fi-ta-cell {
+    background: rgba(157, 219, 239, 0.035);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {
+    background:
+        linear-gradient(90deg, rgba(244, 107, 18, 0.12), rgba(157, 219, 239, 0.055)),
+        rgba(157, 219, 239, 0.045);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell:first-child {
+    box-shadow: inset 3px 0 0 var(--juvenil-camp-orange);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-cell {
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-text,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-placeholder {
+    color: rgba(244, 251, 253, 0.92);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-empty-state {
+    min-height: 17rem;
+    border-color: rgba(157, 219, 239, 0.16);
+    background:
+        radial-gradient(circle at 50% 8%, rgba(157, 219, 239, 0.12), transparent 17rem),
+        linear-gradient(180deg, rgba(11, 21, 36, 0.38), rgba(11, 21, 36, 0.72));
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-empty-state-icon-bg {
+    border: 1px solid rgba(157, 219, 239, 0.12);
+    background: rgba(157, 219, 239, 0.1);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-empty-state-icon-bg .fi-icon {
+    color: rgba(216, 242, 250, 0.68);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-empty-state-heading {
+    color: var(--juvenil-camp-text);
+    font-weight: 900;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-empty-state-description {
+    color: rgba(216, 242, 250, 0.72);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-admin-table-avatar {
+    border: 1px solid rgba(157, 219, 239, 0.28);
+    background:
+        radial-gradient(circle at 50% 30%, rgba(157, 219, 239, 0.18), transparent 1.8rem),
+        rgba(3, 24, 28, 0.68);
+    object-fit: cover;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-btn-color-primary {
+    border-radius: 0;
+    background: var(--juvenil-camp-orange);
+    color: var(--juvenil-camp-ink);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    box-shadow: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-btn-color-primary:hover {
+    background: var(--juvenil-camp-orange-hover);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-btn-color-gray, .fi-btn-color-secondary) {
+    border-color: var(--juvenil-camp-line);
+    border-radius: 0;
+    background: rgba(7, 61, 69, 0.64);
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-tabs, .fi-dropdown-panel, .fi-pagination, .fi-ac-grouped) {
+    border-color: var(--juvenil-camp-line);
+    border-radius: 0;
+    background: rgba(3, 24, 28, 0.92);
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sc-tabs.fi-contained {
+    border-color: rgba(157, 219, 239, 0.18);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(157, 219, 239, 0.06), transparent 24rem),
+        linear-gradient(180deg, rgba(4, 31, 35, 0.98), rgba(3, 24, 28, 0.96)),
+        var(--juvenil-camp-panel-deep);
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sc-tabs-tab.fi-active {
+    background: transparent;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-file-upload .filepond--root {
+    border-color: rgba(157, 219, 239, 0.24);
+    background:
+        linear-gradient(180deg, rgba(4, 31, 35, 0.94), rgba(3, 24, 28, 0.9)),
+        var(--juvenil-camp-panel-deep);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-file-upload .filepond--panel-root {
+    background: transparent;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-badge {
+    border-radius: 0;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-global-search .fi-input-wrp {
+    border-color: rgba(157, 219, 239, 0.3);
+    background: rgba(3, 24, 28, 0.64);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-global-search .fi-input {
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-topbar .fi-user-menu {
+    position: relative;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-topbar .fi-user-menu > .fi-dropdown-panel {
+    position: absolute !important;
+    inset-block-start: calc(100% + 0.5rem) !important;
+    inset-inline-end: 0 !important;
+    inset-block-end: auto !important;
+    inset-inline-start: auto !important;
+    transform: none !important;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-user-menu-trigger {
+    border: 1px solid transparent;
+    background: transparent;
+    box-shadow: none;
+    outline: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-user-menu-trigger:hover {
+    background: rgba(157, 219, 239, 0.08);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-user-menu-trigger:focus-visible {
+    outline: 2px solid rgba(157, 219, 239, 0.42);
+    outline-offset: 2px;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .js-cookie-consent {
+    border-color: var(--juvenil-camp-line-strong);
+    background: rgba(3, 24, 28, 0.96);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card {
+    overflow: hidden;
+    border: 1px solid rgba(157, 219, 239, 0.34);
+    background:
+        linear-gradient(180deg, rgba(15, 28, 46, 0.82), rgba(7, 61, 69, 0.56)),
+        radial-gradient(circle at 6% 0%, rgba(157, 219, 239, 0.16), transparent 23rem),
+        rgba(3, 24, 28, 0.66);
+    color: var(--juvenil-camp-text);
+    box-shadow:
+        inset 0 1px 0 rgba(244, 251, 253, 0.05),
+        0 30px 90px rgba(0, 0, 0, 0.24);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__hero {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: clamp(1rem, 2vw, 1.5rem);
+    align-items: center;
+    padding: clamp(1rem, 2.2vw, 1.5rem);
+    border-bottom: 1px solid rgba(157, 219, 239, 0.18);
+    background:
+        linear-gradient(90deg, rgba(3, 24, 28, 0.9), rgba(7, 61, 69, 0.42)),
+        rgba(3, 24, 28, 0.42);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__photo {
+    display: grid;
+    width: clamp(5.4rem, 8vw, 7.25rem);
+    aspect-ratio: 1;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(157, 219, 239, 0.36);
+    background:
+        radial-gradient(circle at 50% 25%, rgba(157, 219, 239, 0.22), transparent 4rem),
+        rgba(3, 24, 28, 0.8);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__photo img.juvenil-registration-card__photo-fallback {
+    padding: 0.7rem;
+    object-fit: contain;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__photo span {
+    color: var(--juvenil-camp-orange);
+    font-size: 2rem;
+    font-weight: 900;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__eyebrow {
+    margin: 0 0 0.55rem;
+    color: var(--juvenil-camp-orange);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__name-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__name-row h2 {
+    margin: 0;
+    color: var(--juvenil-camp-text);
+    font-size: clamp(1.65rem, 2.6vw, 2.55rem);
+    font-weight: 900;
+    line-height: 0.95;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0.75rem 0 0;
+    color: rgba(216, 242, 250, 0.74);
+    font-size: 0.9rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__badge,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item strong {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    border: 1px solid rgba(157, 219, 239, 0.18);
+    background: rgba(3, 24, 28, 0.62);
+    padding: 0.22rem 0.48rem;
+    color: var(--juvenil-camp-text);
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__badge--success,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--success strong {
+    border-color: rgba(34, 197, 94, 0.38);
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__badge--warning,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--warning strong {
+    border-color: rgba(250, 204, 21, 0.38);
+    background: rgba(250, 204, 21, 0.12);
+    color: #fde047;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__badge--danger,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--danger strong {
+    border-color: rgba(251, 113, 133, 0.42);
+    background: rgba(251, 113, 133, 0.14);
+    color: #fda4af;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--info strong {
+    border-color: rgba(157, 219, 239, 0.4);
+    background: rgba(157, 219, 239, 0.12);
+    color: var(--juvenil-camp-sky);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-bottom: 1px solid rgba(157, 219, 239, 0.18);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item {
+    min-height: 6rem;
+    padding: 1rem;
+    border-right: 1px solid rgba(157, 219, 239, 0.16);
+    background: rgba(3, 24, 28, 0.24);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item:last-child {
+    border-right: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item span {
+    display: block;
+    margin-bottom: 0.6rem;
+    color: rgba(216, 242, 250, 0.72);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__sections {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__section {
+    border: 1px solid rgba(157, 219, 239, 0.2);
+    background:
+        linear-gradient(180deg, rgba(7, 61, 69, 0.52), rgba(3, 24, 28, 0.26)),
+        rgba(3, 24, 28, 0.34);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__section--documents {
+    grid-column: 1 / -1;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__section-header {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid rgba(157, 219, 239, 0.14);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__section-header span {
+    width: 0.45rem;
+    height: 1.6rem;
+    background: linear-gradient(180deg, var(--juvenil-camp-orange), var(--juvenil-camp-sky));
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__section-header h3 {
+    margin: 0;
+    color: var(--juvenil-camp-text);
+    font-size: 0.98rem;
+    font-weight: 900;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__field {
+    min-height: 5.1rem;
+    padding: 0.9rem 1rem;
+    border-right: 1px solid rgba(157, 219, 239, 0.12);
+    border-bottom: 1px solid rgba(157, 219, 239, 0.12);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__field:nth-child(2n) {
+    border-right: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__field--wide {
+    grid-column: 1 / -1;
+    border-right: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__field dt {
+    margin-bottom: 0.45rem;
+    color: rgba(157, 219, 239, 0.78);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__field dd {
+    margin: 0;
+    color: var(--juvenil-camp-text);
+    font-size: 0.96rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__field--tone-warning dd {
+    color: #fde047;
+    font-weight: 800;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__field--tone-success dd {
+    color: #86efac;
+    font-weight: 800;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 1rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents a {
+    display: grid;
+    gap: 0.3rem;
+    border: 1px solid rgba(157, 219, 239, 0.18);
+    background: rgba(3, 24, 28, 0.5);
+    padding: 0.85rem;
+    color: var(--juvenil-camp-text);
+    text-decoration: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents a:hover {
+    border-color: rgba(244, 107, 18, 0.58);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents small,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__empty {
+    color: rgba(216, 242, 250, 0.7);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__empty {
+    margin: 0;
+    padding: 1rem;
+}
+
+@media (max-width: 1023px) {
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar {
+        box-shadow: 24px 0 90px rgba(0, 0, 0, 0.4);
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-main {
+        padding-inline: 1rem;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__hero {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary,
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__sections {
+        grid-template-columns: 1fr;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item {
+        border-right: 0;
+        border-bottom: 1px solid rgba(157, 219, 239, 0.16);
+    }
+}
+
+@media (max-width: 767px) {
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__hero {
+        grid-template-columns: 1fr;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__photo {
+        width: 6rem;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__fields,
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents {
+        grid-template-columns: 1fr;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__field {
+        border-right: 0;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-table {
+        width: 100%;
+        min-width: 0 !important;
+        table-layout: fixed;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-selection-cell {
+        width: 2.75rem;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-ta-header-cell-avatar-url, .fi-ta-cell-avatar-url) {
+        width: 5.25rem;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-cell-nome {
+        min-width: 0;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-ta-actions-header-cell, .fi-ta-row > .fi-ta-cell:last-child) {
+        width: 6.25rem;
+        padding-inline: 0.25rem;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-actions {
+        justify-content: flex-end;
+        gap: 0.125rem;
+    }
+}

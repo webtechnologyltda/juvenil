@@ -3,11 +3,10 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\StatusInscricao;
+use App\Filament\Widgets\Concerns\SupportsWidgetShield;
 use App\Models\Campista;
-use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Carbon\Carbon;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Grouping\Group;
@@ -17,7 +16,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class UtilizaRemedioTableWidget extends BaseWidget
 {
 
-    use HasWidgetShield;
+    use SupportsWidgetShield;
 
     protected int | string | array $columnSpan = 'full';
 

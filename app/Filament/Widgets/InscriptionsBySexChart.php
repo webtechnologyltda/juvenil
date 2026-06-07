@@ -3,31 +3,19 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\StatusInscricao;
+use App\Filament\Widgets\Concerns\SupportsWidgetShield;
 use App\Models\Campista;
-use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
-use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
+use Filament\Widgets\ChartWidget;
 
-class InscriptionsBySexChart extends ApexChartWidget
+class InscriptionsBySexChart extends ChartWidget
 {
+    use SupportsWidgetShield;
 
-    use HasWidgetShield;
-    /**
-     * Chart Id
-     */
-    protected static ?string $chartId = 'inscriptionsBySexChart';
+    protected ?string $heading = 'Inscrições por Sexo';
 
-    /**
-     * Widget Title
-     */
-    protected static ?string $heading = 'Inscrições por Sexo';
+    protected static ?int $sort = 2;
 
-    protected  static ?int $sort  = 2;
-
-    /**
-     * Chart options (series, labels, types, size, animations...)
-     * https://apexcharts.com/docs/options
-     */
-    protected function getOptions(): array
+    protected function getData(): array
     {
         $data = Campista::select('form_data')->where('status', '<>', StatusInscricao::Cancelado->value)->get();
         $options = [
@@ -40,18 +28,18 @@ class InscriptionsBySexChart extends ApexChartWidget
         }
 
         return [
-            'chart' => [
-                'type' => 'donut',
-                'height' => 300,
-            ],
-            'series' => [$options['M'], $options['F']],
-            'labels' => ['Masculino', 'Feminino'],
-            'colors' => ['#2f80ed', '#F53BD6'],
-            'legend' => [
-                'labels' => [
-                    'fontFamily' => 'inherit',
+            'datasets' => [
+                [
+                    'data' => [$options['M'], $options['F']],
+                    'backgroundColor' => ['#2f80ed', '#F53BD6'],
                 ],
             ],
+            'labels' => ['Masculino', 'Feminino'],
         ];
+    }
+
+    protected function getType(): string
+    {
+        return 'doughnut';
     }
 }

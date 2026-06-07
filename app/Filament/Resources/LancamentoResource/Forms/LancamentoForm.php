@@ -5,23 +5,27 @@ namespace App\Filament\Resources\LancamentoResource\Forms;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
+use App\Models\CategoriaLancamento;
 use Carbon\Carbon;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Get;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\RawJs;
 use Leandrocfe\FilamentPtbrFormFields\Money;
 
 abstract class LancamentoForm
 {
+    private const COMPROVANTE_BLOCK = 'anexar_comprovante';
+
     public static function getFormSchema(): array
     {
         return [
@@ -56,7 +60,18 @@ abstract class LancamentoForm
                            ->label('Tipo de Lançamento')
                            ->options(TipoLacamento::class)
                            ->inline()
+                           ->live()
+                           ->afterStateUpdated(fn (Set $set): mixed => $set('categoria_lancamento_id', null))
                            ->required(),
+
+                       Select::make('categoria_lancamento_id')
+                           ->label('Categoria')
+                           ->options(fn (Get $get): array => self::categoryOptions($get('tipo')))
+                           ->searchable()
+                           ->preload()
+                           ->placeholder('Selecione uma categoria')
+                           ->helperText('As opções acompanham o tipo do lançamento.')
+                           ->disabled(fn (Get $get): bool => blank($get('tipo'))),
 
                        DatePicker::make('data')
                            ->label('Data de Lançamento')
@@ -97,8 +112,12 @@ abstract class LancamentoForm
                           Builder::make('comprovante')
                               ->label('Comprovates')
                               ->required()
+                              ->afterStateHydrated(static function (Builder $component): void {
+                                  $component->rawState(self::normalizeComprovanteState($component->getRawState()));
+                                  $component->hydrateItems();
+                              })
                               ->blocks([
-                                  Block::make('anexar_comprovante')
+                                  Block::make(self::COMPROVANTE_BLOCK)
                                       ->label('Comprovante')
                                       ->schema([
                                           TextInput::make('comprovante_nome')
@@ -113,7 +132,6 @@ abstract class LancamentoForm
                                               ->openable()
                                               ->multiple()
                                               ->maxSize(2048)
-                                              ->uploadingMessage('Carregando...')
                                               ->acceptedFileTypes(['application/pdf', 'image/*'])
                                               ->previewable(true)
                                               ->columnSpan(2),
@@ -123,5 +141,120 @@ abstract class LancamentoForm
 
               ]),
         ];
+    }
+
+    public static function normalizeComprovanteState(mixed $state): array
+    {
+        if (blank($state)) {
+            return [];
+        }
+
+        if (is_string($state)) {
+            return [self::makeComprovanteBlock(files: [$state])];
+        }
+
+        if (! is_array($state)) {
+            return [];
+        }
+
+        if (array_is_list($state) && self::containsOnlyFiles($state)) {
+            return [self::makeComprovanteBlock(files: $state)];
+        }
+
+        $items = [];
+
+        foreach ($state as $item) {
+            if (is_string($item)) {
+                $items[] = self::makeComprovanteBlock(files: [$item]);
+
+                continue;
+            }
+
+            if (! is_array($item)) {
+                continue;
+            }
+
+            if (array_key_exists('type', $item)) {
+                $data = is_array($item['data'] ?? null) ? $item['data'] : [];
+                $data['url'] = self::normalizeFileUploadState($data['url'] ?? []);
+
+                $items[] = [
+                    'type' => filled($item['type'] ?? null) ? $item['type'] : self::COMPROVANTE_BLOCK,
+                    'data' => $data,
+                ];
+
+                continue;
+            }
+
+            if (array_key_exists('url', $item) || array_key_exists('comprovante_nome', $item)) {
+                $items[] = self::makeComprovanteBlock(
+                    name: $item['comprovante_nome'] ?? 'Comprovante',
+                    files: self::normalizeFileUploadState($item['url'] ?? []),
+                );
+            }
+        }
+
+        return $items;
+    }
+
+    private static function makeComprovanteBlock(string $name = 'Comprovante', array $files = []): array
+    {
+        return [
+            'type' => self::COMPROVANTE_BLOCK,
+            'data' => [
+                'comprovante_nome' => filled($name) ? $name : 'Comprovante',
+                'url' => self::normalizeFileUploadState($files),
+            ],
+        ];
+    }
+
+    private static function normalizeFileUploadState(mixed $files): array
+    {
+        if (blank($files)) {
+            return [];
+        }
+
+        if (is_string($files)) {
+            return [$files];
+        }
+
+        if (! is_array($files)) {
+            return [];
+        }
+
+        return array_values(array_filter($files, fn (mixed $file): bool => is_string($file) && filled($file)));
+    }
+
+    private static function containsOnlyFiles(array $items): bool
+    {
+        if ($items === []) {
+            return false;
+        }
+
+        foreach ($items as $item) {
+            if (! is_string($item)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function categoryOptions(mixed $type): array
+    {
+        if ($type instanceof TipoLacamento) {
+            $type = $type->value;
+        }
+
+        if (blank($type)) {
+            return [];
+        }
+
+        return CategoriaLancamento::query()
+            ->where('ativo', true)
+            ->where('tipo', (int) $type)
+            ->orderBy('nome')
+            ->pluck('nome', 'id')
+            ->all();
     }
 }

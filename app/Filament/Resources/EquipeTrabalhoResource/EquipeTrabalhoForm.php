@@ -4,26 +4,26 @@ namespace App\Filament\Resources\EquipeTrabalhoResource;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use Carbon\Carbon;
-use Filament\Forms\Components\Actions;
-use Filament\Forms\Components\Actions\Action as FormAction;
-use Filament\Forms\Components\Fieldset;
+use Filament\Actions\Action as FormAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Html;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
-use Leandrocfe\FilamentPtbrFormFields\Cep;
+use JeffersonGoncalves\Filament\CepField\Forms\Components\CepInput;
 
 abstract class EquipeTrabalhoForm
 {
@@ -130,41 +130,24 @@ abstract class EquipeTrabalhoForm
                             'lg' => 5,
                         ])
                         ->schema([
-                        Placeholder::make('info_endereco')
-                            ->hint('Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.')
-                            ->hintColor(Color::Yellow)
-                            ->hintIcon('heroicon-o-exclamation-circle')
-                            ->hiddenLabel()
+                        Html::make(new HtmlString('<p class="text-sm text-primary-600">Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.</p>'))
                             ->columnSpanFull(),
 
-                        Cep::make('data_form.cep')
+                        CepInput::make('data_form.cep')
                             ->label('CEP')
                             ->required()
                             ->columnSpan([
                                 'default' => 1,
                                 'lg' => 1,
                             ])
-                            ->viaCep(
-                            // Determines whether the action should be appended to (suffix) or prepended to (prefix) the cep field, or not included at all (none).
-                                mode: 'suffix',
-
-                                // Error message to display if the CEP is invalid.
-                                errorMessage: 'CEP inválido.',
-
-                                /**
-                                 * Other form fields that can be filled by ViaCep.
-                                 * The key is the name of the Filament input, and the value is the ViaCep attribute that corresponds to it.
-                                 * More information: https://viacep.com.br/
-                                 */
-                                setFields: [
-                                    'data_form.rua' => 'logradouro',
-                                    'data_form.numero' => 'numero',
-                                    'data_form.ponto_referencia' => 'complemento',
-                                    'data_form.bairro' => 'bairro',
-                                    'data_form.cidade' => 'localidade',
-                                    'data_form.estado' => 'uf'
-                                ],
-                            ),
+                            ->setMode('suffix')
+                            ->setActionLabel('Buscar CEP')
+                            ->setActionLabelHidden(true)
+                            ->setErrorMessage('CEP inválido.')
+                            ->setStreetField('data_form.rua')
+                            ->setNeighborhoodField('data_form.bairro')
+                            ->setCityField('data_form.cidade')
+                            ->setStateField('data_form.estado'),
 
                         TextInput::make('data_form.rua')
                             ->required()
@@ -183,7 +166,7 @@ abstract class EquipeTrabalhoForm
                             ])
                             ->label('Número'),
                         TextInput::make('data_form.ponto_referencia')
-                            ->label('Ponto Referência')
+                            ->label('Complemento')
                             ->columnSpan([
                                 'default' => 1,
                                 'sm' => 1,
@@ -323,9 +306,7 @@ abstract class EquipeTrabalhoForm
             FileUpload::make('avatar_url')
                 ->hiddenLabel()
                 ->label('Foto de identificação')
-                ->optimize('webp')
                 ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
-                ->resize(15)
                 ->alignCenter()
                 ->imageEditor()
                 ->directory('foto-formulario-equipe-trabalho')
@@ -348,7 +329,6 @@ abstract class EquipeTrabalhoForm
                     '1:1',
                 ])
                 ->panelLayout('integrated')
-                ->uploadingMessage('Uploading attachment...')
                 ->imageEditorEmptyFillColor('#000000')
                 ->required(),
 

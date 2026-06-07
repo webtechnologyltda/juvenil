@@ -27,6 +27,7 @@ class LancamentoFactory extends Factory
             'data' => $this->faker->dateTime(),
             'valor' => $this->faker->randomFloat(2, 0, 1000),
             'tipo' => $this->faker->randomElement([TipoLacamento::Receita->value,TipoLacamento::Doacao->value,TipoLacamento::Despesa->value]),
+            'categoria_lancamento_id' => null,
             'status' => $this->faker->randomElement([StatusLacamento::Pago->value,StatusLacamento::Cancelado->value,StatusLacamento::Pendente->value,]),
             'forma_pagamento' => $this->faker->randomElement([FormaPagamento::Dinheiro->value, FormaPagamento::Pix->value]),
             'comprovante' => $this->faker->imageUrl(640, 480),

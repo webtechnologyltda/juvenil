@@ -5,33 +5,32 @@ namespace App\Filament\Resources\CampistaResource;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use Carbon\Carbon;
-use Filament\Forms\Components\Actions;
-use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Actions\Action as FormAction;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Split;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Wizard\Step;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Html;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Wizard\Step;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
-use Leandrocfe\FilamentPtbrFormFields\Cep;
+use JeffersonGoncalves\Filament\CepField\Forms\Components\CepInput;
 
 abstract class CampistaForm
 {
@@ -200,11 +199,16 @@ abstract class CampistaForm
             FileUpload::make('avatar_url')
                 ->hiddenLabel()
                 ->label('Foto de identificação')
-                ->optimize('webp')
                 ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
-                ->resize(15)
                 ->alignCenter()
                 ->imageEditor()
+                ->image()
+                ->acceptedFileTypes([
+                    'image/jpeg',
+                    'image/png',
+                    'image/webp',
+                ])
+                ->rules(['mimes:jpg,jpeg,png,webp'])
                 ->directory('foto-formulario')
                 ->imagePreviewHeight('250')
                 ->previewable(true)
@@ -213,7 +217,6 @@ abstract class CampistaForm
                     'default' => 1,
                     'lg' => 3,
                 ])
-                ->imageCropAspectRatio('1:1')
                 ->loadingIndicatorPosition('center')
                 ->panelAspectRatio('1:1')
                 ->removeUploadedFileButtonPosition('top-center')
@@ -221,7 +224,14 @@ abstract class CampistaForm
                 ->uploadProgressIndicatorPosition('center')
                 ->imageEditorMode(2)
                 ->panelLayout('integrated')
+                ->imageAspectRatio('1:1')
+                ->automaticallyOpenImageEditorForAspectRatio()
+                ->imageEditorAspectRatioOptions(['1:1'])
                 ->imageEditorEmptyFillColor('#000000')
+                ->validationMessages([
+                    'mimetypes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
+                    'mimes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
+                ])
                 ->required(),
 
             Actions::make([
@@ -251,7 +261,7 @@ abstract class CampistaForm
                 ->columnSpan(1)
                 ->label('Data de Nascimento'),
 
-            Radio::make('form_data.sexo')
+            ToggleButtons::make('form_data.sexo')
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
@@ -259,6 +269,14 @@ abstract class CampistaForm
                 ->options([
                     'M' => 'Masculino',
                     'F' => 'Feminino',
+                ])
+                ->colors([
+                    'M' => Color::Blue,
+                    'F' => Color::Pink,
+                ])
+                ->icons([
+                    'M' => 'eos-male',
+                    'F' => 'eos-female',
                 ])
                 ->label('Sexo'),
 
@@ -321,41 +339,24 @@ abstract class CampistaForm
     {
         return [
 
-            Placeholder::make('info_endereco')
-                ->hint('Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.')
-                ->hintColor(Color::Yellow)
-                ->hintIcon('heroicon-o-exclamation-circle')
-                ->hiddenLabel()
+            Html::make(new HtmlString('<p class="text-sm text-primary-600">Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.</p>'))
                 ->columnSpanFull(),
 
-            Cep::make('form_data.cep')
+            CepInput::make('form_data.cep')
                 ->label('CEP')
                 ->required()
                 ->columnSpan([
                     'default' => 1,
                     'lg' => 1,
                 ])
-                ->viaCep(
-                // Determines whether the action should be appended to (suffix) or prepended to (prefix) the cep field, or not included at all (none).
-                    mode: 'suffix',
-
-                    // Error message to display if the CEP is invalid.
-                    errorMessage: 'CEP inválido.',
-
-                    /**
-                     * Other form fields that can be filled by ViaCep.
-                     * The key is the name of the Filament input, and the value is the ViaCep attribute that corresponds to it.
-                     * More information: https://viacep.com.br/
-                     */
-                    setFields: [
-                        'form_data.rua' => 'logradouro',
-                        'form_data.numero' => 'numero',
-                        'form_data.ponto_referencia' => 'complemento',
-                        'form_data.bairro' => 'bairro',
-                        'form_data.cidade' => 'localidade',
-                        'form_data.estado' => 'uf'
-                    ],
-                ),
+                ->setMode('suffix')
+                ->setActionLabel('Buscar CEP')
+                ->setActionLabelHidden(true)
+                ->setErrorMessage('CEP inválido.')
+                ->setStreetField('form_data.rua')
+                ->setNeighborhoodField('form_data.bairro')
+                ->setCityField('form_data.cidade')
+                ->setStateField('form_data.estado'),
 
             Hidden::make('breakLineEndereco')->columnSpan(1),
 
@@ -376,7 +377,7 @@ abstract class CampistaForm
                 ])
                 ->label('Número'),
             TextInput::make('form_data.ponto_referencia')
-                ->label('Ponto Referência')
+                ->label('Complemento')
                 ->columnSpan([
                     'default' => 1,
                     'sm' => 1,
@@ -435,7 +436,7 @@ abstract class CampistaForm
     public static function getFormInformacoesImportantes(): array
     {
         return [
-            Radio::make('form_data.paroquia')
+            ToggleButtons::make('form_data.paroquia')
                 ->label('Qual paróquia participa?')
                 ->columnSpanFull()
                 ->required()
@@ -454,13 +455,11 @@ abstract class CampistaForm
 
                 }),
 
-            Radio::make('form_data.comunidade')
+            ToggleButtons::make('form_data.comunidade')
                 ->label('Qual comunidade?')
                 ->live()
                 ->columnSpanFull()
-                ->visible(function (Get $get) {
-                    return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 0;
-                })
+                ->visible(fn (Get $get): bool => self::selectedParishIs($get, 0))
                 ->required()
                 ->gridDirection('row')
                 ->columns(2)
@@ -472,14 +471,12 @@ abstract class CampistaForm
                     'Comunidade Imaculado Coração de Maria',
                 ]),
 
-            Radio::make('form_data.comunidade')
+            ToggleButtons::make('form_data.comunidade')
                 ->label('Qual comunidade?')
                 ->live()
                 ->columns(2)
                 ->columnSpanFull()
-                ->visible(function (Get $get) {
-                    return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 1;
-                })
+                ->visible(fn (Get $get): bool => self::selectedParishIs($get, 1))
                 ->required()
                 ->gridDirection('row')
                 ->options([
@@ -496,17 +493,19 @@ abstract class CampistaForm
             TextInput::make('form_data.comunidade')
                 ->label('Especificar o nome da comunidade')
                 ->columnSpanFull()
-                ->visible(function (Get $get) {
-                    return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 2;
-                }),
+                ->visible(fn (Get $get): bool => self::selectedParishIs($get, 2)),
 
-            Radio::make('form_data.toma_remedio')
+            ToggleButtons::make('form_data.toma_remedio')
                 ->label('Toma algum Remédio?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Sim',
                     false => 'Não',
@@ -514,18 +513,22 @@ abstract class CampistaForm
 
             Textarea::make('form_data.remedio')
                 ->rows(3)
-                ->required(fn(Get $get) => $get('form_data.toma_remedio') == true)
-                ->visible(fn(Get $get) => $get('form_data.toma_remedio') == true)
+                ->required(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.toma_remedio') == true)
+                ->visible(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.toma_remedio') == true)
                 ->label('Por favor, descreva os medicamentos abaixo e os horários de administração caso se aplique')
                 ->columnSpanFull(),
 
-            Radio::make('form_data.tem_recomendacao')
+            ToggleButtons::make('form_data.tem_recomendacao')
                 ->label('Tem alguma recomendação especial?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Sim',
                     false => 'Não',
@@ -533,12 +536,12 @@ abstract class CampistaForm
 
             Textarea::make('form_data.recomendacao')
                 ->label('Qual?')
-                ->required(fn(Get $get) => $get('form_data.tem_recomendacao') == true)
-                ->visible(fn(Get $get) => $get('form_data.tem_recomendacao') == true)
+                ->required(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.tem_recomendacao') == true)
+                ->visible(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.tem_recomendacao') == true)
                 ->rows(3)
                 ->columnSpanFull(),
 
-            Radio::make('form_data.tamanho_camiseta')
+            ToggleButtons::make('form_data.tamanho_camiseta')
                 ->label('Tamanho da camiseta')
                 ->columnSpanFull()
                 ->options([
@@ -566,13 +569,17 @@ abstract class CampistaForm
                 ->minLength(1)
                 ->maxLength(3),
 
-            Radio::make('form_data.ja_participou_retiro')
+            ToggleButtons::make('form_data.ja_participou_retiro')
                 ->label('Já participou de algum acampamento/retiro ?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Sim',
                     false => 'Não',
@@ -584,13 +591,17 @@ abstract class CampistaForm
                 ->requiredIf(fn(Get $get) => $get('form_data.ja_participou_retiro'), false)
                 ->visible(fn(Get $get) => $get('form_data.ja_participou_retiro') ?? false),
 
-            Radio::make('form_data.algum_parente')
+            ToggleButtons::make('form_data.algum_parente')
                 ->label('Tem algum amigo/parente próximo que irá participar do acampamento ?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Sim',
                     false => 'Não',
@@ -601,13 +612,17 @@ abstract class CampistaForm
                 ->columnSpanFull()
                 ->requiredIf(fn(Get $get) => $get('form_data.algum_parente'), false)
                 ->visible(fn(Get $get) => $get('form_data.algum_parente') ?? false),
-            Radio::make('form_data.declaro')
-                ->label('Declaro nunca ter participado de nenhuma edição do acampamento Trekking ?')
+            ToggleButtons::make('form_data.declaro')
+                ->label('Declaro nunca ter participado de nenhuma edição do Acampamento Juvenil ?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Declaro nunca ter participado',
                     false => 'Não, já participei de alguma edição',
@@ -621,6 +636,15 @@ abstract class CampistaForm
                 ->required()
                 ->columnSpanFull(),
         ];
+    }
+
+    private static function selectedParishIs(Get $get, int $parish): bool
+    {
+        $selectedParish = $get('form_data.paroquia');
+
+        return $selectedParish !== null
+            && $selectedParish !== ''
+            && (int) $selectedParish === $parish;
     }
 
     public static function getFormInformacaoInscricao(): array
@@ -702,7 +726,6 @@ abstract class CampistaForm
                                 ->openable()
                                 ->multiple()
                                 ->maxSize(2048)
-                                ->uploadingMessage('Carregando...')
                                 ->acceptedFileTypes(['application/pdf', 'image/*'])
                                 ->previewable(true)
                                 ->columnSpan(2),
@@ -712,5 +735,34 @@ abstract class CampistaForm
         ];
     }
 
+    public static function canViewSensitiveHealth(): bool
+    {
+        return auth()->user()?->can('view_sensitive_health_campista') ?? false;
+    }
 
+    public static function redactSensitiveHealthDetails(array $data): array
+    {
+        if (self::canViewSensitiveHealth()) {
+            return $data;
+        }
+
+        unset($data['form_data']['remedio'], $data['form_data']['recomendacao']);
+
+        return $data;
+    }
+
+    public static function preserveSensitiveHealthDetails(array $data, Model $record): array
+    {
+        if (self::canViewSensitiveHealth()) {
+            return $data;
+        }
+
+        foreach (['remedio', 'recomendacao'] as $key) {
+            if (array_key_exists($key, $record->form_data ?? [])) {
+                $data['form_data'][$key] = $record->form_data[$key];
+            }
+        }
+
+        return $data;
+    }
 }

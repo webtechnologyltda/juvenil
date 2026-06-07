@@ -2,11 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use App\Enums\RoleEnum;
 use App\Filament\Dashboard;
-use Awcodes\FilamentStickyHeader\StickyHeaderPlugin;
+use App\Filament\Pages\Auth\Login;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use EightyNine\Reports\ReportsPlugin;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -15,15 +13,14 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Joaopaulolndev\FilamentGeneralSettings\FilamentGeneralSettingsPlugin;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 
@@ -35,9 +32,9 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(Login::class)
             ->colors([
-                'primary' => Color::Blue,
+                'primary' => Color::generatePalette('#f46b12'),
                 'info' => Color::Cyan,
                 'success' => Color::Green,
                 'warning' => Color::Amber,
@@ -50,6 +47,7 @@ class AdminPanelProvider extends PanelProvider
                 'blue' => Color::Blue,
             ])
             ->sidebarCollapsibleOnDesktop()
+            ->darkMode(isForced: true)
             ->navigationGroups([
                 NavigationGroup::make()
                     ->label('Gestão Acampamento')
@@ -57,6 +55,10 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label('Administrativo')
                     ->icon('heroicon-o-shield-check')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Financeiro')
+                    ->icon('heroicon-o-banknotes')
                     ->collapsed(false),
                 NavigationGroup::make()
                     ->label('Relatórios')
@@ -69,12 +71,12 @@ class AdminPanelProvider extends PanelProvider
 
             ])
 //            ->topNavigation()
-            ->maxContentWidth(MaxWidth::ScreenTwoExtraLarge)
-            ->favicon(asset('img/logo_simple.png'))
-            ->defaultThemeMode(ThemeMode::Light)
-            ->brandLogo(asset('img/logo_simple.png'))
-            ->darkModeBrandLogo(asset('img/logo_simple.png'))
-            ->brandLogoHeight(  '40px')
+            ->maxContentWidth(Width::ScreenTwoExtraLarge)
+            ->favicon(asset('img/logo.png'))
+            ->defaultThemeMode(ThemeMode::Dark)
+            ->brandLogo(asset('img/logo.png'))
+            ->darkModeBrandLogo(asset('img/logo.png'))
+            ->brandLogoHeight('54px')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -89,21 +91,20 @@ class AdminPanelProvider extends PanelProvider
                 StartSession::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
-                VerifyCsrfToken::class,
+                PreventRequestForgery::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
-                FilamentApexChartsPlugin::make(),
                 FilamentShieldPlugin::make(),
-                ReportsPlugin::make(),
+                FilamentApexChartsPlugin::make(),
                 EnvironmentIndicatorPlugin::make()
                     ->visible(fn () => auth()->user()?->hasRole('Super Administrador'))
                     ->color(fn () => match (app()->environment()) {
                         'production' => null,
-                        'staging' => Color::Orange,
-                        default => Color::Blue,
+                        'staging' => Color::generatePalette('#f46b12'),
+                        default => Color::generatePalette('#f46b12'),
                     }),
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')

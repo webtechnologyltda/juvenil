@@ -1,5 +1,6 @@
 /* ---- particles.js config ---- */
 
+if (window.particlesJS && document.getElementById("particles-js")) {
 particlesJS("particles-js", {
     "particles": {
         "number": {
@@ -110,7 +111,9 @@ particlesJS("particles-js", {
     },
     "retina_detect": true
 });
+}
 
+if (window.particlesJS && document.getElementById("particles-js2")) {
 particlesJS("particles-js2", {
     "particles": {
         "number": {
@@ -221,3 +224,4 @@ particlesJS("particles-js2", {
     },
     "retina_detect": true
 });
+}

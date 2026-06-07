@@ -1,127 +1,99 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Campista;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 class CampistaPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
+    public function viewAny(AuthUser $authUser): bool
     {
-        return $user->can('view_any_campista');
+        return $authUser->can('view_any_campista');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Campista $campista): bool
+    public function view(AuthUser $authUser, Campista $campista): bool
     {
-        return $user->can('view_campista');
+        return $authUser->can('view_campista');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return $user->can('create_campista');
+        return $authUser->can('create_campista');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Campista $campista): bool
+    public function update(AuthUser $authUser, Campista $campista): bool
     {
-        return $user->can('update_campista');
+        return $authUser->can('update_campista');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Campista $campista): bool
+    public function delete(AuthUser $authUser, Campista $campista): bool
     {
-        return $user->can('delete_campista');
+        return $authUser->can('delete_campista');
     }
 
-    /**
-     * Determine whether the user can bulk delete.
-     */
-    public function deleteAny(User $user): bool
+    public function deleteAny(AuthUser $authUser): bool
     {
-        return $user->can('delete_any_campista');
+        return $authUser->can('delete_any_campista');
     }
 
-    /**
-     * Determine whether the user can permanently delete.
-     */
-    public function forceDelete(User $user, Campista $campista): bool
+    public function restore(AuthUser $authUser, Campista $campista): bool
     {
-        return $user->can('{{ ForceDelete }}');
+        return $authUser->can('restore_campista');
     }
 
-    /**
-     * Determine whether the user can permanently bulk delete.
-     */
-    public function forceDeleteAny(User $user): bool
+    public function forceDelete(AuthUser $authUser, Campista $campista): bool
     {
-        return $user->can('{{ ForceDeleteAny }}');
+        return $authUser->can('force_delete_campista');
     }
 
-    /**
-     * Determine whether the user can restore.
-     */
-    public function restore(User $user, Campista $campista): bool
+    public function forceDeleteAny(AuthUser $authUser): bool
     {
-        return $user->can('{{ Restore }}');
+        return $authUser->can('force_delete_any_campista');
     }
 
-    /**
-     * Determine whether the user can bulk restore.
-     */
-    public function restoreAny(User $user): bool
+    public function restoreAny(AuthUser $authUser): bool
     {
-        return $user->can('{{ RestoreAny }}');
+        return $authUser->can('restore_any_campista');
     }
 
-    /**
-     * Determine whether the user can replicate.
-     */
-    public function replicate(User $user, Campista $campista): bool
+    public function replicate(AuthUser $authUser, Campista $campista): bool
     {
-        return $user->can('{{ Replicate }}');
+        return $authUser->can('replicate_campista');
     }
 
-    /**
-     * Determine whether the user can reorder.
-     */
-    public function reorder(User $user): bool
+    public function reorder(AuthUser $authUser): bool
     {
-        return $user->can('{{ Reorder }}');
+        return $authUser->can('reorder_campista');
     }
 
-
-    public function audit(User $user): bool
+    public function updateTribo(AuthUser $authUser, Campista $campista): bool
     {
-        return $user->can('audit_campista');
+        return $authUser->can('updateTribo_campista');
     }
 
-    public function restoreAudit(User $user): bool
+    public function viewSensitiveHealth(AuthUser $authUser): bool
     {
-        return $user->can('restoreAudit_campista');
+        return $authUser->can('view_sensitive_health_campista');
     }
 
-    /**
-     * Determine whether the user can export.
-     */
-    public function export(User $user): bool
+    public function audit(AuthUser $authUser): bool
     {
-        return $user->can('export_campista');
+        return $authUser->can('audit_campista');
+    }
+
+    public function restoreAudit(AuthUser $authUser): bool
+    {
+        return $authUser->can('restoreAudit_campista');
+    }
+
+    public function export(AuthUser $authUser): bool
+    {
+        return $authUser->can('export_campista');
     }
 }

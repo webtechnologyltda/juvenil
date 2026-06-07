@@ -1,15 +1,16 @@
 <?php
 
-use App\Livewire\CampistaForm;
+use App\Settings\GeneralSettings;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $settings = app(\App\Settings\GeneralSettings::class);
-//    dd($settings);
-//    return view('welcome', compact('settings'));
-    return redirect()->route('inscricao-equipe-trabalho');
-})->name('welcome');
-//Route::get('/campista', CampistaForm::class,);
+$campistaRegistrationPage = function () {
+    $settings = app(GeneralSettings::class);
+
+    return view('welcome', compact('settings'));
+};
+
+Route::get('/', $campistaRegistrationPage)->name('welcome');
+Route::get('/campista', $campistaRegistrationPage)->name('campista');
 
 Route::get('/politica-privacidade', function () {
     return view('politica-privacidade');
@@ -23,6 +24,4 @@ Route::get('/pdf/{filename}', function ($filename) {
     return response()->file(asset('pdf/' . $filename));
 })->name('pdf.show');
 
-Route::get('/inscricao-equipe-trabalho', function () {
-    return view('incricao-equipe-trabalho-page');
-})->name('inscricao-equipe-trabalho');
+Route::redirect('/inscricao-equipe-trabalho', '/campista')->name('inscricao-equipe-trabalho');

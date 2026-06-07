@@ -1,22 +1,56 @@
-<section class="w-full flex justify-center h-auto  bg-gradient-to-b from-gray-950 to-black">
+<section class="juvenil-footer w-full overflow-hidden bg-[#03181c] px-4 pb-24 pt-12 text-white sm:px-6 lg:px-8 lg:pb-14">
+    <footer class="mx-auto max-w-7xl border-t border-[#9ddbef]/20 pt-10" data-motion-card>
+        <div class="grid gap-6 text-center sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:text-left">
+            <span class="mx-auto flex size-36 shrink-0 items-center justify-center rounded-full bg-[#d8f2fa] p-3 shadow-[0_24px_70px_rgba(157,219,239,0.14)] ring-1 ring-white/40 sm:mx-0 lg:size-40">
+                <img
+                    src="{{ asset('img/logo.png') }}"
+                    alt="Logo do Acampamento Juvenil"
+                    width="160"
+                    height="160"
+                    class="juvenil-brand-mark size-full object-contain"
+                >
+            </span>
 
-    <footer class="w-full container h-auto flex flex-col 2xl:px-36 pt-40">
-        <div class="flex flex-wrap lg:flex-nowrap   px-6  justify-center items-center">
-                <div>
-{{--                    <img src={{asset('img/logo_light.png')}} alt="" class="w-28 lg:w-36 lg:mb-0  lg:mr-12 ">--}}
-                </div>
-                <div class="">
-                    <img src={{asset('img/carmo.png')}} alt="" class="w-40  lg:w-64">
-                </div>
-                <div >
-{{--                    <p class="text-gray-200 p-4 mt-10 font-bold">--}}
-{{--                        Venha viver uma aventura de fé e superação no Acampamento Trekking!--}}
-{{--                        Desafie seus limites e descubra a radicalidade do amor de Deus!.</p>--}}
-                </div>
+            <div>
+                <p class="juvenil-poster-title text-4xl uppercase leading-none text-white sm:text-5xl">Juvenil</p>
+                <p class="mx-auto mt-4 max-w-2xl text-sm leading-6 text-[#d8f2fa] sm:mx-0">
+                    De 22 a 26 de Julho. Inscrições para campistas de 29 a 59 anos.
+                </p>
 
+                <div class="mt-7 grid gap-3 sm:max-w-2xl sm:grid-cols-3">
+                    <a
+                        href="#registration"
+                        class="inline-flex min-h-12 items-center justify-center bg-[#f46b12] px-5 text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a]"
+                        data-anchor-scroll
+                    >
+                        Inscrever
+                    </a>
+                    <a
+                        href="{{ route('termos-inscricao') }}"
+                        class="inline-flex min-h-12 items-center justify-center border border-[#9ddbef]/30 px-5 text-sm font-black uppercase tracking-[0.12em] text-[#d8f2fa] transition-colors duration-300 hover:border-[#f46b12] hover:text-[#f46b12]"
+                    >
+                        Termos
+                    </a>
+                    <a
+                        href="{{ route('politica-privacidade') }}"
+                        class="inline-flex min-h-12 items-center justify-center border border-[#9ddbef]/30 px-5 text-sm font-black uppercase tracking-[0.12em] text-[#d8f2fa] transition-colors duration-300 hover:border-[#f46b12] hover:text-[#f46b12]"
+                    >
+                        Privacidade
+                    </a>
+                </div>
+            </div>
         </div>
-        <div class="mt-8 md:order-1 md:mt-0 mb-10 z-50">
-            <p class="text-center text-sm leading-5 text-gray-500">Copyright &copy; {{ now()->year}}. Desenvolvido por <a href="https://webtechnology.com.br" target="_blank" class="text-gray-600 hover:text-amber-500">Web Technology</a>
+
+        <div class="mt-10 flex flex-col gap-5 border-t border-[#9ddbef]/15 pt-6 text-center text-sm leading-6 text-[#9ddbef] md:text-left">
+            <nav class="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs font-black uppercase tracking-[0.18em] md:justify-start" aria-label="Links do rodapé">
+                <a href="#top" class="transition-colors duration-300 hover:text-[#f46b12]" data-anchor-scroll>Início</a>
+                <a href="#juvenil-details" class="transition-colors duration-300 hover:text-[#f46b12]" data-anchor-scroll>Detalhes</a>
+                <a href="#contact" class="transition-colors duration-300 hover:text-[#f46b12]" data-anchor-scroll>Local</a>
+            </nav>
+
+            <p>
+                Copyright &copy; {{ now()->year }}. Desenvolvido por
+                <a href="https://webtechnology.com.br" target="_blank" class="font-bold text-white transition-colors duration-300 hover:text-[#f46b12]">Web Technology</a>
             </p>
         </div>
     </footer>

@@ -1,101 +1,48 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Trekking- Termo de Inscrição</title>
-    <!-- Favicon -->
-    <link rel="shortcut icon" href="{{ url(asset('img/logo_simple.png')) }}?20231011">
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Holtwood+One+SC&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Holtwood+One+SC&display=swap" rel="stylesheet">
-
-    @filamentStyles
-    @livewireStyles
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-W7WHMPQ4CM"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-
-        function gtag() {
-            dataLayer.push(arguments);
-        }
-
-        gtag('js', new Date());
-
-        gtag('config', 'G-W7WHMPQ4CM');
-    </script>
-</head>
-<body class="bg-pink-600 scrollbar-thin scrollbar-track-gray-950 scrollbar-thumb-gray-800 scrollbar-thumb-rounded-full">
-
-<div class="preloader">
-    <div class="loader">
-        <div class="ytp-spinner">
-            <div class="ytp-spinner-container">
-                <div class="ytp-spinner-rotator">
-                    <div class="ytp-spinner-left">
-                        <div class="ytp-spinner-circle"></div>
-                    </div>
-                    <div class="ytp-spinner-right">
-                        <div class="ytp-spinner-circle"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<img src="{{ asset('img/fundo.jpg') }}"
-     class="top-0 object-cover -z-20 absolute opacity-100 hidden md:block">
-
-{{--    MOBILE--}}
-<img src="{{ asset('img/fundo.jpg') }}"
-     class="top-0 w-full h-full object-cover -z-20 absolute opacity-100 md:hidden">
-{{--    END MOBILE--}}
-
-<div class="container mx-auto text-black bg-white mt-10 px-8 rounded-xl relative z-10">
-    <h1 class="text-3xl font-bold mb-4">Termo de Inscrição</h1>
-    <p class="mb-4">
-        Agradecemos o seu interesse e apoio ao acampamento Trekking. É importante esclarecer que, ao realizar a inscrição, você está contribuindo financeiramente para a realização do acampamento, ajudando a cobrir despesas como organização, infraestrutura e materiais necessários para a sua execução.
+<x-legal-page-layout
+    title="Termos de Inscrição"
+    summary="Condições para participação, pagamento e organização das inscrições do Acampamento Juvenil."
+>
+    <p class="lead">
+        Ao realizar a inscrição, o campista declara que leu e concorda com as condições abaixo. Estes termos orientam a organização, a confirmação de vaga e o uso dos valores recebidos para viabilizar o Acampamento Juvenil.
     </p>
 
-    <h2 class="text-2xl font-semibold mb-2">1. Natureza de Doação</h2>
-    <p class="mb-4">
-        Os valores pagos no ato da inscrição possuem caráter de doação e são destinados integralmente para a organização e execução do acampamento. Dessa forma, ao efetuar o pagamento, você confirma sua intenção de apoiar o evento e contribuir para seu sucesso.
+    <h2>1. Natureza da contribuição</h2>
+    <p>
+        O valor pago na inscrição é destinado à organização do acampamento, incluindo estrutura, materiais, alimentação, apoio operacional e demais custos necessários para a realização do evento.
     </p>
 
-    <h2 class="text-2xl font-semibold mb-2">2. Política de Não Devolução</h2>
-    <p class="mb-4">
-        Considerando que os valores pagos são tratados como doações, não realizamos a devolução dos montantes, mesmo em casos de desistência ou impossibilidade de participação. Isso ocorre porque os recursos já estão alocados em compromissos financeiros que garantem a realização do acampamento.
+    <h2>2. Confirmação da vaga</h2>
+    <p>
+        A inscrição poderá depender da validação dos dados informados, da disponibilidade de vagas e da confirmação do pagamento. A equipe organizadora poderá entrar em contato para complementar informações quando necessário.
     </p>
 
-    <h2 class="text-2xl font-semibold mb-2">3. Compromisso com o Evento</h2>
-    <p class="mb-4">
-        Ao se inscrever, você está assumindo o compromisso de apoiar a execução do acampamento e compreende que sua contribuição ajuda a tornar possível a realização das atividades planejadas para todos os participantes. Mesmo que você não possa comparecer, sua inscrição permite que outros tenham a oportunidade de participar e desfrutar de uma experiência completa.
+    <h2>3. Política de não devolução</h2>
+    <p>
+        Em caso de desistência, ausência ou impossibilidade de participação por parte do inscrito, os valores pagos não serão devolvidos, pois os recursos são planejados e comprometidos antecipadamente com a execução do acampamento.
     </p>
 
-    <h2 class="text-2xl font-semibold mb-2">4. Exceções</h2>
-    <p class="mb-4">
-        Em casos excepcionais, como cancelamento total do acampamento por parte dos organizadores, estudaremos formas de reembolso ou realocação dos valores para outras atividades ou eventos futuros. No entanto, cada caso será analisado individualmente, respeitando as condições estabelecidas previamente.
+    <h2>4. Cancelamento do evento</h2>
+    <p>
+        Se houver cancelamento total do Acampamento Juvenil por decisão da organização, a equipe avaliará a melhor forma de reembolso, remanejamento ou utilização futura dos valores, conforme as condições do caso.
     </p>
 
-    <h2 class="text-2xl font-semibold mb-2">5. Contato</h2>
-    <p class="mb-4">
-        Se você tiver dúvidas sobre esta política, entre em contato com nossa equipe organizadora pelo e-mail <a href="mailto:paroquiasaodomingos.carmo@gmail.com" class="text-blue-500">paroquiasaodomingos.carmo@gmail.com</a>. Teremos o prazer de esclarecer quaisquer questões e proporcionar mais informações sobre como sua contribuição está sendo utilizada.
+    <h2>5. Responsabilidade pelas informações</h2>
+    <p>
+        O inscrito é responsável pela veracidade dos dados enviados no formulário, incluindo informações pessoais, contatos, condições de saúde e demais dados necessários para segurança e organização do evento.
     </p>
 
-    <p class="mt-8 text-md text-center text-gray-600 pb-10">
-        Esta política de não devolução é válida para todas as inscrições realizadas no evento Trekking e está sujeita a alterações sem aviso prévio, conforme necessário para garantir a melhor execução do acampamento.
+    <h2>6. Comunicação</h2>
+    <p>
+        A organização poderá usar os contatos informados na inscrição para enviar confirmações, orientações e avisos importantes sobre o acampamento.
     </p>
-</div>
-</body>
-</html>
+
+    <h2>7. Contato</h2>
+    <p>
+        Para dúvidas sobre estes termos, entre em contato com a equipe organizadora pelo e-mail
+        <a href="mailto:paroquiasaodomingos.carmo@gmail.com">paroquiasaodomingos.carmo@gmail.com</a>.
+    </p>
+
+    <p class="notice">
+        Estes termos podem ser atualizados para refletir necessidades operacionais, legais ou organizacionais do Acampamento Juvenil.
+    </p>
+</x-legal-page-layout>

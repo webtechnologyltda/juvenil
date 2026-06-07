@@ -24,17 +24,24 @@ abstract class CampistaTable
             TextColumn::make('id')
                 ->label('Cód.')
                 ->sortable()
-                ->searchable(),
+                ->searchable()
+                ->visibleFrom('md'),
 
             ImageColumn::make('avatar_url')
+                ->state(fn (Campista $record): ?string => filter_var($record->avatar_url, FILTER_VALIDATE_URL) ? null : $record->avatar_url)
                 ->square()
                 ->alignCenter()
                 ->size(60)
                 ->grow(false)
-                ->extraImgAttributes(['class' => 'rounded-xl'])
+                ->defaultImageUrl(asset('img/logo.png'))
+                ->extraImgAttributes([
+                    'class' => 'rounded-xl juvenil-admin-table-avatar',
+                    'onerror' => "this.onerror=null;this.src='".asset('img/logo.png')."';",
+                ])
                 ->label('Foto'),
 
             TextColumn::make('nome')
+                ->lineClamp(1)
                 ->sortable()
                 ->searchable(),
 
@@ -44,13 +51,15 @@ abstract class CampistaTable
                 ->options(Tribo::all()->pluck('cor', 'id'))
                 ->sortable()
                 ->visible( fn() => auth()->user()->can('update_campista', Campista::class ))
-                ->searchable(true),
+                ->searchable(true)
+                ->visibleFrom('md'),
 
             TextColumn::make('tribo.cor')
                 ->label('Cor da Tribo')
                 ->sortable()
                 ->hidden( fn() => auth()->user()->can('update_campista', Campista::class))
-                ->searchable(true),
+                ->searchable(true)
+                ->visibleFrom('md'),
 
             TextColumn::make('form_data.data_nacimento')
                 ->label('Idade')
@@ -63,19 +72,22 @@ abstract class CampistaTable
             TextColumn::make('status')
                 ->badge()
                 ->alignCenter()
-                ->label('Status'),
+                ->label('Status')
+                ->visibleFrom('md'),
 
             TextColumn::make('forma_pagamento')
                 ->badge()
                 ->alignCenter()
-                ->label('Meio de Pagamento'),
+                ->label('Meio de Pagamento')
+                ->visibleFrom('md'),
 
             IconColumn::make('presenca')
                 ->label('Presença')
                 ->alignCenter()
                 ->icon(fn($state) => $state ? 'heroicon-o-hand-thumb-up' : 'heroicon-o-hand-thumb-down')
                 ->tooltip(fn($state) => $state ? 'Presença Confirmada' : 'Não Compareceu')
-                ->boolean(),
+                ->boolean()
+                ->visibleFrom('md'),
 
             TextColumn::make('dia_pagamento')
                 ->label('Dia de Pagamento')
@@ -111,7 +123,7 @@ abstract class CampistaTable
                 ->toggleable(isToggledHiddenByDefault: true),
 
             TextColumn::make('form_data.ponto_referencia')
-                ->label('Ponto Referencia')
+                ->label('Complemento')
                 ->toggleable(isToggledHiddenByDefault: true),
 
             TextColumn::make('form_data.bairro')

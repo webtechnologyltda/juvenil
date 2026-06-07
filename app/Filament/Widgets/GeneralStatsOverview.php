@@ -3,16 +3,17 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\StatusInscricao;
+use App\Filament\Widgets\Concerns\SupportsWidgetShield;
 use App\Models\Campista;
-use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class GeneralStatsOverview extends BaseWidget
 {
-    use HasWidgetShield;
-    protected static ?string $pollingInterval = '60s';
+    use SupportsWidgetShield;
+
+    protected ?string $pollingInterval = '60s';
 
     /**
      * Widget Title
