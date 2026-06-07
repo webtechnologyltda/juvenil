@@ -12,7 +12,6 @@ use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
@@ -20,6 +19,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -30,7 +30,7 @@ use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
-use Leandrocfe\FilamentPtbrFormFields\Cep;
+use JeffersonGoncalves\Filament\CepField\Forms\Components\CepInput;
 
 abstract class CampistaForm
 {
@@ -339,41 +339,24 @@ abstract class CampistaForm
     {
         return [
 
-            Placeholder::make('info_endereco')
-                ->hint('Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.')
-                ->hintColor('primary')
-                ->hintIcon('heroicon-o-exclamation-circle')
-                ->hiddenLabel()
+            Html::make(new HtmlString('<p class="text-sm text-primary-600">Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.</p>'))
                 ->columnSpanFull(),
 
-            Cep::make('form_data.cep')
+            CepInput::make('form_data.cep')
                 ->label('CEP')
                 ->required()
                 ->columnSpan([
                     'default' => 1,
                     'lg' => 1,
                 ])
-                ->viaCep(
-                // Determines whether the action should be appended to (suffix) or prepended to (prefix) the cep field, or not included at all (none).
-                    mode: 'suffix',
-
-                    // Error message to display if the CEP is invalid.
-                    errorMessage: 'CEP inválido.',
-
-                    /**
-                     * Other form fields that can be filled by ViaCep.
-                     * The key is the name of the Filament input, and the value is the ViaCep attribute that corresponds to it.
-                     * More information: https://viacep.com.br/
-                     */
-                    setFields: [
-                        'form_data.rua' => 'logradouro',
-                        'form_data.numero' => 'numero',
-                        'form_data.ponto_referencia' => 'complemento',
-                        'form_data.bairro' => 'bairro',
-                        'form_data.cidade' => 'localidade',
-                        'form_data.estado' => 'uf'
-                    ],
-                ),
+                ->setMode('suffix')
+                ->setActionLabel('Buscar CEP')
+                ->setActionLabelHidden(true)
+                ->setErrorMessage('CEP inválido.')
+                ->setStreetField('form_data.rua')
+                ->setNeighborhoodField('form_data.bairro')
+                ->setCityField('form_data.cidade')
+                ->setStateField('form_data.estado'),
 
             Hidden::make('breakLineEndereco')->columnSpan(1),
 
@@ -394,7 +377,7 @@ abstract class CampistaForm
                 ])
                 ->label('Número'),
             TextInput::make('form_data.ponto_referencia')
-                ->label('Ponto Referência')
+                ->label('Complemento')
                 ->columnSpan([
                     'default' => 1,
                     'sm' => 1,
@@ -476,9 +459,7 @@ abstract class CampistaForm
                 ->label('Qual comunidade?')
                 ->live()
                 ->columnSpanFull()
-                ->visible(function (Get $get) {
-                    return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 0;
-                })
+                ->visible(fn (Get $get): bool => self::selectedParishIs($get, 0))
                 ->required()
                 ->gridDirection('row')
                 ->columns(2)
@@ -495,9 +476,7 @@ abstract class CampistaForm
                 ->live()
                 ->columns(2)
                 ->columnSpanFull()
-                ->visible(function (Get $get) {
-                    return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 1;
-                })
+                ->visible(fn (Get $get): bool => self::selectedParishIs($get, 1))
                 ->required()
                 ->gridDirection('row')
                 ->options([
@@ -514,9 +493,7 @@ abstract class CampistaForm
             TextInput::make('form_data.comunidade')
                 ->label('Especificar o nome da comunidade')
                 ->columnSpanFull()
-                ->visible(function (Get $get) {
-                    return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 2;
-                }),
+                ->visible(fn (Get $get): bool => self::selectedParishIs($get, 2)),
 
             ToggleButtons::make('form_data.toma_remedio')
                 ->label('Toma algum Remédio?')
@@ -659,6 +636,15 @@ abstract class CampistaForm
                 ->required()
                 ->columnSpanFull(),
         ];
+    }
+
+    private static function selectedParishIs(Get $get, int $parish): bool
+    {
+        $selectedParish = $get('form_data.paroquia');
+
+        return $selectedParish !== null
+            && $selectedParish !== ''
+            && (int) $selectedParish === $parish;
     }
 
     public static function getFormInformacaoInscricao(): array

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\LancamentoResource\Forms;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
+use App\Models\CategoriaLancamento;
 use Carbon\Carbon;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
@@ -16,6 +17,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\RawJs;
 use Leandrocfe\FilamentPtbrFormFields\Money;
 
@@ -57,7 +60,18 @@ abstract class LancamentoForm
                            ->label('Tipo de Lançamento')
                            ->options(TipoLacamento::class)
                            ->inline()
+                           ->live()
+                           ->afterStateUpdated(fn (Set $set): mixed => $set('categoria_lancamento_id', null))
                            ->required(),
+
+                       Select::make('categoria_lancamento_id')
+                           ->label('Categoria')
+                           ->options(fn (Get $get): array => self::categoryOptions($get('tipo')))
+                           ->searchable()
+                           ->preload()
+                           ->placeholder('Selecione uma categoria')
+                           ->helperText('As opções acompanham o tipo do lançamento.')
+                           ->disabled(fn (Get $get): bool => blank($get('tipo'))),
 
                        DatePicker::make('data')
                            ->label('Data de Lançamento')
@@ -224,5 +238,23 @@ abstract class LancamentoForm
         }
 
         return true;
+    }
+
+    private static function categoryOptions(mixed $type): array
+    {
+        if ($type instanceof TipoLacamento) {
+            $type = $type->value;
+        }
+
+        if (blank($type)) {
+            return [];
+        }
+
+        return CategoriaLancamento::query()
+            ->where('ativo', true)
+            ->where('tipo', (int) $type)
+            ->orderBy('nome')
+            ->pluck('nome', 'id')
+            ->all();
     }
 }

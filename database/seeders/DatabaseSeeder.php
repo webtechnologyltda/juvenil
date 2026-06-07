@@ -18,16 +18,17 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@admin.com',
             'password' => bcrypt('admin'),
         ]);
-        if (app()->environment('local')) {
+        if (app()->environment(['local', 'testing'])) {
             $this->call([
                 UserSeeder::class,
                 TriboSeeder::class,
                 CampistaSeeder::class,
+                EquipeTrabalhoSeeder::class,
                 LancamentoSeeder::class,
             ]);
         }
         $this->call([
-            ShieldSeeder::class
+            ShieldSeeder::class,
         ]);
 
         $admin->assignRole('Super Administrador');

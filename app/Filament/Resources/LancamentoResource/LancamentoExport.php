@@ -33,6 +33,9 @@ abstract class LancamentoExport
                     default => 'Indefinido',
                 }),
 
+            ExportColumn::make('categoria.nome')
+                ->label('Categoria'),
+
             ExportColumn::make('status')
                 ->label('Status')
                 ->formatStateUsing(fn ($state) => match ($state->value) {

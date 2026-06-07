@@ -57,6 +57,10 @@ class AdminPanelProvider extends PanelProvider
                     ->icon('heroicon-o-shield-check')
                     ->collapsed(false),
                 NavigationGroup::make()
+                    ->label('Financeiro')
+                    ->icon('heroicon-o-banknotes')
+                    ->collapsed(false),
+                NavigationGroup::make()
                     ->label('Relatórios')
                     ->icon('heroicon-o-chart-bar')
                     ->collapsed(false),

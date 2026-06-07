@@ -109,6 +109,7 @@ test('authenticated Filament panel keeps branded layout clear of visual obstruct
     await page.goto('http://juvenil.test/admin/lancamentos');
     await page.waitForSelector('.fi-wi-stats-overview-stat');
     await expect(page.locator('h1')).toContainText('Lançamentos');
+    await expect(page.getByRole('link', { name: /categorias de lançamento/i })).toBeVisible();
 
     const statsSurface = await page.evaluate(() => {
         const widget = document.querySelector('.fi-wi-stats-overview');
@@ -146,7 +147,9 @@ test('authenticated Filament form pages use compact headings and the available w
 
     for (const path of [
         '/admin/lancamentos/10/edit',
+        '/admin/categoria-lancamentos/create',
         '/admin/users/1/edit',
+        '/admin/general-settings-page',
         '/admin/campistas/10/edit',
     ]) {
         await page.goto(`http://juvenil.test${path}`);
@@ -155,6 +158,12 @@ test('authenticated Filament form pages use compact headings and the available w
 
         await expectPageHeadingIsCompact(page);
         await expectSectionsUsePageWidth(page);
+
+        if (path === '/admin/general-settings-page') {
+            await expect(page.getByText('Idade mínima')).toBeVisible();
+            await expect(page.getByText('Idade máxima')).toBeVisible();
+            await expect(page.getByText('Use 0 para liberar inscrições de qualquer idade nesse limite.').first()).toBeVisible();
+        }
     }
 
     await page.goto('http://juvenil.test/admin/lancamentos/10/edit');
@@ -162,6 +171,36 @@ test('authenticated Filament form pages use compact headings and the available w
         path: 'storage/app/screenshots/playwright-admin-lancamento-edit-form-layout.png',
         fullPage: false,
     });
+});
+
+test('authenticated Campista view renders as a ficha before editing', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    await page.goto('http://juvenil.test/admin/campistas/10');
+    await page.waitForSelector('.juvenil-registration-card');
+
+    await expect(page.locator('h1')).toContainText('Ficha de inscrição');
+    await expect(page.locator('.juvenil-registration-card')).toContainText('Ficha oficial');
+    await expect(page.locator('.juvenil-registration-card')).toContainText('Dados pessoais');
+    await expect(page.locator('.juvenil-registration-card')).toContainText('Controle da inscrição');
+    await expectNoDocumentHorizontalOverflow(page);
+
+    const editableControlsInsideFicha = await page.locator(
+        '.juvenil-registration-card input, .juvenil-registration-card textarea, .juvenil-registration-card select',
+    ).count();
+
+    expect(editableControlsInsideFicha).toBe(0);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-campista-ficha-layout.png',
+        fullPage: false,
+    });
+
+    await page.locator('.juvenil-registration-header-edit').click();
+    await expect(page).toHaveURL(/\/admin\/campistas\/10\/edit/);
+    await page.waitForSelector('.fi-page .fi-section');
 });
 
 test('authenticated Filament user menu opens downward without orange trigger highlight', async ({ page }) => {

@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Tribo;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Seeders\Support\DemoRegistrationData;
 use Illuminate\Database\Seeder;
 
 class TriboSeeder extends Seeder
@@ -13,6 +13,11 @@ class TriboSeeder extends Seeder
      */
     public function run(): void
     {
-        Tribo::factory()->count(10)->create();
+        foreach (DemoRegistrationData::TRIBE_COLORS as $index => $color) {
+            Tribo::query()->updateOrCreate(
+                ['id' => $index + 1],
+                ['cor' => $color],
+            );
+        }
     }
 }

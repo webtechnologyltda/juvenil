@@ -55,7 +55,7 @@ class EquipeTrabalhoExporter extends Exporter
                 ->label('Numero'),
 
             ExportColumn::make('data_form.ponto_referencia')
-                ->label('Ponto Referencia'),
+                ->label('Complemento'),
 
             ExportColumn::make('data_form.bairro')
                 ->label('Bairro'),

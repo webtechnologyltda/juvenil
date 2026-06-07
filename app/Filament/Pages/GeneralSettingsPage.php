@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\LiberacaoInscricoesEquipeTrabalhoStatusEnum;
 use App\Enums\LiberacaoInscricoesStatusEnum;
 use App\Settings\GeneralSettings;
+use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
@@ -41,70 +42,35 @@ class GeneralSettingsPage extends SettingsPage
             ->columns(1)
             ->components([
                 Grid::make()
-                    ->columns(12)
+                    ->columns([
+                        'default' => 1,
+                        'lg' => 12,
+                        'xl' => 12,
+                    ])
                     ->schema([
-                        Section::make('Contato do Atendente')
+                        Section::make('Inscrições dos Campistas')
+                            ->description('Controle principal da inscrição pública dos campistas.')
                             ->schema([
-                                PhoneNumber::make('telefone_atendente')
-                                    ->required(),
+                                Select::make('liberacao_inscricoes_status')
+                                    ->label('Status das Inscrições Campistas')
+                                    ->options(LiberacaoInscricoesStatusEnum::class)
+                                    ->native(false)
+                                    ->selectablePlaceholder(false)
+                                    ->live()
+                                    ->prefixIcon(fn ($state) => self::resolveCampistaStatus($state)?->getIcon())
+                                    ->prefixIconColor(fn ($state) => self::resolveCampistaStatus($state)?->getColor())
+                                    ->columnSpanFull(),
                             ])
                             ->columnSpan([
                                 'default' => 'full',
-                                'md' => '5',
-                                'lg' => '4',
-                            ])
-                            ->icon('heroicon-o-phone'),
-
-                        Section::make('Pagamento PIX')
-                            ->schema([
-                                Money::make('valor_acampamento')
-                                    ->label('Valor do Acampamento')
-                                    ->intFormat()
-                                    ->prefix(RawJs::make('R$'))
-                                    ->columnSpan([
-                                        'default' => 'full',
-                                        'lg' => '4',
-                                    ]),
-
-                                Textarea::make('pix_copia_cola')
-                                    ->label('PIX copia e cola')
-                                    ->rows(5)
-                                    ->columnSpan([
-                                        'default' => 'full',
-                                        'lg' => '8',
-                                    ]),
-
-                                FileUpload::make('pix_qr_code')
-                                    ->label('Imagem do QR Code PIX')
-                                    ->disk('public')
-                                    ->directory('settings/pix')
-                                    ->image()
-                                    ->acceptedFileTypes([
-                                        'image/jpeg',
-                                        'image/png',
-                                        'image/webp',
-                                    ])
-                                    ->rules(['mimes:jpg,jpeg,png,webp'])
-                                    ->maxSize(2048)
-                                    ->downloadable()
-                                    ->openable()
-                                    ->previewable(true)
-                                    ->imagePreviewHeight('180')
-                                    ->columnSpanFull()
-                                    ->validationMessages([
-                                        'mimetypes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
-                                        'mimes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
-                                    ]),
-                            ])
-                            ->columnSpan([
-                                'default' => 'full',
-                                'md' => '7',
-                                'lg' => '8',
+                                'lg' => '6',
+                                'xl' => '6',
                             ])
                             ->columns(12)
-                            ->icon('fab-pix'),
+                            ->icon('heroicon-o-user-group'),
 
-                        Section::make('Controle de Vagas')
+                        Section::make('Equipe de Trabalho')
+                            ->description('Liberação separada para inscrições da equipe.')
                             ->schema([
                                 Select::make('liberacao_inscricoes_equipe_trabalho_status')
                                     ->label('Status das Inscrições Equipe de Trabalho')
@@ -114,26 +80,19 @@ class GeneralSettingsPage extends SettingsPage
                                     ->live()
                                     ->prefixIcon(fn ($state) => self::resolveEquipeTrabalhoStatus($state)?->getIcon())
                                     ->prefixIconColor(fn ($state) => self::resolveEquipeTrabalhoStatus($state)?->getColor())
-                                    ->columnSpan([
-                                        'default' => 'full',
-                                        'md' => '6',
-                                        'lg' => '4',
-                                    ]),
+                                    ->columnSpanFull(),
+                            ])
+                            ->columnSpan([
+                                'default' => 'full',
+                                'lg' => '6',
+                                'xl' => '6',
+                            ])
+                            ->columns(12)
+                            ->icon('heroicon-o-identification'),
 
-                                Select::make('liberacao_inscricoes_status')
-                                    ->label('Status das Inscrições Campistas')
-                                    ->options(LiberacaoInscricoesStatusEnum::class)
-                                    ->native(false)
-                                    ->selectablePlaceholder(false)
-                                    ->live()
-                                    ->prefixIcon(fn ($state) => self::resolveCampistaStatus($state)?->getIcon())
-                                    ->prefixIconColor(fn ($state) => self::resolveCampistaStatus($state)?->getColor())
-                                    ->columnSpan([
-                                        'default' => 'full',
-                                        'md' => '6',
-                                        'lg' => '4',
-                                    ]),
-
+                        Section::make('Capacidade e Faixa Etária')
+                            ->description('Limites usados para validar novas inscrições.')
+                            ->schema([
                                 TextInput::make('qtd_max_vagas_masculino')
                                     ->label('Limite de Campistas Homens')
                                     ->integer()
@@ -156,6 +115,42 @@ class GeneralSettingsPage extends SettingsPage
                                         'lg' => '3',
                                     ]),
 
+                                TextInput::make('idade_minima')
+                                    ->label('Idade mínima')
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->suffix('anos')
+                                    ->helperText('Use 0 para liberar inscrições de qualquer idade nesse limite.')
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => '6',
+                                        'lg' => '3',
+                                    ]),
+
+                                TextInput::make('idade_maxima')
+                                    ->label('Idade máxima')
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->suffix('anos')
+                                    ->helperText('Use 0 para liberar inscrições de qualquer idade nesse limite.')
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => '6',
+                                        'lg' => '3',
+                                    ]),
+
+                            ])
+                            ->columnSpan([
+                                'default' => 'full',
+                                'lg' => '8',
+                                'xl' => '8',
+                            ])
+                            ->columns(12)
+                            ->icon('heroicon-o-adjustments-horizontal'),
+
+                        Section::make('Período de Inscrição')
+                            ->description('Janela exibida e aplicada ao formulário público.')
+                            ->schema([
                                 DateTimePicker::make('data_inicio_inscricoes')
                                     ->label('Início das Inscrições')
                                     ->native(false)
@@ -163,8 +158,6 @@ class GeneralSettingsPage extends SettingsPage
                                     ->displayFormat('d/m/Y H:i')
                                     ->columnSpan([
                                         'default' => 'full',
-                                        'md' => '6',
-                                        'lg' => '3',
                                     ]),
 
                                 DateTimePicker::make('data_final_inscricoes')
@@ -175,10 +168,107 @@ class GeneralSettingsPage extends SettingsPage
                                     ->afterOrEqual('data_inicio_inscricoes')
                                     ->columnSpan([
                                         'default' => 'full',
-                                        'md' => '6',
-                                        'lg' => '3',
+                                    ]),
+                            ])
+                            ->columnSpan([
+                                'default' => 'full',
+                                'lg' => '4',
+                                'xl' => '4',
+                            ])
+                            ->columns(12)
+                            ->icon('heroicon-o-calendar-days'),
+
+                        Section::make('Pagamento PIX')
+                            ->description('Informações financeiras exibidas na inscrição.')
+                            ->schema([
+                                Money::make('valor_acampamento')
+                                    ->label('Valor do Acampamento')
+                                    ->intFormat()
+                                    ->prefix(RawJs::make('R$'))
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'lg' => '4',
                                     ]),
 
+                                FileUpload::make('pix_qr_code')
+                                    ->label('Imagem do QR Code PIX')
+                                    ->disk('public')
+                                    ->directory('settings/pix')
+                                    ->image()
+                                    ->acceptedFileTypes([
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/webp',
+                                    ])
+                                    ->rules(['mimes:jpg,jpeg,png,webp'])
+                                    ->maxSize(2048)
+                                    ->downloadable()
+                                    ->openable()
+                                    ->previewable(true)
+                                    ->imagePreviewHeight('160')
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'lg' => '8',
+                                    ])
+                                    ->validationMessages([
+                                        'mimetypes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
+                                        'mimes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
+                                    ]),
+
+                                Textarea::make('pix_copia_cola')
+                                    ->label('PIX copia e cola')
+                                    ->rows(5)
+                                    ->columnSpanFull(),
+                            ])
+                            ->columnSpan([
+                                'default' => 'full',
+                                'lg' => '8',
+                                'xl' => '8',
+                            ])
+                            ->columns(12)
+                            ->icon('fab-pix'),
+
+                        Section::make('Atendimento e Documentos')
+                            ->description('Canal de suporte e termo entregue ao campista.')
+                            ->schema([
+                                PhoneNumber::make('telefone_atendente')
+                                    ->required()
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                    ]),
+
+                                FileUpload::make('termo_responsabilidade')
+                                    ->label('Documento do termo')
+                                    ->helperText('Envie o termo que ficará disponível no botão público após a inscrição.')
+                                    ->disk('public')
+                                    ->directory('settings/termos')
+                                    ->acceptedFileTypes([
+                                        'application/pdf',
+                                        'application/msword',
+                                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                    ])
+                                    ->rules(['mimes:pdf,doc,docx'])
+                                    ->maxSize(5120)
+                                    ->downloadable()
+                                    ->openable()
+                                    ->previewable(false)
+                                    ->columnSpanFull()
+                                    ->validationMessages([
+                                        'mimetypes' => 'Envie um documento nos formatos PDF, DOC ou DOCX.',
+                                        'mimes' => 'Envie um documento nos formatos PDF, DOC ou DOCX.',
+                                    ]),
+                            ])
+                            ->columnSpan([
+                                'default' => 'full',
+                                'lg' => '4',
+                                'xl' => '4',
+                            ])
+                            ->columns(12)
+                            ->icon('heroicon-o-document-text'),
+
+                        Section::make('Mensagem de Bloqueio')
+                            ->description('Conteúdo exibido quando as inscrições dos campistas não estiverem liberadas.')
+                            ->schema([
                                 RichEditor::make('liberacao_inscricoes_bloco')
                                     ->label('Conteúdo bloco de inscrições dos campistas')
                                     ->hint('O conteúdo do bloco de inscrições aparece quando o status das inscrições estiver
@@ -192,12 +282,36 @@ class GeneralSettingsPage extends SettingsPage
                             ])
                             ->columnSpan([
                                 'default' => 'full',
-                                'lg' => 'full',
                             ])
                             ->columns(12)
-                            ->icon('tabler-lock'),
+                            ->icon('heroicon-o-megaphone'),
                     ]),
             ]);
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data['liberacao_inscricoes_status'] = self::normalizeIntegerSettingValue(
+            $data['liberacao_inscricoes_status'] ?? null,
+        );
+        $data['liberacao_inscricoes_equipe_trabalho_status'] = self::normalizeIntegerSettingValue(
+            $data['liberacao_inscricoes_equipe_trabalho_status'] ?? null,
+        );
+
+        return $data;
+    }
+
+    private static function normalizeIntegerSettingValue(mixed $state): mixed
+    {
+        if ($state instanceof BackedEnum) {
+            return $state->value;
+        }
+
+        if ($state === null || $state === '') {
+            return $state;
+        }
+
+        return (int) $state;
     }
 
     private static function resolveEquipeTrabalhoStatus(mixed $state): ?LiberacaoInscricoesEquipeTrabalhoStatusEnum

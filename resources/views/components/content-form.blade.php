@@ -1,9 +1,11 @@
 @php
-    $fallbackPixCopiaCola = '00020126910014br.gov.bcb.pix01368c973c48-8687-4977-b585-cb4cfeb9d7a30229ACAMPAMENTO TK  NAVEGANTES SC5204000053039865406250.005802BR5919DIOCESE DE BLUMENAU6010NAVEGANTES62290525VE7Y10G0K87QFK28YPAD0HGV463047FBD';
-    $pixCopiaCola = filled($settings->pix_copia_cola) ? $settings->pix_copia_cola : $fallbackPixCopiaCola;
+    $pixCopiaCola = $settings->pix_copia_cola;
     $pixQrCode = is_array($settings->pix_qr_code) ? reset($settings->pix_qr_code) : $settings->pix_qr_code;
-    $pixQrCodeUrl = filled($pixQrCode) ? \Illuminate\Support\Facades\Storage::disk('public')->url($pixQrCode) : asset('img/qr_code_pix.png');
-    $valorAcampamento = $settings->valor_acampamento ?? 25000;
+    $pixQrCodeUrl = filled($pixQrCode) ? \Illuminate\Support\Facades\Storage::disk('public')->url($pixQrCode) : null;
+    $valorAcampamento = $settings->valor_acampamento;
+    $hasValorAcampamento = $valorAcampamento !== null;
+    $attendantWhatsappUrl = \App\Support\AtendenteWhatsapp::url($settings->telefone_atendente);
+    $termoResponsabilidadeUrl = \App\Support\ConfiguredStorageFile::publicUrl($settings->termo_responsabilidade);
 @endphp
 
 <section id="registration" class="juvenil-form-shell relative z-10 bg-[#06343b] px-4 py-20 text-white sm:px-6 sm:py-24 lg:px-8 lg:py-28">
@@ -44,47 +46,68 @@
 
                 <div class="mt-10 border-t border-[#9ddbef]/20 pt-8">
                     <p class="text-center text-2xl font-black uppercase leading-tight text-white">Informações de pagamento</p>
-                    <img
-                        class="mx-auto mb-7 mt-7 bg-white p-3"
-                        src="{{ $pixQrCodeUrl }}"
-                        alt="QR Code PIX para pagamento da inscrição"
-                        width="170"
-                    >
-                    <button
-                        onclick="navigator.clipboard.writeText(@js($pixCopiaCola))"
-                        type="button"
-                        class="inline-flex min-h-11 w-full items-center justify-center bg-[#9ddbef] px-4 text-sm font-black uppercase tracking-[0.1em] text-[#052f35] transition-colors duration-300 hover:bg-white"
-                    >
-                        Copiar código PIX
-                    </button>
-                    <p class="mt-6 text-center text-sm leading-6 text-[#d8f2fa]">
-                        Favorecido<br>
-                        Diocese de Blumenau<br>
-                        03.925.280/0035-86<br>
-                        Instituição: CC da Foz do Rio Itajaí Açu
-                    </p>
+                    @if($pixQrCodeUrl)
+                        <img
+                            class="mx-auto mb-7 mt-7 bg-white p-3"
+                            src="{{ $pixQrCodeUrl }}"
+                            alt="QR Code PIX para pagamento da inscrição"
+                            width="170"
+                        >
+                    @else
+                        <div class="mx-auto mb-7 mt-7 flex min-h-[170px] w-[170px] items-center justify-center border border-[#9ddbef]/25 bg-[#052f35] p-4 text-center text-xs font-black uppercase tracking-[0.12em] text-[#9ddbef]">
+                            PIX indisponível
+                        </div>
+                    @endif
+
+                    @if(filled($pixCopiaCola))
+                        <button
+                            onclick="navigator.clipboard.writeText(@js($pixCopiaCola))"
+                            type="button"
+                            class="inline-flex min-h-11 w-full items-center justify-center bg-[#9ddbef] px-4 text-sm font-black uppercase tracking-[0.1em] text-[#052f35] transition-colors duration-300 hover:bg-white"
+                        >
+                            Copiar código PIX
+                        </button>
+                    @else
+                        <p class="border border-[#9ddbef]/25 px-4 py-3 text-center text-sm font-bold text-[#d8f2fa]">
+                            Código PIX indisponível no momento.
+                        </p>
+                    @endif
+
                     <p class="mt-7 text-center text-sm font-bold uppercase tracking-[0.18em] text-[#9ddbef]">
                         Valor da inscrição
                         <span class="mt-2 block text-3xl font-black tracking-normal text-[#f46b12]">
-                            R$ {{ number_format($valorAcampamento / 100, 2, ',', '.') }}
+                            @if($hasValorAcampamento)
+                                R$ {{ number_format($valorAcampamento / 100, 2, ',', '.') }}
+                            @else
+                                Não configurado
+                            @endif
                         </span>
                     </p>
                 </div>
 
                 <div class="mt-8 grid gap-3">
-                    <a
-                        target="_blank"
-                        href="https://wa.me/55{{ str_replace(['(', ')', '-', ' '], '', $settings->telefone_atendente) }}?text={{ rawurlencode('Olá tenho uma dúvida sobre o Acampamento Juvenil, consegue me ajudar?') }}"
-                        class="inline-flex min-h-12 w-full items-center justify-center bg-[#f46b12] px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a]"
-                    >
-                        Falar com atendente
-                    </a>
-                    <a
-                        href="{{ route('pdf.show', ['filename' => 'termo.pdf']) }}"
-                        class="inline-flex min-h-12 w-full items-center justify-center border border-[#f46b12]/65 px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12] transition-colors duration-300 hover:border-white hover:text-white"
-                    >
-                        Termo de responsabilidade
-                    </a>
+                    @if($attendantWhatsappUrl)
+                        <a
+                            target="_blank"
+                            href="{{ $attendantWhatsappUrl }}"
+                            class="inline-flex min-h-12 w-full items-center justify-center bg-[#f46b12] px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a]"
+                        >
+                            Falar com atendente
+                        </a>
+                    @else
+                        <p class="inline-flex min-h-12 w-full items-center justify-center border border-[#f46b12]/35 px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12]">
+                            Atendente não configurado
+                        </p>
+                    @endif
+                    @if($termoResponsabilidadeUrl)
+                        <a
+                            href="{{ $termoResponsabilidadeUrl }}"
+                            target="_blank"
+                            class="inline-flex min-h-12 w-full items-center justify-center border border-[#f46b12]/65 px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12] transition-colors duration-300 hover:border-white hover:text-white"
+                        >
+                            Termo de responsabilidade
+                        </a>
+                    @endif
                 </div>
             </aside>
 

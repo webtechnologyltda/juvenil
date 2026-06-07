@@ -10,6 +10,8 @@ class GeneralSettings extends Settings
 {
     public ?string $telefone_atendente;
     public ?int $valor_acampamento;
+    public ?int $idade_minima;
+    public ?int $idade_maxima;
     public ?int $qtd_max_vagas;
     public ?int $qtd_max_vagas_feminino;
     public ?int $qtd_max_vagas_masculino;
@@ -17,6 +19,7 @@ class GeneralSettings extends Settings
     public ?\DateTime $data_final_inscricoes;
     public ?string $pix_copia_cola;
     public ?string $pix_qr_code;
+    public ?string $termo_responsabilidade;
     public int $liberacao_inscricoes_status;
     public int $liberacao_inscricoes_equipe_trabalho_status;
     public ?string $liberacao_inscricoes_bloco;

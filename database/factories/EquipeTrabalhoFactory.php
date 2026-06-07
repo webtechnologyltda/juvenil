@@ -2,10 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\EquipeTrabalho;
+use Database\Seeders\Support\DemoRegistrationData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\EquipeTrabalho>
+ * @extends Factory<EquipeTrabalho>
  */
 class EquipeTrabalhoFactory extends Factory
 {
@@ -16,8 +18,6 @@ class EquipeTrabalhoFactory extends Factory
      */
     public function definition(): array
     {
-        return [
-            //
-        ];
+        return DemoRegistrationData::equipeTrabalhoAttributes(1);
     }
 }

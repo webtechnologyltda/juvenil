@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3bcbf8d6b61006e5eccf7f277123f4dc",
+    "content-hash": "2ec208e0146309a70dd4b20d6153ab3d",
     "packages": [
         {
             "name": "afatmustafa/blade-hugeicons",
@@ -3199,6 +3199,146 @@
                 }
             ],
             "time": "2026-05-23T22:00:21+00:00"
+        },
+        {
+            "name": "jeffersongoncalves/filament-cep-field",
+            "version": "3.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jeffersongoncalves/filament-cep-field.git",
+                "reference": "7f6da75bc0c1a24cf8be9c33f683b5323c4ff466"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jeffersongoncalves/filament-cep-field/zipball/7f6da75bc0c1a24cf8be9c33f683b5323c4ff466",
+                "reference": "7f6da75bc0c1a24cf8be9c33f683b5323c4ff466",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^5.3",
+                "jeffersongoncalves/laravel-cep": "^1.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.14.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.21",
+                "orchestra/testbench": "^9.0|^10.0|^11.0",
+                "pestphp/pest": "^3.7.4",
+                "pestphp/pest-plugin-laravel": "^3.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "JeffersonGoncalves\\Filament\\CepField\\CepFieldServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "JeffersonGoncalves\\Filament\\CepField\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jefferson Gonçalves",
+                    "email": "gerson.simao.92@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The Filament CEP Field is a custom input component designed specifically for Brazilian postal codes (CEP - Código de Endereçamento Postal). This component extends Filament's form capabilities by providing a specialized input field that handles CEP formatting, validation, and automatic address lookup.",
+            "homepage": "https://github.com/jeffersongoncalves/filament-cep-field",
+            "keywords": [
+                "filament",
+                "filament-cep-field",
+                "jeffersongoncalves",
+                "laravel"
+            ],
+            "support": {
+                "issues": "https://github.com/jeffersongoncalves/filament-cep-field/issues",
+                "source": "https://github.com/jeffersongoncalves/filament-cep-field/tree/3.0.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/jeffersongoncalves",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-03-04T03:12:24+00:00"
+        },
+        {
+            "name": "jeffersongoncalves/laravel-cep",
+            "version": "1.1.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jeffersongoncalves/laravel-cep.git",
+                "reference": "837ccb19f7428bc2430a568e1f4567829b9e151a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jeffersongoncalves/laravel-cep/zipball/837ccb19f7428bc2430a568e1f4567829b9e151a",
+                "reference": "837ccb19f7428bc2430a568e1f4567829b9e151a",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": "^11.0|^12.0|^13.0",
+                "php": "^8.2|^8.3",
+                "spatie/laravel-package-tools": "^1.14.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.24",
+                "orchestra/testbench": "^9.0|^10.0|^11.0",
+                "pestphp/pest": "^3.7.4|^4.0",
+                "pestphp/pest-plugin-laravel": "^3.0|^4.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "JeffersonGoncalves\\Cep\\CepServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "JeffersonGoncalves\\Cep\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jefferson Gonçalves",
+                    "email": "gerson.simao.92@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A simple and efficient PHP package for querying Brazilian postal codes (CEP). This package provides an easy way to retrieve address information from Brazilian ZIP codes through multiple providers.",
+            "homepage": "https://github.com/jeffersongoncalves/laravel-cep",
+            "keywords": [
+                "jeffersongoncalves",
+                "laravel",
+                "laravel-cep"
+            ],
+            "support": {
+                "issues": "https://github.com/jeffersongoncalves/laravel-cep/issues",
+                "source": "https://github.com/jeffersongoncalves/laravel-cep/tree/1.1.4"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/jeffersongoncalves",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-05-23T17:05:04+00:00"
         },
         {
             "name": "kirschbaum-development/eloquent-power-joins",

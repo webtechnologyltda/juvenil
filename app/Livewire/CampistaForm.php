@@ -5,6 +5,9 @@ namespace App\Livewire;
 use App\Models\Campista;
 use App\Models\User;
 use App\Settings\GeneralSettings;
+use App\Support\RegistrationAgeLimits;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -18,19 +21,21 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
-use Leandrocfe\FilamentPtbrFormFields\Cep;
+use JeffersonGoncalves\Filament\CepField\Forms\Components\CepInput;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Session;
 use Livewire\Component;
 
-class CampistaForm extends Component implements HasForms
+class CampistaForm extends Component implements HasActions, HasForms
 {
+    use InteractsWithActions;
     use InteractsWithForms;
 
     public ?array $data = [];
@@ -225,12 +230,7 @@ class CampistaForm extends Component implements HasForms
                         'xl' => 4,
                     ])->schema([
 
-                        Placeholder::make('info_endereco')
-                            ->hint('Precisaria fornecer os dados de duas pessoas responsáveis de fora, incluindo o nome e o
-                                        telefone de cada uma delas.')
-                            ->hintColor('primary')
-                            ->hintIcon('heroicon-o-exclamation-circle')
-                            ->hiddenLabel()
+                        Html::make(new HtmlString('<p class="text-sm text-primary-600">Precisaria fornecer os dados de duas pessoas responsáveis de fora, incluindo o nome e o telefone de cada uma delas.</p>'))
                             ->columnSpanFull(),
                         TextInput::make('form_data.telefone_reponsavel_1')
                             ->required()
@@ -367,14 +367,10 @@ class CampistaForm extends Component implements HasForms
                     ])
                     ->schema([
 
-                        Placeholder::make('info_endereco')
-                            ->hint('Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.')
-                            ->hintColor('primary')
-                            ->hintIcon('heroicon-o-exclamation-circle')
-                            ->hiddenLabel()
+                        Html::make(new HtmlString('<p class="text-sm text-primary-600">Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.</p>'))
                             ->columnSpanFull(),
 
-                        Cep::make('form_data.cep')
+                        CepInput::make('form_data.cep')
                             ->label('CEP')
                             ->required()
                             ->columnSpan([
@@ -383,27 +379,14 @@ class CampistaForm extends Component implements HasForms
                                 'md' => 3,
                                 'xl' => 2,
                             ])
-                            ->viaCep(
-                                // Determines whether the action should be appended to (suffix) or prepended to (prefix) the cep field, or not included at all (none).
-                                mode: 'suffix',
-
-                                // Error message to display if the CEP is invalid.
-                                errorMessage: 'CEP inválido.',
-
-                                /**
-                                 * Other form fields that can be filled by ViaCep.
-                                 * The key is the name of the Filament input, and the value is the ViaCep attribute that corresponds to it.
-                                 * More information: https://viacep.com.br/
-                                 */
-                                setFields: [
-                                    'form_data.rua' => 'logradouro',
-                                    'form_data.numero' => 'numero',
-                                    'form_data.ponto_referencia' => 'complemento',
-                                    'form_data.bairro' => 'bairro',
-                                    'form_data.cidade' => 'localidade',
-                                    'form_data.estado' => 'uf',
-                                ],
-                            ),
+                            ->setMode('suffix')
+                            ->setActionLabel('Buscar CEP')
+                            ->setActionLabelHidden(true)
+                            ->setErrorMessage('CEP inválido.')
+                            ->setStreetField('form_data.rua')
+                            ->setNeighborhoodField('form_data.bairro')
+                            ->setCityField('form_data.cidade')
+                            ->setStateField('form_data.estado'),
 
                         Hidden::make('breakLineEndereco')->columnSpan(1),
 
@@ -428,7 +411,7 @@ class CampistaForm extends Component implements HasForms
                             ])
                             ->label('Número'),
                         TextInput::make('form_data.ponto_referencia')
-                            ->label('Ponto Referência')
+                            ->label('Complemento')
                             ->minValue(0)
                             ->columnSpan([
                                 'default' => 1,
@@ -496,9 +479,7 @@ class CampistaForm extends Component implements HasForms
                             ->label('Qual comunidade?')
                             ->live()
                             ->columnSpanFull()
-                            ->visible(function (Get $get) {
-                                return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 0;
-                            })
+                            ->visible(fn (Get $get): bool => self::selectedParishIs($get, 0))
                             ->required()
                             ->gridDirection('row')
                             ->columns(2)
@@ -515,9 +496,7 @@ class CampistaForm extends Component implements HasForms
                             ->live()
                             ->columns(2)
                             ->columnSpanFull()
-                            ->visible(function (Get $get) {
-                                return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 1;
-                            })
+                            ->visible(fn (Get $get): bool => self::selectedParishIs($get, 1))
                             ->required()
                             ->gridDirection('row')
                             ->options([
@@ -534,9 +513,7 @@ class CampistaForm extends Component implements HasForms
                         TextInput::make('form_data.comunidade')
                             ->label('Especificar o nome da comunidade')
                             ->columnSpanFull()
-                            ->visible(function (Get $get) {
-                                return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 2;
-                            }),
+                            ->visible(fn (Get $get): bool => self::selectedParishIs($get, 2)),
 
                         ToggleButtons::make('form_data.ja_participou_retiro')
                             ->label('Já participou de algum acampamento/retiro ?')
@@ -617,9 +594,33 @@ class CampistaForm extends Component implements HasForms
             ]);
     }
 
+    private static function selectedParishIs(Get $get, int $parish): bool
+    {
+        $selectedParish = $get('form_data.paroquia');
+
+        return $selectedParish !== null
+            && $selectedParish !== ''
+            && (int) $selectedParish === $parish;
+    }
+
     public function submitForm(): void
     {
         $this->validate();
+
+        $ageLimitMessage = RegistrationAgeLimits::fromSettings(app(GeneralSettings::class))
+            ->violationMessage(data_get($this->data, 'form_data.data_nacimento'));
+
+        if ($ageLimitMessage !== null) {
+            Notification::make()
+                ->title('Inscrição não permitida')
+                ->body($ageLimitMessage)
+                ->duration(60000)
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         if (! $this->data['form_data']['declaro']) {
             Notification::make()
                 ->title('Inscrição não permitida')

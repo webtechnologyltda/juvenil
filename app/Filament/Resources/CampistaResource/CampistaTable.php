@@ -123,7 +123,7 @@ abstract class CampistaTable
                 ->toggleable(isToggledHiddenByDefault: true),
 
             TextColumn::make('form_data.ponto_referencia')
-                ->label('Ponto Referencia')
+                ->label('Complemento')
                 ->toggleable(isToggledHiddenByDefault: true),
 
             TextColumn::make('form_data.bairro')

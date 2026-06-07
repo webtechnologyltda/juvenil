@@ -1,10 +1,12 @@
 @php
-    $fallbackPixCopiaCola = '00020126910014br.gov.bcb.pix01368c973c48-8687-4977-b585-cb4cfeb9d7a30229ACAMPAMENTO TK  NAVEGANTES SC5204000053039865406250.005802BR5919DIOCESE DE BLUMENAU6010NAVEGANTES62290525VE7Y10G0K87QFK28YPAD0HGV463047FBD';
-    $pixCopiaCola = filled($this->settings['pix_copia_cola'] ?? null) ? $this->settings['pix_copia_cola'] : $fallbackPixCopiaCola;
+    $pixCopiaCola = $this->settings['pix_copia_cola'] ?? null;
     $pixQrCode = $this->settings['pix_qr_code'] ?? null;
     $pixQrCode = is_array($pixQrCode) ? reset($pixQrCode) : $pixQrCode;
-    $pixQrCodeUrl = filled($pixQrCode) ? \Illuminate\Support\Facades\Storage::disk('public')->url($pixQrCode) : asset('img/qr_code_pix.png');
-    $valorAcampamento = $this->settings['valor_acampamento'] ?? 25000;
+    $pixQrCodeUrl = filled($pixQrCode) ? \Illuminate\Support\Facades\Storage::disk('public')->url($pixQrCode) : null;
+    $valorAcampamento = $this->settings['valor_acampamento'] ?? null;
+    $hasValorAcampamento = $valorAcampamento !== null;
+    $attendantWhatsappUrl = \App\Support\AtendenteWhatsapp::url($this->settings['telefone_atendente'] ?? null);
+    $termoResponsabilidadeUrl = \App\Support\ConfiguredStorageFile::publicUrl($this->settings['termo_responsabilidade'] ?? null);
 @endphp
 
 <div>
@@ -29,41 +31,65 @@
                     <p class="mt-3 text-center text-sm font-bold uppercase tracking-[0.18em] text-[#9ddbef]">
                         Valor da inscrição
                         <span class="mt-2 block text-3xl font-black tracking-normal text-[#f46b12]">
-                            R$ {{ number_format($valorAcampamento / 100, 2, ',', '.') }}
+                            @if($hasValorAcampamento)
+                                R$ {{ number_format($valorAcampamento / 100, 2, ',', '.') }}
+                            @else
+                                Não configurado
+                            @endif
                         </span>
                     </p>
-                    <img class="mx-auto mb-8 mt-8 bg-white p-3" src="{{ $pixQrCodeUrl }}" alt="QR Code PIX" width="150" />
+                    @if($pixQrCodeUrl)
+                        <img class="mx-auto mb-8 mt-8 bg-white p-3" src="{{ $pixQrCodeUrl }}" alt="QR Code PIX" width="150" />
+                    @else
+                        <div class="mx-auto mb-8 mt-8 flex min-h-[150px] w-[150px] items-center justify-center border border-[#9ddbef]/25 bg-[#052f35] p-4 text-center text-xs font-black uppercase tracking-[0.12em] text-[#9ddbef]">
+                            PIX indisponível
+                        </div>
+                    @endif
 
                     <div class="grid justify-items-center mb-4">
-                        <button
-                            onclick="navigator.clipboard.writeText(@js($pixCopiaCola))"
-                            type="button"
-                            class="flex min-h-11 items-center justify-center bg-[#9ddbef] px-4 text-sm font-black uppercase tracking-[0.1em] text-[#052f35] transition-colors duration-300 hover:bg-white">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                 stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                      d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z"/>
-                            </svg>
-                            Copiar código PIX
-                        </button>
+                        @if(filled($pixCopiaCola))
+                            <button
+                                onclick="navigator.clipboard.writeText(@js($pixCopiaCola))"
+                                type="button"
+                                class="flex min-h-11 items-center justify-center bg-[#9ddbef] px-4 text-sm font-black uppercase tracking-[0.1em] text-[#052f35] transition-colors duration-300 hover:bg-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z"/>
+                                </svg>
+                                Copiar código PIX
+                            </button>
+                        @else
+                            <p class="border border-[#9ddbef]/25 px-4 py-3 text-center text-sm font-bold text-[#d8f2fa]">
+                                Código PIX indisponível no momento.
+                            </p>
+                        @endif
                     </div>
 
                     <div class="flex justify-evenly mx-6 mt-4 text-center">
                         <div class="justify-items-center">
                             <p class="text-center mx-4 text-[#d8f2fa] text-sm xl:text-xl">Para finalizar sua inscrição, realize o pagamento e envie o comprovante para nosso atendente.</p>
                             <div class="mt-2 grid justify-items-center">
-                                <a target="_blank"
-                                   href="https://wa.me/55{{str_replace(['(', ')', '-', ' '], '', $this->settings['telefone_atendente'])}}?text={{ rawurlencode('Olá tenho uma dúvida sobre o Acampamento Juvenil, consegue me ajudar?') }}"
-                                   class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center bg-[#f46b12] p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] lg:w-[50%]">
-                                    <span class="relative text-center">Falar com atendente</span>
-                                </a>
+                                @if($attendantWhatsappUrl)
+                                    <a target="_blank"
+                                       href="{{ $attendantWhatsappUrl }}"
+                                       class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center bg-[#f46b12] p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] lg:w-[50%]">
+                                        <span class="relative text-center">Falar com atendente</span>
+                                    </a>
+                                @else
+                                    <p class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center border border-[#f46b12]/35 p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12] lg:w-[50%]">
+                                        Atendente não configurado
+                                    </p>
+                                @endif
                             </div>
                             <p class="mt-6 text-[#d8f2fa]">Sua participação no Acampamento Juvenil está a um passo de ser confirmada.</p>
                         </div>
                     </div>
-                    <p class="mt-4 text-center text-[#f46b12] xl:text-xl">Obrigatório levar o termo assinado no dia.</p>
-                    <a href="{{ route('pdf.show', ['filename' =>'termo.pdf'  ]) }}"
-                       class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center border border-[#f46b12]/65 p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12] transition-colors duration-300 hover:border-white hover:text-white lg:w-[50%]">Termo de responsabilidade</a>
+                    @if($termoResponsabilidadeUrl)
+                        <p class="mt-4 text-center text-[#f46b12] xl:text-xl">Obrigatório levar o termo assinado no dia.</p>
+                        <a href="{{ $termoResponsabilidadeUrl }}" target="_blank"
+                           class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center border border-[#f46b12]/65 p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12] transition-colors duration-300 hover:border-white hover:text-white lg:w-[50%]">Termo de responsabilidade</a>
+                    @endif
                     <button type="submit" role="button"
                             class="mb-8 mt-4 flex min-h-12 w-full items-center justify-center bg-[#9ddbef] p-2 text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-white lg:w-[50%]">
                         <span class="relative text-center">Nova inscrição</span>
@@ -75,7 +101,7 @@
                 {{ $this->form }}
                 <button type="submit" role="button"
                         class="mt-8 flex min-h-12 max-h-12 w-full items-center justify-center bg-[#f46b12] p-2 text-[18px] font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] sm:max-w-full sm:p-4">
-                    <i class="bi bi-cart-fill mr-2"></i>Comprar
+                    <i class="bi bi-cart-fill mr-2"></i>Inscrever-se
                 </button>
             </form>
         @endif
@@ -104,4 +130,6 @@
             </div>
         </section>
     @endif
+
+    <x-filament-actions::modals />
 </div>

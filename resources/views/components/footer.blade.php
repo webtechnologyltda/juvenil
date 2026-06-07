@@ -12,8 +12,7 @@
             </span>
 
             <div>
-                <p class="text-xs font-black uppercase tracking-[0.28em] text-[#f46b12]">Acampamento Juvenil</p>
-                <p class="juvenil-poster-title mt-3 text-4xl uppercase leading-none text-white sm:text-5xl">Juvenil</p>
+                <p class="juvenil-poster-title text-4xl uppercase leading-none text-white sm:text-5xl">Juvenil</p>
                 <p class="mx-auto mt-4 max-w-2xl text-sm leading-6 text-[#d8f2fa] sm:mx-0">
                     De 22 a 26 de Julho. Inscrições para campistas de 29 a 59 anos.
                 </p>

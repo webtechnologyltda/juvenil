@@ -2,10 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Tribo;
+use Database\Seeders\Support\DemoRegistrationData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Tribo>
+ * @extends Factory<Tribo>
  */
 class TriboFactory extends Factory
 {
@@ -17,7 +19,7 @@ class TriboFactory extends Factory
     public function definition(): array
     {
         return [
-            'cor' => $this->faker->colorName(),
+            'cor' => DemoRegistrationData::TRIBE_COLORS[0],
         ];
     }
 }

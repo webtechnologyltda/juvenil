@@ -16,7 +16,10 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class LancamentoResource extends Resource
 {
@@ -40,6 +43,7 @@ class LancamentoResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('categoria'))
             ->columns([
                 TextColumn::make('id')
                     ->label('Código')
@@ -66,6 +70,12 @@ class LancamentoResource extends Resource
                     ->alignCenter()
                     ->label('Lançamento'),
 
+                TextColumn::make('categoria.nome')
+                    ->label('Categoria')
+                    ->placeholder('Sem categoria')
+                    ->badge()
+                    ->sortable(),
+
                 TextColumn::make('status')
                     ->badge()
                     ->alignCenter()
@@ -79,12 +89,19 @@ class LancamentoResource extends Resource
 
             ])
             ->groups([
-                Tables\Grouping\Group::make('status')->collapsible(),
-                Tables\Grouping\Group::make('tipo')->collapsible(),
+                Group::make('status')->collapsible(),
+                Group::make('tipo')->collapsible(),
+                Group::make('categoria.nome')
+                    ->label('Categoria')
+                    ->collapsible(),
             ])
             ->defaultSort('id', 'desc')
             ->filters([
-                //
+                SelectFilter::make('categoria_lancamento_id')
+                    ->label('Categoria')
+                    ->relationship('categoria', 'nome')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
                 EditAction::make()

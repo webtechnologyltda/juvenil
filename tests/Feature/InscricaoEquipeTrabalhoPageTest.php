@@ -12,11 +12,16 @@ it('redirects the equipe de trabalho registration page to campista registration'
 
     foreach ([
         'telefone_atendente' => null,
+        'valor_acampamento' => null,
+        'idade_minima' => 0,
+        'idade_maxima' => 0,
         'qtd_max_vagas' => null,
         'qtd_max_vagas_feminino' => null,
         'qtd_max_vagas_masculino' => null,
         'data_inicio_inscricoes' => null,
         'data_final_inscricoes' => null,
+        'pix_copia_cola' => null,
+        'pix_qr_code' => null,
         'liberacao_inscricoes_status' => LiberacaoInscricoesStatusEnum::LIBERADO->value,
         'liberacao_inscricoes_equipe_trabalho_status' => LiberacaoInscricoesEquipeTrabalhoStatusEnum::LIBERADO->value,
         'liberacao_inscricoes_bloco' => null,
