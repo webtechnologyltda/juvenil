@@ -10,6 +10,7 @@ use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\EquipeTrabalhoSeeder;
 use Database\Seeders\TriboSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -43,13 +44,27 @@ it('seeds deterministic complete registration data for dashboard validation', fu
         ->and($firstCampista->form_data['estado'])->toBe('SC')
         ->and($firstCampista->form_data['cep'])->toStartWith('883')
         ->and($firstCampista->avatar_url)->toStartWith('foto-formulario/')
+        ->and(Storage::disk('public')->exists($firstCampista->avatar_url))->toBeTrue()
+        ->and(Storage::disk('public')->mimeType($firstCampista->avatar_url))->toBe('image/png')
         ->and($firstCampista->tribo_id)->not->toBeNull()
         ->and($firstEquipe->nome)->toBe('Ana Souza Equipe 001')
         ->and($firstEquipe->data_form)->toHaveKeys(equipeTrabalhoSeederRequiredFormKeys())
         ->and($firstEquipe->data_form['cidade'])->toBe('Navegantes')
         ->and($firstEquipe->data_form['estado'])->toBe('SC')
         ->and($firstEquipe->data_form['cep'])->toStartWith('883')
-        ->and($firstEquipe->avatar_url)->toStartWith('foto-formulario-equipe-trabalho/');
+        ->and($firstEquipe->avatar_url)->toStartWith('foto-formulario-equipe-trabalho/')
+        ->and(Storage::disk('public')->exists($firstEquipe->avatar_url))->toBeTrue()
+        ->and(Storage::disk('public')->mimeType($firstEquipe->avatar_url))->toBe('image/png');
+
+    expect(Campista::query()->whereNotNull('avatar_url')->get()->every(
+        fn (Campista $campista): bool => Storage::disk('public')->exists($campista->avatar_url),
+    ))->toBeTrue()
+        ->and(EquipeTrabalho::query()->whereNotNull('avatar_url')->get()->every(
+            fn (EquipeTrabalho $equipe): bool => Storage::disk('public')->exists($equipe->avatar_url),
+        ))->toBeTrue();
+
+    expect(array_key_exists('telefone_reponsavel_2', $firstCampista->form_data))->toBeFalse()
+        ->and(array_key_exists('telefone_reponsavel_nome_2', $firstCampista->form_data))->toBeFalse();
 
     expect(collect($firstCampista->form_data)->except(['comprovante'])->filter(fn ($value): bool => $value === null)->all())->toBe([])
         ->and(collect($firstEquipe->data_form)->filter(fn ($value): bool => $value === null)->all())->toBe([]);
@@ -96,8 +111,6 @@ function campistaSeederRequiredFormKeys(): array
         'telefone_campista',
         'telefone_reponsavel_1',
         'telefone_reponsavel_nome_1',
-        'telefone_reponsavel_2',
-        'telefone_reponsavel_nome_2',
         'cep',
         'rua',
         'numero',

@@ -22,6 +22,7 @@ abstract class EquipeTrabalhoTable
 
             ImageColumn::make('avatar_url')
                 ->state(fn ($record): ?string => filter_var($record->avatar_url, FILTER_VALIDATE_URL) ? null : $record->avatar_url)
+                ->disk('public')
                 ->square()
                 ->alignCenter()
                 ->size(60)

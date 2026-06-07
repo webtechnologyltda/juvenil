@@ -22,5 +22,7 @@ class EquipeTrabalhoSeeder extends Seeder
                 DemoRegistrationData::equipeTrabalhoAttributes($index),
             ));
         }
+
+        DemoRegistrationData::ensureEquipeTrabalhoAvatarFiles();
     }
 }

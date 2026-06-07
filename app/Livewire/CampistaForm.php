@@ -77,8 +77,7 @@ class CampistaForm extends Component implements HasActions, HasForms
                             ->label('Foto de identificação')
                             ->placeholder(fn () => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
                             ->alignCenter()
-                            ->imageEditor()
-                            ->imageEditorAspectRatioOptions(['1:1'])
+                            ->disk('public')
                             ->directory('foto-formulario')
                             ->columnSpan(1)
                             ->columnStart([
@@ -93,19 +92,20 @@ class CampistaForm extends Component implements HasActions, HasForms
                                 'image/webp',
                             ])
                             ->rules(['mimes:jpg,jpeg,png,webp'])
-                            ->imagePreviewHeight('400')
                             ->loadingIndicatorPosition('center')
                             ->panelAspectRatio('1:1')
+                            ->itemPanelAspectRatio('1:1')
                             ->removeUploadedFileButtonPosition('top-center')
                             ->uploadProgressIndicatorPosition('center')
-                            ->imageEditorMode(2)
                             ->imageAspectRatio('1:1')
-                            ->automaticallyOpenImageEditorForAspectRatio()
-                            ->orientImagesFromExif(false)
-                            ->extraAttributes(['rounded'])
+                            ->automaticallyCropImagesToAspectRatio()
+                            ->automaticallyResizeImagesMode('cover')
+                            ->automaticallyResizeImagesToWidth('500')
+                            ->automaticallyResizeImagesToHeight('500')
+                            ->automaticallyUpscaleImagesWhenResizing(false)
+                            ->extraAttributes(['class' => 'juvenil-photo-upload'])
                             ->imagePreviewHeight('250')
                             ->panelLayout('integrated')
-                            ->imageEditorEmptyFillColor('#000000')
                             ->validationMessages([
                                 'mimetypes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
                                 'mimes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
@@ -230,7 +230,7 @@ class CampistaForm extends Component implements HasActions, HasForms
                         'xl' => 4,
                     ])->schema([
 
-                        Html::make(new HtmlString('<p class="text-sm text-primary-600">Precisaria fornecer os dados de duas pessoas responsáveis de fora, incluindo o nome e o telefone de cada uma delas.</p>'))
+                        Html::make(new HtmlString('<p class="text-sm text-primary-600">Informe os dados de uma pessoa responsável de fora, incluindo o nome e o telefone dela.</p>'))
                             ->columnSpanFull(),
                         TextInput::make('form_data.telefone_reponsavel_1')
                             ->required()
@@ -244,7 +244,7 @@ class CampistaForm extends Component implements HasActions, HasForms
                             ->label('Telefone Responsável'),
 
                         TextInput::make('form_data.telefone_reponsavel_nome_1')
-                            ->label('Nome da Contato')
+                            ->label('Nome do Contato')
                             ->required()
                             ->columnSpan([
                                 'default' => 1,
@@ -252,26 +252,6 @@ class CampistaForm extends Component implements HasActions, HasForms
                                 'md' => 3,
                                 'xl' => 2,
                             ]),
-                        TextInput::make('form_data.telefone_reponsavel_2')
-                            ->required()
-                            ->mask('(99) 9 9999-9999')
-                            ->columnSpan([
-                                'default' => 1,
-                                'sm' => 1,
-                                'md' => 3,
-                                'xl' => 2,
-                            ])
-                            ->label('Telefone Responsável'),
-
-                        TextInput::make('form_data.telefone_reponsavel_nome_2')
-                            ->required()
-                            ->columnSpan([
-                                'default' => 1,
-                                'sm' => 1,
-                                'md' => 3,
-                                'xl' => 2,
-                            ])
-                            ->label('Nome do Contato'),
 
                         ToggleButtons::make('form_data.toma_remedio')
                             ->label('Toma algum Remédio?')

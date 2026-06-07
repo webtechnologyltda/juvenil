@@ -33,33 +33,77 @@ it('uses the artwork orange as the Filament primary color', function () {
         ->not->toContain('colors.yellow');
 });
 
-it('uses toggle buttons and constrained square image uploads for campista forms', function () {
+it('uses toggle buttons and automatic square image uploads for registration photos', function () {
     $forms = [
         file_get_contents(app_path('Livewire/CampistaForm.php')),
         file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaForm.php')),
+        file_get_contents(app_path('Filament/Resources/EquipeTrabalhoResource/EquipeTrabalhoForm.php')),
     ];
 
     foreach ($forms as $form) {
+        expect($form)
+            ->toContain("FileUpload::make('avatar_url')")
+            ->toContain("'image/jpeg'")
+            ->toContain("'image/png'")
+            ->toContain("'image/webp'")
+            ->toContain("->rules(['mimes:jpg,jpeg,png,webp'])")
+            ->toContain("->imageAspectRatio('1:1')")
+            ->toContain('->automaticallyCropImagesToAspectRatio()')
+            ->toContain("->automaticallyResizeImagesMode('cover')")
+            ->toContain("->automaticallyResizeImagesToWidth('500')")
+            ->toContain("->automaticallyResizeImagesToHeight('500')")
+            ->toContain('->automaticallyUpscaleImagesWhenResizing(false)')
+            ->toContain("->panelAspectRatio('1:1')")
+            ->not->toContain('->imageEditor()')
+            ->not->toContain('->automaticallyOpenImageEditorForAspectRatio()')
+            ->not->toContain('->imageEditorAspectRatioOptions')
+            ->not->toContain('->imageEditorAspectRatios')
+            ->not->toContain('->imageEditorMode')
+            ->not->toContain('->imageEditorEmptyFillColor')
+            ->not->toContain('->imageCropAspectRatio')
+            ->not->toContain('->orientImagesFromExif(false)');
+    }
+
+    foreach (array_slice($forms, 0, 2) as $form) {
         expect($form)
             ->toContain('use Filament\Forms\Components\ToggleButtons;')
             ->toContain('use Filament\Support\Colors\Color;')
             ->toContain("ToggleButtons::make('form_data.sexo')")
             ->toContain("'M' => Color::Blue")
             ->toContain("'F' => Color::Pink")
-            ->toContain("'image/jpeg'")
-            ->toContain("'image/png'")
-            ->toContain("'image/webp'")
-            ->toContain("->rules(['mimes:jpg,jpeg,png,webp'])")
-            ->toContain('->imageEditor()')
-            ->toContain("->imageAspectRatio('1:1')")
-            ->toContain('->automaticallyOpenImageEditorForAspectRatio()')
-            ->toContain("->imageEditorAspectRatioOptions(['1:1'])")
             ->not->toContain('use Filament\Forms\Components\Radio;')
-            ->not->toContain('Radio::make')
-            ->not->toContain('automaticallyCropImagesToAspectRatio')
-            ->not->toContain('imageCropAspectRatio')
-            ->not->toContain('imageEditorAspectRatios');
+            ->not->toContain('Radio::make');
     }
+});
+
+it('stores registration photo uploads on the public disk so previews can load saved images', function () {
+    $campistaForm = file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaForm.php'));
+    $equipeForm = file_get_contents(app_path('Filament/Resources/EquipeTrabalhoResource/EquipeTrabalhoForm.php'));
+    $campistaTable = file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaTable.php'));
+    $equipeTable = file_get_contents(app_path('Filament/Resources/EquipeTrabalhoResource/EquipeTrabalhoTable.php'));
+    $campistaView = file_get_contents(app_path('Filament/Resources/CampistaResource/Pages/ViewCampista.php'));
+    $publicEquipeForm = file_get_contents(app_path('Livewire/EquipeTrabalhoForm.php'));
+
+    expect($campistaForm)
+        ->toContain("FileUpload::make('avatar_url')")
+        ->toContain("->disk('public')")
+        ->toContain("->directory('foto-formulario')")
+        ->toContain('Storage::disk(\'public\')->url($record->avatar_url)')
+        ->and($equipeForm)
+        ->toContain("FileUpload::make('avatar_url')")
+        ->toContain("->disk('public')")
+        ->toContain("->directory('foto-formulario-equipe-trabalho')")
+        ->toContain('Storage::disk(\'public\')->url($record->avatar_url)')
+        ->and($campistaTable)
+        ->toContain("ImageColumn::make('avatar_url')")
+        ->toContain("->disk('public')")
+        ->and($equipeTable)
+        ->toContain("ImageColumn::make('avatar_url')")
+        ->toContain("->disk('public')")
+        ->and($campistaView)
+        ->toContain('Storage::disk(\'public\')->url($avatar)')
+        ->and($publicEquipeForm)
+        ->toContain("->store('foto-formulario-equipe-trabalho', 'public')");
 });
 
 it('keeps parish community fields visible for zero-valued parish options', function () {
@@ -115,21 +159,50 @@ it('labels address complement fields without point of reference wording', functi
     }
 });
 
-it('keeps the Filament image cropper constrained inside the public page viewport', function () {
+it('requires only one external responsible contact for campista registrations', function () {
+    $publicForm = file_get_contents(app_path('Livewire/CampistaForm.php'));
+    $adminForm = file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaForm.php'));
+    $viewPage = file_get_contents(app_path('Filament/Resources/CampistaResource/Pages/ViewCampista.php'));
+    $export = file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaExport.php'));
+    $table = file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaTable.php'));
+    $demoData = file_get_contents(database_path('seeders/Support/DemoRegistrationData.php'));
+
+    foreach ([$publicForm, $adminForm, $viewPage, $demoData] as $file) {
+        expect($file)
+            ->toContain('telefone_reponsavel_1')
+            ->toContain('telefone_reponsavel_nome_1')
+            ->not->toContain('telefone_reponsavel_2')
+            ->not->toContain('telefone_reponsavel_nome_2');
+    }
+
+    expect($publicForm)
+        ->toContain('uma pessoa responsável')
+        ->not->toContain('duas pessoas responsáveis')
+        ->and($viewPage)
+        ->not->toContain("'Contato 2'")
+        ->not->toContain("'Telefone 2'")
+        ->and($export)
+        ->toContain("ExportColumn::make('form_data.telefone_reponsavel_1')")
+        ->not->toContain("ExportColumn::make('form_data.telefone_reponsavel')")
+        ->and($table)
+        ->toContain("TextColumn::make('form_data.telefone_reponsavel_1')")
+        ->not->toContain("TextColumn::make('form_data.telefone_reponsavel')");
+});
+
+it('keeps the public photo upload compact without cropper modal overrides', function () {
     $css = file_get_contents(resource_path('css/app.css'));
     $js = file_get_contents(resource_path('js/app.js'));
 
     expect($css)
-        ->toContain('.fi-fo-file-upload-editor-window')
-        ->toContain('max-width: min(72rem, calc(100vw - 1.5rem));')
-        ->toContain('.fi-fo-file-upload-editor-image-ctn')
-        ->toContain('overflow: hidden;')
-        ->toContain('.fi-fo-file-upload-editor .cropper-container img')
-        ->toContain('max-width: none !important;')
+        ->toContain('.filament-registration-shell .fi-fo-file-upload .filepond--root')
+        ->toContain('width: min(100%, 18rem);')
+        ->toContain('.filament-registration-shell .fi-fo-file-upload .filepond--drop-label')
+        ->not->toContain('.fi-fo-file-upload-editor-window')
+        ->not->toContain('.fi-fo-file-upload-editor-image-ctn')
+        ->not->toContain('.fi-fo-file-upload-editor .cropper-container')
         ->toContain('[data-motion-card]:not(.filament-registration-shell)')
         ->toContain('.filament-registration-shell')
         ->toContain('will-change: auto;')
-        ->toContain("body:has(.fi-fo-file-upload-editor:not([style*='display: none'])) .js-cookie-consent")
         ->and($js)
         ->toContain("element.style.willChange = 'auto';");
 });

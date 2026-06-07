@@ -372,7 +372,7 @@ test('public Filament form uses the orange primary theme', async ({ page }) => {
     });
 });
 
-test('public Filament upload editor stays fixed to the viewport and crops square images', async ({ page }) => {
+test('public Filament photo upload crops square images without opening the editor', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
     await page.goto('http://juvenil.test');
@@ -381,16 +381,14 @@ test('public Filament upload editor stays fixed to the viewport and crops square
     await page.waitForTimeout(2500);
 
     await page.locator('.filament-registration-shell input[type="file"]').first().setInputFiles('/home/lucas/code/juvenil/public/img/hero-desktop.png');
-    await page.waitForSelector('.fi-fo-file-upload-editor', { state: 'visible' });
+    await page.waitForSelector('.filament-registration-shell .filepond--item', { state: 'visible' });
     await page.waitForTimeout(1200);
 
-    const editorState = await page.evaluate(() => {
-        const editor = document.querySelector('.fi-fo-file-upload-editor').getBoundingClientRect();
-        const windowBox = document.querySelector('.fi-fo-file-upload-editor-window').getBoundingClientRect();
-        const imageBox = document.querySelector('.fi-fo-file-upload-editor-image-ctn').getBoundingClientRect();
-        const cropBox = document.querySelector('.cropper-crop-box').getBoundingClientRect();
-        const cropperImage = document.querySelector('.cropper-container img');
-        const cropperImageStyle = getComputedStyle(cropperImage);
+    const uploadState = await page.evaluate(() => {
+        const upload = document.querySelector('.filament-registration-shell .fi-fo-file-upload').getBoundingClientRect();
+        const root = document.querySelector('.filament-registration-shell .filepond--root').getBoundingClientRect();
+        const item = document.querySelector('.filament-registration-shell .filepond--item').getBoundingClientRect();
+        const editor = document.querySelector('.fi-fo-file-upload-editor');
         const cookieDialog = document.querySelector('.js-cookie-consent');
 
         return {
@@ -398,40 +396,28 @@ test('public Filament upload editor stays fixed to the viewport and crops square
                 width: window.innerWidth,
                 height: window.innerHeight,
             },
-            editor: {
-                left: editor.left,
-                top: editor.top,
-                right: editor.right,
-                bottom: editor.bottom,
-                width: editor.width,
-                height: editor.height,
-            },
-            windowInsideViewport: windowBox.left >= 0
-                && windowBox.top >= 0
-                && windowBox.right <= window.innerWidth
-                && windowBox.bottom <= window.innerHeight,
-            cropBoxInsideImage: cropBox.left >= imageBox.left - 1
-                && cropBox.top >= imageBox.top - 1
-                && cropBox.right <= imageBox.right + 1
-                && cropBox.bottom <= imageBox.bottom + 1,
+            uploadInsideViewport: upload.left >= 0
+                && upload.right <= window.innerWidth,
+            rootAspectDelta: Math.abs((root.width / root.height) - 1),
+            itemAspectDelta: Math.abs((item.width / item.height) - 1),
+            editorExists: Boolean(editor),
+            editorVisible: editor ? getComputedStyle(editor).display !== 'none' : false,
             cookieVisible: cookieDialog ? getComputedStyle(cookieDialog).display !== 'none' : false,
-            cropAspectDelta: Math.abs((cropBox.width / cropBox.height) - 1),
-            cropperImageMaxWidth: cropperImageStyle.maxWidth,
+            rootWidth: root.width,
+            viewportWidth: window.innerWidth,
         };
     });
 
-    expect(Math.abs(editorState.editor.left)).toBeLessThan(2);
-    expect(Math.abs(editorState.editor.top)).toBeLessThan(2);
-    expect(Math.abs(editorState.editor.right - editorState.viewport.width)).toBeLessThan(2);
-    expect(Math.abs(editorState.editor.bottom - editorState.viewport.height)).toBeLessThan(2);
-    expect(editorState.windowInsideViewport).toBe(true);
-    expect(editorState.cropBoxInsideImage).toBe(true);
-    expect(editorState.cookieVisible).toBe(false);
-    expect(editorState.cropAspectDelta).toBeLessThan(0.01);
-    expect(editorState.cropperImageMaxWidth).toBe('none');
+    expect(uploadState.uploadInsideViewport).toBe(true);
+    expect(uploadState.rootWidth).toBeLessThanOrEqual(uploadState.viewportWidth);
+    expect(uploadState.rootAspectDelta).toBeLessThan(0.08);
+    expect(uploadState.itemAspectDelta).toBeLessThan(0.08);
+    expect(uploadState.editorExists).toBe(false);
+    expect(uploadState.editorVisible).toBe(false);
+    expect(uploadState.cookieVisible).toBe(true);
 
     await page.screenshot({
-        path: 'storage/app/screenshots/playwright-filament-upload-editor.png',
+        path: 'storage/app/screenshots/playwright-filament-upload-auto-square.png',
         fullPage: false,
     });
 });

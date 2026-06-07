@@ -57,7 +57,7 @@ class EquipeTrabalhoForm extends Component implements HasActions, HasForms
 
             $this->data = Arr::only($this->data, ['nome', 'avatar_url', 'data_form']);
 
-            $this->data['avatar_url'] = $this->data['avatar_url'][array_key_first($this->data['avatar_url'])]->store('foto-formulario', 'public');
+            $this->data['avatar_url'] = $this->data['avatar_url'][array_key_first($this->data['avatar_url'])]->store('foto-formulario-equipe-trabalho', 'public');
 
             $voluntario = EquipeTrabalho::create($this->data);
 

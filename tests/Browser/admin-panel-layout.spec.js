@@ -101,6 +101,29 @@ test('authenticated Filament panel keeps branded layout clear of visual obstruct
 
     expect(brokenVisibleTableImages).toEqual([]);
 
+    const tableSurface = await page.evaluate(() => {
+        const table = document.querySelector('.fi-ta');
+        const content = document.querySelector('.fi-ta-content-ctn');
+        const head = document.querySelector('.fi-ta-table thead');
+        const tableStyle = getComputedStyle(table);
+        const contentStyle = getComputedStyle(content);
+        const headStyle = getComputedStyle(head);
+
+        return {
+            tableBackground: tableStyle.backgroundColor,
+            tableBackgroundImage: tableStyle.backgroundImage,
+            contentBackground: contentStyle.backgroundColor,
+            headBackground: headStyle.backgroundColor,
+            headBackgroundImage: headStyle.backgroundImage,
+        };
+    });
+
+    expect(tableSurface.tableBackground).toBe('rgb(4, 31, 35)');
+    expect(tableSurface.tableBackgroundImage).toContain('rgba(4, 31, 35, 0.96)');
+    expect(tableSurface.contentBackground).toBe('rgba(4, 31, 35, 0.66)');
+    expect(tableSurface.headBackground).toBe('rgb(4, 31, 35)');
+    expect(tableSurface.headBackgroundImage).toContain('rgba(7, 61, 69, 0.86)');
+
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-campistas-layout.png',
         fullPage: false,
@@ -169,6 +192,50 @@ test('authenticated Filament form pages use compact headings and the available w
     await page.goto('http://juvenil.test/admin/lancamentos/10/edit');
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-lancamento-edit-form-layout.png',
+        fullPage: false,
+    });
+});
+
+test('general settings date picker opens above the following sections', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    await page.goto('http://juvenil.test/admin/general-settings-page');
+    await page.waitForSelector('.fi-page .fi-section');
+
+    await page.locator('.fi-fo-date-time-picker-trigger').first().click();
+    await page.waitForSelector('.fi-fo-date-time-picker-panel');
+
+    const datePickerStacking = await page.evaluate(() => {
+        const panel = document.querySelector('.fi-fo-date-time-picker-panel');
+        const section = panel?.closest('.fi-section');
+
+        if (! panel || ! section) {
+            return null;
+        }
+
+        const panelRect = panel.getBoundingClientRect();
+        const sectionRect = section.getBoundingClientRect();
+        const probeX = panelRect.left + Math.min(80, panelRect.width / 2);
+        const probeY = Math.min(panelRect.bottom - 12, window.innerHeight - 12);
+        const topElement = document.elementFromPoint(probeX, probeY);
+
+        return {
+            panelBottom: panelRect.bottom,
+            sectionBottom: sectionRect.bottom,
+            sectionZIndex: getComputedStyle(section).zIndex,
+            topElementInsidePanel: panel.contains(topElement),
+        };
+    });
+
+    expect(datePickerStacking).not.toBeNull();
+    expect(datePickerStacking.panelBottom).toBeGreaterThan(datePickerStacking.sectionBottom);
+    expect(datePickerStacking.sectionZIndex).not.toBe('auto');
+    expect(datePickerStacking.topElementInsidePanel).toBe(true);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-general-settings-datepicker.png',
         fullPage: false,
     });
 });
