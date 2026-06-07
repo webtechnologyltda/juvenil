@@ -272,24 +272,59 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-header-subheading {
     color: var(--juvenil-camp-muted);
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-btn {
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    padding-inline: 1.25rem;
+    font-size: 0.78rem;
+    font-weight: 900;
+    gap: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    box-shadow: none;
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease,
+        transform 180ms ease;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-btn:hover,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-btn:focus-visible {
+    box-shadow: none;
+    transform: translateY(-1px);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-btn .fi-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    color: currentColor;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-header-edit {
     display: inline-flex;
-    min-height: 2.75rem;
+    min-height: 3rem;
     align-items: center;
     justify-content: center;
     border: 1px solid rgba(244, 107, 18, 0.72);
     border-radius: 0;
     background: var(--juvenil-camp-orange);
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.25rem;
     color: var(--juvenil-camp-ink);
     font-size: 0.78rem;
     font-weight: 900;
-    gap: 0.5rem;
+    gap: 0.625rem;
     letter-spacing: 0.12em;
     text-decoration: none;
     text-transform: uppercase;
     box-shadow: none;
-    transition: background-color 180ms ease, border-color 180ms ease;
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease,
+        transform 180ms ease;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-header-edit:hover,
@@ -298,9 +333,12 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-header-e
     background: var(--juvenil-camp-orange-hover);
     color: var(--juvenil-camp-ink);
     box-shadow: none;
+    transform: translateY(-1px);
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-header-edit .fi-icon {
+    width: 1.125rem;
+    height: 1.125rem;
     color: currentColor;
 }
 
@@ -513,17 +551,21 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-header-cell .fi-icon {
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row {
-    transition: background-color 160ms ease, box-shadow 160ms ease;
+    transition: background 160ms ease, box-shadow 160ms ease;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row.fi-striped > .fi-ta-cell {
     background: rgba(157, 219, 239, 0.035);
 }
 
-body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) {
     background:
         linear-gradient(90deg, rgba(244, 107, 18, 0.12), rgba(157, 219, 239, 0.055)),
         rgba(157, 219, 239, 0.045);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {
+    background: transparent;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell:first-child {
@@ -623,6 +665,23 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-file-upload .filepond--
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-file-upload .filepond--panel-root {
     background: transparent;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-pix-qr-upload .filepond--root {
+    width: min(100%, 15rem);
+    max-width: 15rem;
+    min-height: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-pix-qr-upload .filepond--drop-label {
+    min-height: 0;
+    padding: 1rem;
+    text-align: center;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-pix-qr-upload .filepond--drop-label label {
+    line-height: 1.35;
+    white-space: normal;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-badge {

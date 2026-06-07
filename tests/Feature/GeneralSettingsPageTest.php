@@ -4,6 +4,7 @@ use App\Enums\LiberacaoInscricoesEquipeTrabalhoStatusEnum;
 use App\Enums\LiberacaoInscricoesStatusEnum;
 use App\Filament\Pages\GeneralSettingsPage;
 use App\Models\User;
+use App\Settings\GeneralSettings;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +84,27 @@ it('organizes the general settings form by operational responsibility', function
         ->toContain("'lg' => '3'");
 });
 
+it('configures the pix qr code upload as a square public image preview', function () {
+    $settingsPage = file_get_contents(app_path('Filament/Pages/GeneralSettingsPage.php'));
+
+    expect($settingsPage)
+        ->toContain("FileUpload::make('pix_qr_code')")
+        ->toContain("->directory('settings/pix')")
+        ->toContain("->visibility('public')")
+        ->toContain('->image()')
+        ->toContain("->imageAspectRatio('1:1')")
+        ->toContain('->automaticallyCropImagesToAspectRatio()')
+        ->toContain("->automaticallyResizeImagesMode('cover')")
+        ->toContain("->automaticallyResizeImagesToWidth('600')")
+        ->toContain("->automaticallyResizeImagesToHeight('600')")
+        ->toContain('->automaticallyUpscaleImagesWhenResizing(false)')
+        ->toContain("->panelAspectRatio('1:1')")
+        ->toContain("->itemPanelAspectRatio('1:1')")
+        ->toContain("->panelLayout('integrated')")
+        ->toContain("->imagePreviewHeight('180')")
+        ->toContain("'class' => 'juvenil-pix-qr-upload'");
+});
+
 it('saves registration status settings as scalar values', function () {
     $this->seed(ShieldSeeder::class);
 
@@ -100,8 +122,8 @@ it('saves registration status settings as scalar values', function () {
             'qtd_max_vagas' => 120,
             'qtd_max_vagas_feminino' => 60,
             'qtd_max_vagas_masculino' => 60,
-            'data_inicio_inscricoes' => null,
-            'data_final_inscricoes' => null,
+            'data_inicio_inscricoes' => '2026-06-10 19:00:00',
+            'data_final_inscricoes' => '2026-06-20 19:30:00',
             'pix_copia_cola' => null,
             'pix_qr_code' => null,
             'termo_responsabilidade' => ['settings/termos/termo-juvenil.pdf'],
@@ -120,4 +142,15 @@ it('saves registration status settings as scalar values', function () {
             ->where('group', 'general')
             ->where('name', 'liberacao_inscricoes_equipe_trabalho_status')
             ->value('payload'))->toBe((string) LiberacaoInscricoesEquipeTrabalhoStatusEnum::TRANCADO->value);
+
+    app()->forgetInstance(GeneralSettings::class);
+
+    $settings = app(GeneralSettings::class);
+
+    expect($settings->data_inicio_inscricoes)
+        ->toBeInstanceOf(DateTimeInterface::class)
+        ->and($settings->data_inicio_inscricoes->format('Y-m-d H:i:s'))->toBe('2026-06-10 19:00:00')
+        ->and($settings->data_final_inscricoes)
+        ->toBeInstanceOf(DateTimeInterface::class)
+        ->and($settings->data_final_inscricoes->format('Y-m-d H:i:s'))->toBe('2026-06-20 19:30:00');
 });

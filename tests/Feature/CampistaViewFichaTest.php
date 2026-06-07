@@ -90,7 +90,7 @@ it('renders the campista view as a registration ficha with a single styled heade
         ->not->toContain('$editUrl')
         ->and($adminCss)
         ->toContain('.juvenil-registration-header-edit')
-        ->toContain('min-height: 2.75rem;')
+        ->toContain('min-height: 3rem;')
         ->toContain('border: 1px solid rgba(244, 107, 18, 0.72);')
         ->toContain('text-transform: uppercase;')
         ->not->toContain('.juvenil-registration-card__edit');
