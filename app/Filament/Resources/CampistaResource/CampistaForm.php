@@ -26,7 +26,6 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Wizard\Step;
-use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
@@ -321,7 +320,7 @@ abstract class CampistaForm
 
             Placeholder::make('info_endereco')
                 ->hint('Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.')
-                ->hintColor(Color::Yellow)
+                ->hintColor('primary')
                 ->hintIcon('heroicon-o-exclamation-circle')
                 ->hiddenLabel()
                 ->columnSpanFull(),
