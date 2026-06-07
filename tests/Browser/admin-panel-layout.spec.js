@@ -196,6 +196,50 @@ test('authenticated Filament form pages use compact headings and the available w
     });
 });
 
+test('general settings date picker opens above the following sections', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    await page.goto('http://juvenil.test/admin/general-settings-page');
+    await page.waitForSelector('.fi-page .fi-section');
+
+    await page.locator('.fi-fo-date-time-picker-trigger').first().click();
+    await page.waitForSelector('.fi-fo-date-time-picker-panel');
+
+    const datePickerStacking = await page.evaluate(() => {
+        const panel = document.querySelector('.fi-fo-date-time-picker-panel');
+        const section = panel?.closest('.fi-section');
+
+        if (! panel || ! section) {
+            return null;
+        }
+
+        const panelRect = panel.getBoundingClientRect();
+        const sectionRect = section.getBoundingClientRect();
+        const probeX = panelRect.left + Math.min(80, panelRect.width / 2);
+        const probeY = Math.min(panelRect.bottom - 12, window.innerHeight - 12);
+        const topElement = document.elementFromPoint(probeX, probeY);
+
+        return {
+            panelBottom: panelRect.bottom,
+            sectionBottom: sectionRect.bottom,
+            sectionZIndex: getComputedStyle(section).zIndex,
+            topElementInsidePanel: panel.contains(topElement),
+        };
+    });
+
+    expect(datePickerStacking).not.toBeNull();
+    expect(datePickerStacking.panelBottom).toBeGreaterThan(datePickerStacking.sectionBottom);
+    expect(datePickerStacking.sectionZIndex).not.toBe('auto');
+    expect(datePickerStacking.topElementInsidePanel).toBe(true);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-general-settings-datepicker.png',
+        fullPage: false,
+    });
+});
+
 test('authenticated Campista view renders as a ficha before editing', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
