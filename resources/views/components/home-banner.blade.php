@@ -1,48 +1,34 @@
-<section class="relative w-full px-4 pb-12 pt-10 sm:px-6 lg:px-8 lg:pb-16 lg:pt-20">
-    <div class="mx-auto grid w-full max-w-7xl items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,28rem)]">
-        <div class="max-w-3xl">
-            <p class="text-sm font-bold uppercase tracking-widest text-color1">
-                Paróquia São Domingos de Gusmão e Nossa Senhora do Carmo
+<section class="relative z-10 flex min-h-[100dvh] w-full items-end px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-36 sm:px-6 sm:pb-20 sm:pt-44 lg:min-h-[calc(100dvh-7rem)] lg:px-8 lg:pb-20 lg:pt-64">
+    <div class="mx-auto w-full max-w-7xl">
+        <div class="juvenil-hero-copy max-w-xl text-left">
+            <h1 class="sr-only">Acampamento Juvenil</h1>
+            <p class="text-xs font-black uppercase tracking-[0.26em] text-[#9ddbef] sm:text-sm" data-motion-heading>
+                Inscrições para campistas de 29 a 59 anos
             </p>
-            <h1 class="mt-5 font-rustic text-6xl uppercase leading-none text-white sm:text-7xl lg:text-8xl">
-                Acampamento <span class="block text-color1">Juvenil</span>
-            </h1>
-            <p class="mt-6 max-w-2xl text-base font-bold uppercase tracking-widest text-white sm:text-lg">
-                De 22 a 26 de Julho
+            <p class="juvenil-poster-title mt-4 max-w-4xl text-[2.75rem] uppercase leading-[0.86] text-white drop-shadow-[0_14px_34px_rgba(0,0,0,0.36)] sm:text-[4.6rem] lg:text-[5.4rem]" data-motion-heading>
+                22 a 26 <span class="block text-[#f46b12]">de Julho</span>
             </p>
-            <p class="mt-4 max-w-2xl text-base leading-7 text-gray-200">
-                Prepare suas malas para viver uma experiência de fé, amizade e fortalecimento espiritual.
+            <p class="mt-5 max-w-lg text-sm font-bold uppercase leading-6 tracking-[0.14em] text-[#e7fbff] sm:mt-6 sm:text-base sm:leading-7 sm:tracking-[0.16em]" data-motion-heading>
+                Fé, amizade e uma experiência viva de acampamento.
             </p>
-
-            <div class="mt-8 grid gap-3 text-sm font-bold uppercase tracking-wide text-white sm:grid-cols-3">
-                <div class="border border-white/20 bg-white/10 p-4">
-                    Para campistas de 29 a 59 anos
-                </div>
-                <div class="border border-white/20 bg-white/10 p-4">
-                    Vagas limitadas
-                </div>
-                <div class="border border-white/20 bg-white/10 p-4">
-                    Inscrições a partir de 07 de Junho
-                </div>
-            </div>
-
-            <div class="mt-10">
+            <div class="mt-7 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
                 <a
                     href="#registration"
                     role="button"
-                    class="inline-flex min-h-12 w-full items-center justify-center rounded bg-color3 px-6 py-3 text-center text-lg font-bold uppercase text-gray-950 transition-all duration-300 hover:bg-amber-600 hover:text-white sm:w-auto"
+                    class="inline-flex min-h-12 w-full items-center justify-center bg-[#f46b12] px-7 text-center text-sm font-black uppercase tracking-[0.16em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] sm:w-auto"
+                    data-anchor-scroll
                 >
                     Inscrever-se
                 </a>
+                <a
+                    href="#juvenil-details"
+                    role="button"
+                    class="inline-flex min-h-12 w-full items-center justify-center border border-[#9ddbef]/55 px-7 text-center text-sm font-black uppercase tracking-[0.16em] text-[#e7fbff] transition-colors duration-300 hover:border-[#f46b12] hover:text-[#f46b12] sm:w-auto"
+                    data-anchor-scroll
+                >
+                    Ver detalhes
+                </a>
             </div>
         </div>
-
-        <figure class="mx-auto w-full max-w-sm lg:max-w-md">
-            <img
-                src="{{ asset('img/acampamento-juvenil-divulgacao.webp') }}"
-                alt="Divulgação do Acampamento Juvenil, de 22 a 26 de Julho"
-                class="h-auto w-full border border-white/20 bg-white/10 object-cover shadow-2xl"
-            >
-        </figure>
     </div>
 </section>

@@ -32,7 +32,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => Color::Blue,
+                'primary' => Color::generatePalette('#f46b12'),
                 'info' => Color::Cyan,
                 'success' => Color::Green,
                 'warning' => Color::Amber,

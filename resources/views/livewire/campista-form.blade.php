@@ -1,29 +1,29 @@
 <div>
     @if(App\Enums\LiberacaoInscricoesStatusEnum::tryFrom($this->settings['liberacao_inscricoes_status']) == App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO)
         @if($this->comprado)
-            <form wire:submit.prevent="compraNovaPassagem" class="md:p-12 mx-4 p-4">
-                <section class="bg-transparent text-white min-h-screen flex flex-col justify-center items-center relative">
+            <form wire:submit.prevent="compraNovaPassagem" class="p-0">
+                <section class="relative flex min-h-[42rem] flex-col items-center justify-center bg-[#052f35] p-6 text-white sm:p-10">
                     <div class="mx-auto max-w-screen-md text-center lg:px-2 relative">
-                        <p class="mt-8 uppercase font-bold text-2xl">Prepare-se para a Aventura!</p>
+                        <p class="mt-8 text-2xl font-black uppercase tracking-[0.16em] text-[#f46b12]">Inscrição registrada</p>
                         <div class="flex justify-center">
                             <figure class="flex justify-center items-center mb-4 w-3/5 h-3/5">
                                 <img src="{{ asset('img/campista.svg') }}" alt="" class="h-96">
                             </figure>
                         </div>
-                        <p class="text-center mx-4 text-yellow-500 text-sm xl:text-xl">
-                            Parabéns! Você está prestes a embarcar em uma experiência inesquecível da sua vida.
+                        <p class="text-center mx-4 text-[#d8f2fa] text-sm xl:text-xl">
+                            Parabéns! Você está prestes a viver o Acampamento Juvenil.
                             <br/>
                         </p>
                     </div>
 
-                    <p class="mt-4 text-white text-center text-2xl font-bangers uppercase">Informações de Pagamento</p>
-                    <img class="mt-8 mb-8 mx-auto" src="{{ asset('img/qr_code_pix.png') }}?20231021" alt="qrcode pix" width="150" />
+                    <p class="mt-4 text-center text-2xl font-black uppercase tracking-[0.14em] text-white">Informações de pagamento</p>
+                    <img class="mx-auto mb-8 mt-8 bg-white p-3" src="{{ asset('img/qr_code_pix.png') }}?20231021" alt="QR Code PIX" width="150" />
 
                     <div class="grid justify-items-center mb-4">
                         <button
                             onclick="navigator.clipboard.writeText('00020126910014br.gov.bcb.pix01368c973c48-8687-4977-b585-cb4cfeb9d7a30229ACAMPAMENTO TK  NAVEGANTES SC5204000053039865406250.005802BR5919DIOCESE DE BLUMENAU6010NAVEGANTES62290525VE7Y10G0K87QFK28YPAD0HGV463047FBD')"
                             type="button"
-                            class="text-gray-950 text-md bg-gray-200 rounded-sm p-2 flex justify-between">
+                            class="flex min-h-11 items-center justify-center bg-[#9ddbef] px-4 text-sm font-black uppercase tracking-[0.1em] text-[#052f35] transition-colors duration-300 hover:bg-white">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                  stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -35,29 +35,23 @@
 
                     <div class="flex justify-evenly mx-6 mt-4 text-center">
                         <div class="justify-items-center">
-                            <p class="text-center mx-4 text-yellow-500 text-sm xl:text-xl">Para finalizar sua incrição realize o pagamente e envie o comprovante para nosso atendente </p>
+                            <p class="text-center mx-4 text-[#d8f2fa] text-sm xl:text-xl">Para finalizar sua inscrição, realize o pagamento e envie o comprovante para nosso atendente.</p>
                             <div class="mt-2 grid justify-items-center">
                                 <a target="_blank"
                                    href="https://wa.me/55{{str_replace(['(', ')', '-', ' '], '', $this->settings['telefone_atendente'])}}?text={{ rawurlencode('Olá tenho uma dúvida sobre o Acampamento Juvenil, consegue me ajudar?') }}"
-                                   class=" bg-color1 rounded mt-8 mb-8 p-2 w-full lg:w-[50%]  sm:p-4sm:max-w-full
-                                   flex items-center justify-center text-[12px] hover:bg-amber-600 hover:font-bold
-                                   transition-all duration-500 relative text-center text-md text-black font-bold ">
-                                    <span class="relative text-center text-lg text-gray-950 font-bold">Falar com atendente</span>
+                                   class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center bg-[#f46b12] p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] lg:w-[50%]">
+                                    <span class="relative text-center">Falar com atendente</span>
                                 </a>
                             </div>
-                            <p class="mt-6">Sua aventura está a apenas um passo de começar! 🌄👣</p>
+                            <p class="mt-6 text-[#d8f2fa]">Sua participação no Acampamento Juvenil está a um passo de ser confirmada.</p>
                         </div>
                     </div>
-                    <p class="text-center  mt-4 text-red-600 xl:text-xl">Obrigatório <br>levar termo assinado no dia.  </p>
+                    <p class="mt-4 text-center text-[#f46b12] xl:text-xl">Obrigatório levar o termo assinado no dia.</p>
                     <a href="{{ route('pdf.show', ['filename' =>'termo.pdf'  ]) }}"
-                       class="bg-red-600 rounded mt-8 mb-8 p-2 w-full lg:w-[50%]  sm:p-4sm:max-w-full
-                                   flex items-center justify-center text-[12px] hover:bg-amber-600 hover:font-bold
-                                   transition-all duration-500 relative text-center text-md text-black font-bold">TERMO RESPONDABILIDADE</a>
+                       class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center border border-[#f46b12]/65 p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12] transition-colors duration-300 hover:border-white hover:text-white lg:w-[50%]">Termo de responsabilidade</a>
                     <button type="submit" role="button"
-                            class="bg-color3 rounded mt-8 mb-8 p-2 w-full lg:w-[50%]
-                                   flex items-center justify-center text-[12px] hover:bg-amber-600 hover:font-bold
-                                   transition-all duration-500">
-                        <span class="relative text-center text-lg text-gray-950 font-bold">Nova Inscrição</span>
+                            class="mb-8 mt-4 flex min-h-12 w-full items-center justify-center bg-[#9ddbef] p-2 text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-white lg:w-[50%]">
+                        <span class="relative text-center">Nova inscrição</span>
                     </button>
                 </section>
             </form>
@@ -78,17 +72,12 @@
         </section>
 
     @elseif(App\Enums\LiberacaoInscricoesStatusEnum::tryFrom($this->settings['liberacao_inscricoes_status']) == App\Enums\LiberacaoInscricoesStatusEnum::ENCERRADO)
-        <section class="text-white min-h-screen flex flex-col justify-center items-center relative">
-            <div id="particles-js2" class="min-h-screen"></div>
+        <section class="relative flex min-h-[34rem] flex-col items-center justify-center bg-[#052f35] p-6 text-white sm:p-10">
             <div class="mx-auto max-w-screen-md text-center lg:px-2 relative">
                 <div class="lg:mb-64">
-                    <p class="uppercase font-bold text-2xl text-amber-500 mb-0">Inscrições Encerradas</p>
-                    <p class="text-center mx-4 text-white text-sm xl:text-xl">
-                        @if(\Carbon\Carbon::now() < Carbon\Carbon::create(2024,11,01,19,00,00))
-                            Pronto para algo novo? A aventura está prestes a começar! 🏞️🌲
-                        @else
-                            Prontos, aventureiros? 🌲
-                        @endif
+                    <p class="mb-0 text-2xl font-black uppercase tracking-[0.16em] text-[#f46b12]">Inscrições encerradas</p>
+                    <p class="mx-4 mt-4 text-center text-sm text-[#d8f2fa] xl:text-xl">
+                        As inscrições do Acampamento Juvenil não estão disponíveis no momento.
                     </p>
                 </div>
 
@@ -97,12 +86,6 @@
                         <img src="{{ asset('img/Campfire-bro.svg') }}" alt="" class="w-full h-96 rounded-2xl animate-spin-slow">
                     </figure>
                 </div>
-
-                @if(\Carbon\Carbon::now() < Carbon\Carbon::create(2024,8,23,19,00,00))
-                    <div class="row time-countdown justify-content-center p-0 mb-4 mt-0 pt-0 z-10">
-                        <div id="clockForm" class="time-count"></div>
-                    </div>
-                @endif
             </div>
         </section>
     @endif

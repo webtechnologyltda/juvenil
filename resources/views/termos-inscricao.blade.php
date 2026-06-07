@@ -7,7 +7,7 @@
 
     <title>Acampamento Juvenil - Termo de Inscrição</title>
     <!-- Favicon -->
-    <link rel="shortcut icon" href="{{ url(asset('img/logo_simple.png')) }}?20231011">
+    <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
