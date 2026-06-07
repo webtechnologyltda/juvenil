@@ -33,7 +33,7 @@
         @livewire('notifications')
         <main class="w-full overflow-x-clip bg-[#052f35]">
                 @include('components.navigation')
-                @include('components.content-about-details')
+                @include('components.content-about-details', ['settings' => $settings])
                 @include('components.content-form', ['settings' => $settings])
 {{--                @include('components.content-testemunho')--}}
                 @include('components.content-location_tk')

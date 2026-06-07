@@ -7,10 +7,24 @@
     $hasValorAcampamento = $valorAcampamento !== null;
     $attendantWhatsappUrl = \App\Support\AtendenteWhatsapp::url($this->settings['telefone_atendente'] ?? null);
     $termoResponsabilidadeUrl = \App\Support\ConfiguredStorageFile::publicUrl($this->settings['termo_responsabilidade'] ?? null);
+    $registrationStatus = App\Enums\LiberacaoInscricoesStatusEnum::tryFrom($this->settings['liberacao_inscricoes_status']);
+    $registrationAvailability = $this->availability;
+    $registrationClosedByCapacity = $registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO
+        && $registrationAvailability->registrationClosedByCapacity();
+    $registrationStartsInFuture = $registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO
+        && $registrationAvailability->registrationStartsInFuture();
+    $registrationEndedByDate = $registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO
+        && $registrationAvailability->registrationEnded();
+    $registrationOpen = $registrationAvailability->registrationOpen();
+    $totalCapacity = $registrationAvailability->totalCapacity();
+    $remainingSlots = $registrationAvailability->remainingSlots();
+    $activeRegistrations = $registrationAvailability->activeRegistrations();
+    $activeRegistrationsLabel = $activeRegistrations === 1 ? '1 inscrição ativa' : $activeRegistrations.' inscrições ativas';
+    $unavailableSexMessage = $registrationAvailability->unavailableSexMessage();
 @endphp
 
 <div>
-    @if(App\Enums\LiberacaoInscricoesStatusEnum::tryFrom($this->settings['liberacao_inscricoes_status']) == App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO)
+    @if($registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO)
         @if($this->comprado)
             <form wire:submit.prevent="compraNovaPassagem" class="p-0">
                 <section class="relative flex min-h-[42rem] flex-col items-center justify-center bg-[#052f35] p-6 text-white sm:p-10">
@@ -96,8 +110,96 @@
                     </button>
                 </section>
             </form>
-        @else
+        @elseif($registrationStartsInFuture)
+            <section class="relative flex min-h-[34rem] flex-col items-center justify-center overflow-hidden bg-[#052f35] p-6 text-white sm:p-10">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(157,219,239,0.16),transparent_34%),linear-gradient(180deg,rgba(5,47,53,0.82),rgba(3,27,31,0.96))]"></div>
+                <div class="relative mx-auto max-w-screen-md text-center">
+                    <p class="text-sm font-black uppercase tracking-[0.18em] text-[#f46b12]">Inscrições em contagem regressiva</p>
+                    <h2 class="mt-4 text-3xl font-black uppercase tracking-normal text-white sm:text-5xl">Prepare-se para se inscrever</h2>
+                    <p class="mx-auto mt-4 max-w-xl text-sm font-semibold leading-7 text-[#d8f2fa] sm:text-base">
+                        As inscrições começam em {{ $registrationAvailability->startsAtDisplay() }}.
+                    </p>
+
+                    <div
+                        class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4"
+                        data-registration-countdown
+                        data-target="{{ $registrationAvailability->startsAtIso() }}"
+                    >
+                        <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-4">
+                            <span class="block text-4xl font-black text-[#f46b12]" data-countdown-days>--</span>
+                            <span class="mt-1 block text-xs font-black uppercase tracking-[0.16em] text-[#9ddbef]">Dias</span>
+                        </div>
+                        <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-4">
+                            <span class="block text-4xl font-black text-[#f46b12]" data-countdown-hours>--</span>
+                            <span class="mt-1 block text-xs font-black uppercase tracking-[0.16em] text-[#9ddbef]">Horas</span>
+                        </div>
+                        <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-4">
+                            <span class="block text-4xl font-black text-[#f46b12]" data-countdown-minutes>--</span>
+                            <span class="mt-1 block text-xs font-black uppercase tracking-[0.16em] text-[#9ddbef]">Minutos</span>
+                        </div>
+                        <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-4">
+                            <span class="block text-4xl font-black text-[#f46b12]" data-countdown-seconds>--</span>
+                            <span class="mt-1 block text-xs font-black uppercase tracking-[0.16em] text-[#9ddbef]">Segundos</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        @elseif($registrationEndedByDate)
+            <section class="relative flex min-h-[34rem] flex-col items-center justify-center bg-[#052f35] p-6 text-white sm:p-10">
+                <div class="mx-auto max-w-screen-md text-center lg:px-2">
+                    <p class="mb-0 text-2xl font-black uppercase tracking-[0.16em] text-[#f46b12]">Inscrições encerradas</p>
+                    <p class="mx-4 mt-4 text-center text-sm text-[#d8f2fa] xl:text-xl">
+                        O período de inscrições encerrou em {{ $registrationAvailability->endsAtDisplay() }}.
+                    </p>
+                    <div class="mt-10 flex justify-center">
+                        <figure class="flex items-center justify-center rounded">
+                            <img src="{{ asset('img/Campfire-bro.svg') }}" alt="" class="h-80 w-full rounded-2xl animate-spin-slow">
+                        </figure>
+                    </div>
+                </div>
+            </section>
+        @elseif($registrationClosedByCapacity)
+            <section class="relative flex min-h-[34rem] flex-col items-center justify-center bg-[#052f35] p-6 text-white sm:p-10">
+                <div class="mx-auto max-w-screen-md text-center lg:px-2">
+                    <p class="mb-0 text-2xl font-black uppercase tracking-[0.16em] text-[#f46b12]">Inscrições encerradas</p>
+                    <h2 class="mt-4 text-3xl font-black uppercase tracking-normal text-white sm:text-5xl">Limite de inscrições atingido</h2>
+                    <p class="mx-4 mt-4 text-center text-sm text-[#d8f2fa] xl:text-xl">
+                        As inscrições foram encerradas pelo número de vagas preenchidas.
+                    </p>
+                    @if($totalCapacity !== null)
+                        <p class="mt-3 text-sm font-black uppercase tracking-[0.12em] text-[#9ddbef]">
+                            {{ $activeRegistrationsLabel }} de {{ $totalCapacity }} vagas.
+                        </p>
+                    @endif
+                    <div class="mt-10 flex justify-center">
+                        <figure class="flex items-center justify-center rounded">
+                            <img src="{{ asset('img/Campfire-bro.svg') }}" alt="" class="h-80 w-full rounded-2xl animate-spin-slow">
+                        </figure>
+                    </div>
+                </div>
+            </section>
+        @elseif($registrationOpen)
             <form wire:submit.prevent="submitForm" class="space-y-6">
+                <div class="border border-[#9ddbef]/25 bg-[#052f35] p-4 text-[#d8f2fa]" data-registration-slots>
+                    <p class="text-sm font-black uppercase tracking-[0.14em] text-[#f46b12]">Vagas do Acampamento Juvenil</p>
+                    @if($totalCapacity !== null)
+                        <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">
+                            {{ $remainingSlots }} {{ $remainingSlots === 1 ? 'vaga disponível' : 'vagas disponíveis' }} de {{ $totalCapacity }}
+                        </p>
+                        <p class="mt-1 text-sm font-semibold text-[#9ddbef]">{{ $activeRegistrationsLabel }}</p>
+                    @else
+                        <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">Inscrições abertas</p>
+                        <p class="mt-1 text-sm font-semibold text-[#9ddbef]">Sem limite total de vagas configurado.</p>
+                    @endif
+                </div>
+
+                @if($unavailableSexMessage)
+                    <div class="border border-[#f46b12]/45 bg-[#f46b12]/10 p-4 text-[#d8f2fa]" role="alert">
+                        <p class="text-sm font-black uppercase tracking-[0.14em] text-[#f46b12]">Vagas indisponíveis</p>
+                        <p class="mt-2 text-sm font-semibold">{{ $unavailableSexMessage }}</p>
+                    </div>
+                @endif
+
                 {{ $this->form }}
                 <button type="submit" role="button"
                         class="mt-8 flex min-h-12 max-h-12 w-full items-center justify-center bg-[#f46b12] p-2 text-[18px] font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] sm:max-w-full sm:p-4">
@@ -105,14 +207,14 @@
                 </button>
             </form>
         @endif
-    @elseif(App\Enums\LiberacaoInscricoesStatusEnum::tryFrom($this->settings['liberacao_inscricoes_status']) == App\Enums\LiberacaoInscricoesStatusEnum::TRANCADO)
+    @elseif($registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::TRANCADO)
         <section class="bg-transparent text-white min-h-screen flex flex-col justify-center items-center relative">
             <div class="no-tailwind">
                 {!! $this->settings['liberacao_inscricoes_bloco'] !!}
             </div>
         </section>
 
-    @elseif(App\Enums\LiberacaoInscricoesStatusEnum::tryFrom($this->settings['liberacao_inscricoes_status']) == App\Enums\LiberacaoInscricoesStatusEnum::ENCERRADO)
+    @elseif($registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::ENCERRADO)
         <section class="relative flex min-h-[34rem] flex-col items-center justify-center bg-[#052f35] p-6 text-white sm:p-10">
             <div class="mx-auto max-w-screen-md text-center lg:px-2 relative">
                 <div class="lg:mb-64">

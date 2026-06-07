@@ -2,9 +2,12 @@
 
 use App\Enums\LiberacaoInscricoesEquipeTrabalhoStatusEnum;
 use App\Enums\LiberacaoInscricoesStatusEnum;
+use App\Enums\StatusInscricao;
 use App\Livewire\CampistaForm;
+use App\Models\Campista;
 use App\Support\AtendenteWhatsapp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -97,6 +100,91 @@ it('renders the campista registration route', function () {
         ->assertSee('Inscrever-se');
 });
 
+it('shows a countdown before the configured campista registration start date', function () {
+    Carbon::setTestNow('2026-06-07 12:00:00');
+
+    seedGeneralRegistrationSettings([
+        'data_inicio_inscricoes' => '2026-06-10 19:00:00',
+        'data_final_inscricoes' => '2026-06-20 19:00:00',
+        'qtd_max_vagas' => 30,
+    ]);
+
+    $this->withoutVite();
+
+    $this->get(route('campista'))
+        ->assertOk()
+        ->assertSee('Inscrições em contagem regressiva')
+        ->assertSee('As inscrições começam em 10/06/2026 19:00.')
+        ->assertSee('Inscrições a partir de 10 de Junho, às 19h.')
+        ->assertDontSee('Inscrições a partir de 07 de Junho, após a Santa Missa das 19h30.')
+        ->assertSee('data-registration-countdown', false)
+        ->assertSee('2026-06-10T19:00:00', false)
+        ->assertDontSee('wire:submit.prevent="submitForm"', false);
+
+    Carbon::setTestNow();
+});
+
+it('does not submit campista registration before the configured start date', function () {
+    Carbon::setTestNow('2026-06-07 12:00:00');
+
+    seedGeneralRegistrationSettings([
+        'data_inicio_inscricoes' => '2026-06-10 19:00:00',
+        'qtd_max_vagas' => 30,
+    ]);
+
+    Livewire::test(CampistaForm::class)
+        ->call('submitForm')
+        ->assertHasNoErrors();
+
+    expect(Campista::query()->count())->toBe(0);
+
+    Carbon::setTestNow();
+});
+
+it('closes campista registration after the configured end date', function () {
+    Carbon::setTestNow('2026-06-21 08:00:00');
+
+    seedGeneralRegistrationSettings([
+        'data_inicio_inscricoes' => '2026-06-10 19:00:00',
+        'data_final_inscricoes' => '2026-06-20 19:00:00',
+        'qtd_max_vagas' => 30,
+    ]);
+
+    $this->withoutVite();
+
+    $this->get(route('campista'))
+        ->assertOk()
+        ->assertSee('Inscrições encerradas')
+        ->assertSee('O período de inscrições encerrou em 20/06/2026 19:00.')
+        ->assertDontSee('wire:submit.prevent="submitForm"', false);
+
+    Carbon::setTestNow();
+});
+
+it('shows available campista registration slots during the configured registration period', function () {
+    Carbon::setTestNow('2026-06-12 12:00:00');
+
+    seedGeneralRegistrationSettings([
+        'data_inicio_inscricoes' => '2026-06-10 19:00:00',
+        'data_final_inscricoes' => '2026-06-20 19:00:00',
+        'qtd_max_vagas' => 3,
+    ]);
+
+    createCampistaRegistrationForSex('M', StatusInscricao::Pago);
+    createCampistaRegistrationForSex('F', StatusInscricao::Cancelado);
+
+    $this->withoutVite();
+
+    $this->get(route('campista'))
+        ->assertOk()
+        ->assertSee('2 vagas disponíveis de 3')
+        ->assertSee('1 inscrição ativa')
+        ->assertSee('wire:submit.prevent="submitForm"', false)
+        ->assertSee('Inscrever-se');
+
+    Carbon::setTestNow();
+});
+
 it('renders the configured payment settings on the campista registration page', function () {
     seedGeneralRegistrationSettings([
         'telefone_atendente' => '(47) 9 9999-9999',
@@ -170,6 +258,97 @@ it('normalizes attendant WhatsApp numbers from settings', function () {
         ->and(AtendenteWhatsapp::url('(47) 9 9999-9999'))->toStartWith('https://wa.me/5547999999999?text=');
 });
 
+it('alerts and disables a sex option when its campista vacancies are full', function () {
+    seedGeneralRegistrationSettings([
+        'qtd_max_vagas_masculino' => 2,
+        'qtd_max_vagas_feminino' => 1,
+    ]);
+
+    createCampistaRegistrationForSex('F', StatusInscricao::Pendente);
+
+    $component = Livewire::test(CampistaForm::class);
+    $html = $component->html();
+
+    $component
+        ->assertSee('Não há vagas disponíveis para o sexo feminino.')
+        ->assertDontSee('As inscrições foram encerradas pelo número de vagas preenchidas.');
+
+    expect(campistaSexOptionIsDisabled($html, 'F'))->toBeTrue()
+        ->and(campistaSexOptionIsDisabled($html, 'M'))->toBeFalse();
+});
+
+it('closes campista registration when all sex-specific vacancies are full', function () {
+    seedGeneralRegistrationSettings([
+        'qtd_max_vagas_masculino' => 1,
+        'qtd_max_vagas_feminino' => 1,
+    ]);
+
+    createCampistaRegistrationForSex('M', StatusInscricao::Pago);
+    createCampistaRegistrationForSex('F', StatusInscricao::Pendente);
+
+    Livewire::test(CampistaForm::class)
+        ->assertSee('Inscrições encerradas')
+        ->assertSee('As inscrições foram encerradas pelo número de vagas preenchidas.')
+        ->assertDontSee('Inscrever-se');
+});
+
+it('closes campista registration when the total active registration limit is reached', function () {
+    seedGeneralRegistrationSettings([
+        'qtd_max_vagas' => 1,
+        'qtd_max_vagas_masculino' => 10,
+        'qtd_max_vagas_feminino' => 10,
+    ]);
+
+    createCampistaRegistrationForSex('M', StatusInscricao::Cancelado);
+
+    $openComponent = Livewire::test(CampistaForm::class);
+
+    $openComponent
+        ->assertDontSee('As inscrições foram encerradas pelo número de vagas preenchidas.')
+        ->assertSee('Inscrever-se');
+
+    createCampistaRegistrationForSex('F', StatusInscricao::Pago);
+
+    Livewire::test(CampistaForm::class)
+        ->assertSee('Inscrições encerradas')
+        ->assertSee('As inscrições foram encerradas pelo número de vagas preenchidas.')
+        ->assertDontSee('Inscrever-se');
+});
+
+it('does not count cancelled campista registrations against sex vacancies', function () {
+    seedGeneralRegistrationSettings([
+        'qtd_max_vagas_masculino' => 1,
+        'qtd_max_vagas_feminino' => 1,
+    ]);
+
+    createCampistaRegistrationForSex('F', StatusInscricao::Cancelado);
+
+    $component = Livewire::test(CampistaForm::class);
+    $html = $component->html();
+
+    $component
+        ->assertDontSee('Não há vagas disponíveis para o sexo feminino.')
+        ->assertDontSee('As inscrições foram encerradas pelo número de vagas preenchidas.');
+
+    expect(campistaSexOptionIsDisabled($html, 'F'))->toBeFalse();
+});
+
+it('rejects a campista submission when the selected sex becomes full before submit', function () {
+    seedGeneralRegistrationSettings([
+        'qtd_max_vagas_masculino' => 2,
+        'qtd_max_vagas_feminino' => 1,
+    ]);
+
+    $component = Livewire::test(CampistaForm::class)
+        ->set('data.form_data.sexo', 'F');
+
+    createCampistaRegistrationForSex('F', StatusInscricao::Pago);
+
+    $component->call('submitForm');
+
+    expect(Campista::query()->count())->toBe(1);
+});
+
 function seedGeneralRegistrationSettings(array $overrides = []): void
 {
     $settings = array_merge([
@@ -201,4 +380,34 @@ function seedGeneralRegistrationSettings(array $overrides = []): void
             ],
         );
     }
+}
+
+function createCampistaRegistrationForSex(string $sex, StatusInscricao $status): Campista
+{
+    return Campista::factory()->create([
+        'status' => $status->value,
+        'tribo_id' => null,
+        'user_id' => null,
+        'form_data' => [
+            'sexo' => $sex,
+        ],
+    ]);
+}
+
+function campistaSexOptionIsDisabled(string $html, string $sex): bool
+{
+    $document = new DOMDocument;
+
+    @$document->loadHTML($html);
+
+    $xpath = new DOMXPath($document);
+    $inputs = $xpath->query(sprintf(
+        '//input[@type="radio" and @value="%s" and @*[name()="wire:model" and contains(., "form_data.sexo")]]',
+        $sex,
+    ));
+
+    expect($inputs)->not->toBeFalse()
+        ->and($inputs->length)->toBe(1);
+
+    return $inputs->item(0)?->hasAttribute('disabled') ?? false;
 }

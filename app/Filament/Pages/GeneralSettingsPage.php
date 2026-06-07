@@ -7,6 +7,7 @@ use App\Enums\LiberacaoInscricoesStatusEnum;
 use App\Settings\GeneralSettings;
 use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use DateTimeInterface;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
@@ -19,6 +20,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
+use Illuminate\Support\Carbon;
 use Leandrocfe\FilamentPtbrFormFields\Money;
 use Leandrocfe\FilamentPtbrFormFields\PhoneNumber;
 
@@ -35,6 +37,11 @@ class GeneralSettingsPage extends SettingsPage
     protected static string|\UnitEnum|null $navigationGroup = 'Configurações';
 
     protected static string $settings = GeneralSettings::class;
+
+    private const DATE_TIME_FIELDS = [
+        'data_inicio_inscricoes',
+        'data_final_inscricoes',
+    ];
 
     public function form(Schema $schema): Schema
     {
@@ -289,6 +296,15 @@ class GeneralSettingsPage extends SettingsPage
             ]);
     }
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        foreach (self::DATE_TIME_FIELDS as $field) {
+            $data[$field] = self::normalizeDateTimePickerState($data[$field] ?? null);
+        }
+
+        return $data;
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['liberacao_inscricoes_status'] = self::normalizeIntegerSettingValue(
@@ -298,7 +314,37 @@ class GeneralSettingsPage extends SettingsPage
             $data['liberacao_inscricoes_equipe_trabalho_status'] ?? null,
         );
 
+        foreach (self::DATE_TIME_FIELDS as $field) {
+            $data[$field] = self::normalizeDateTimeSettingValue($data[$field] ?? null);
+        }
+
         return $data;
+    }
+
+    private static function normalizeDateTimePickerState(mixed $state): ?string
+    {
+        if ($state === null || $state === '') {
+            return null;
+        }
+
+        if ($state instanceof DateTimeInterface) {
+            return Carbon::instance($state)->format('Y-m-d H:i:s');
+        }
+
+        return (string) $state;
+    }
+
+    private static function normalizeDateTimeSettingValue(mixed $state): ?DateTimeInterface
+    {
+        if ($state === null || $state === '') {
+            return null;
+        }
+
+        if ($state instanceof DateTimeInterface) {
+            return $state;
+        }
+
+        return Carbon::parse((string) $state, config('app.timezone'));
     }
 
     private static function normalizeIntegerSettingValue(mixed $state): mixed

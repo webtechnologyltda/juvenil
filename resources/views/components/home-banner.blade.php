@@ -1,3 +1,10 @@
+@props(['settings' => null])
+
+@php
+    $registrationAvailability = \App\Support\CampistaRegistrationAvailability::fromSettings($settings ?? app(\App\Settings\GeneralSettings::class));
+    $registrationOpen = $registrationAvailability->registrationOpen();
+@endphp
+
 <section class="relative z-10 flex min-h-[100dvh] w-full items-end px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-36 sm:px-6 sm:pb-20 sm:pt-44 lg:min-h-[calc(100dvh-7rem)] lg:px-8 lg:pb-20 lg:pt-64">
     <div class="mx-auto w-full max-w-7xl">
         <div class="juvenil-hero-copy flex max-w-xl flex-col text-left">
@@ -10,20 +17,20 @@
             </p>
             <div class="order-3 mt-7 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
                 <a
-                    href="#registration"
+                    href="{{ $registrationOpen ? '#registration' : '#juvenil-details' }}"
                     role="button"
                     class="inline-flex min-h-12 w-full items-center justify-center bg-[#f46b12] px-7 text-center text-sm font-black uppercase tracking-[0.16em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] sm:w-auto"
                     data-anchor-scroll
                 >
-                    Inscrever-se
+                    {{ $registrationOpen ? 'Inscrever-se' : 'Ver detalhes' }}
                 </a>
                 <a
-                    href="#juvenil-details"
+                    href="{{ $registrationOpen ? '#juvenil-details' : '#registration' }}"
                     role="button"
                     class="inline-flex min-h-12 w-full items-center justify-center border border-[#9ddbef]/55 px-7 text-center text-sm font-black uppercase tracking-[0.16em] text-[#e7fbff] transition-colors duration-300 hover:border-[#f46b12] hover:text-[#f46b12] sm:w-auto"
                     data-anchor-scroll
                 >
-                    Ver detalhes
+                    {{ $registrationOpen ? 'Ver detalhes' : 'Status das inscrições' }}
                 </a>
             </div>
         </div>
