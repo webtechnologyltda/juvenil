@@ -377,6 +377,19 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-input-wrp, .fi-select-
     box-shadow: none;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section:has(.fi-fo-date-time-picker-panel) {
+    position: relative;
+    z-index: 20;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section:has(.fi-fo-date-time-picker-panel):focus-within {
+    z-index: 60;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-date-time-picker-panel {
+    z-index: 70;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-input-wrp:focus-within {
     border-color: var(--juvenil-camp-orange);
     outline: 2px solid rgba(244, 107, 18, 0.2);
