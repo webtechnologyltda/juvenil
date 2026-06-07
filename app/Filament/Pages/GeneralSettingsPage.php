@@ -56,8 +56,8 @@ class GeneralSettingsPage extends SettingsPage
                                     ->native(false)
                                     ->selectablePlaceholder(false)
                                     ->live()
-                                    ->prefixIcon(fn ($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getIcon())
-                                    ->prefixIconColor(fn ($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getColor())
+                                    ->prefixIcon(fn ($state) => self::resolveEquipeTrabalhoStatus($state)?->getIcon())
+                                    ->prefixIconColor(fn ($state) => self::resolveEquipeTrabalhoStatus($state)?->getColor())
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => '6',
@@ -70,8 +70,8 @@ class GeneralSettingsPage extends SettingsPage
                                     ->native(false)
                                     ->selectablePlaceholder(false)
                                     ->live()
-                                    ->prefixIcon(fn ($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getIcon())
-                                    ->prefixIconColor(fn ($state) => LiberacaoInscricoesStatusEnum::tryFrom($state)->getColor())
+                                    ->prefixIcon(fn ($state) => self::resolveCampistaStatus($state)?->getIcon())
+                                    ->prefixIconColor(fn ($state) => self::resolveCampistaStatus($state)?->getColor())
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => '6',
@@ -87,7 +87,7 @@ class GeneralSettingsPage extends SettingsPage
                                     ->columnSpanFull()
                                     ->fileAttachmentsDirectory('settings')
                                     ->fileAttachmentsMaxSize(1024)
-                                    ->required(fn (Get $get) => LiberacaoInscricoesStatusEnum::tryFrom($get('liberacao_inscricoes_status')) !== LiberacaoInscricoesStatusEnum::LIBERADO),
+                                    ->required(fn (Get $get) => self::resolveCampistaStatus($get('liberacao_inscricoes_status')) !== LiberacaoInscricoesStatusEnum::LIBERADO),
                             ])
                             ->columnSpan([
                                 'default' => 'full',
@@ -98,5 +98,31 @@ class GeneralSettingsPage extends SettingsPage
                             ->icon('tabler-lock'),
                     ]),
             ]);
+    }
+
+    private static function resolveEquipeTrabalhoStatus(mixed $state): ?LiberacaoInscricoesEquipeTrabalhoStatusEnum
+    {
+        if ($state instanceof LiberacaoInscricoesEquipeTrabalhoStatusEnum) {
+            return $state;
+        }
+
+        if (blank($state)) {
+            return null;
+        }
+
+        return LiberacaoInscricoesEquipeTrabalhoStatusEnum::tryFrom((int) $state);
+    }
+
+    private static function resolveCampistaStatus(mixed $state): ?LiberacaoInscricoesStatusEnum
+    {
+        if ($state instanceof LiberacaoInscricoesStatusEnum) {
+            return $state;
+        }
+
+        if (blank($state)) {
+            return null;
+        }
+
+        return LiberacaoInscricoesStatusEnum::tryFrom((int) $state);
     }
 }

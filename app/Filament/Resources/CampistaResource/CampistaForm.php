@@ -13,11 +13,11 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -26,6 +26,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Wizard\Step;
+use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
@@ -202,6 +203,12 @@ abstract class CampistaForm
                 ->alignCenter()
                 ->imageEditor()
                 ->image()
+                ->acceptedFileTypes([
+                    'image/jpeg',
+                    'image/png',
+                    'image/webp',
+                ])
+                ->rules(['mimes:jpg,jpeg,png,webp'])
                 ->directory('foto-formulario')
                 ->imagePreviewHeight('250')
                 ->previewable(true)
@@ -210,7 +217,6 @@ abstract class CampistaForm
                     'default' => 1,
                     'lg' => 3,
                 ])
-                ->imageCropAspectRatio('1:1')
                 ->loadingIndicatorPosition('center')
                 ->panelAspectRatio('1:1')
                 ->removeUploadedFileButtonPosition('top-center')
@@ -218,7 +224,14 @@ abstract class CampistaForm
                 ->uploadProgressIndicatorPosition('center')
                 ->imageEditorMode(2)
                 ->panelLayout('integrated')
+                ->imageAspectRatio('1:1')
+                ->automaticallyOpenImageEditorForAspectRatio()
+                ->imageEditorAspectRatioOptions(['1:1'])
                 ->imageEditorEmptyFillColor('#000000')
+                ->validationMessages([
+                    'mimetypes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
+                    'mimes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
+                ])
                 ->required(),
 
             Actions::make([
@@ -248,7 +261,7 @@ abstract class CampistaForm
                 ->columnSpan(1)
                 ->label('Data de Nascimento'),
 
-            Radio::make('form_data.sexo')
+            ToggleButtons::make('form_data.sexo')
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
@@ -256,6 +269,14 @@ abstract class CampistaForm
                 ->options([
                     'M' => 'Masculino',
                     'F' => 'Feminino',
+                ])
+                ->colors([
+                    'M' => Color::Blue,
+                    'F' => Color::Pink,
+                ])
+                ->icons([
+                    'M' => 'eos-male',
+                    'F' => 'eos-female',
                 ])
                 ->label('Sexo'),
 
@@ -432,7 +453,7 @@ abstract class CampistaForm
     public static function getFormInformacoesImportantes(): array
     {
         return [
-            Radio::make('form_data.paroquia')
+            ToggleButtons::make('form_data.paroquia')
                 ->label('Qual paróquia participa?')
                 ->columnSpanFull()
                 ->required()
@@ -451,7 +472,7 @@ abstract class CampistaForm
 
                 }),
 
-            Radio::make('form_data.comunidade')
+            ToggleButtons::make('form_data.comunidade')
                 ->label('Qual comunidade?')
                 ->live()
                 ->columnSpanFull()
@@ -469,7 +490,7 @@ abstract class CampistaForm
                     'Comunidade Imaculado Coração de Maria',
                 ]),
 
-            Radio::make('form_data.comunidade')
+            ToggleButtons::make('form_data.comunidade')
                 ->label('Qual comunidade?')
                 ->live()
                 ->columns(2)
@@ -497,13 +518,17 @@ abstract class CampistaForm
                     return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 2;
                 }),
 
-            Radio::make('form_data.toma_remedio')
+            ToggleButtons::make('form_data.toma_remedio')
                 ->label('Toma algum Remédio?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Sim',
                     false => 'Não',
@@ -516,13 +541,17 @@ abstract class CampistaForm
                 ->label('Por favor, descreva os medicamentos abaixo e os horários de administração caso se aplique')
                 ->columnSpanFull(),
 
-            Radio::make('form_data.tem_recomendacao')
+            ToggleButtons::make('form_data.tem_recomendacao')
                 ->label('Tem alguma recomendação especial?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Sim',
                     false => 'Não',
@@ -535,7 +564,7 @@ abstract class CampistaForm
                 ->rows(3)
                 ->columnSpanFull(),
 
-            Radio::make('form_data.tamanho_camiseta')
+            ToggleButtons::make('form_data.tamanho_camiseta')
                 ->label('Tamanho da camiseta')
                 ->columnSpanFull()
                 ->options([
@@ -563,13 +592,17 @@ abstract class CampistaForm
                 ->minLength(1)
                 ->maxLength(3),
 
-            Radio::make('form_data.ja_participou_retiro')
+            ToggleButtons::make('form_data.ja_participou_retiro')
                 ->label('Já participou de algum acampamento/retiro ?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Sim',
                     false => 'Não',
@@ -581,13 +614,17 @@ abstract class CampistaForm
                 ->requiredIf(fn(Get $get) => $get('form_data.ja_participou_retiro'), false)
                 ->visible(fn(Get $get) => $get('form_data.ja_participou_retiro') ?? false),
 
-            Radio::make('form_data.algum_parente')
+            ToggleButtons::make('form_data.algum_parente')
                 ->label('Tem algum amigo/parente próximo que irá participar do acampamento ?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Sim',
                     false => 'Não',
@@ -598,13 +635,17 @@ abstract class CampistaForm
                 ->columnSpanFull()
                 ->requiredIf(fn(Get $get) => $get('form_data.algum_parente'), false)
                 ->visible(fn(Get $get) => $get('form_data.algum_parente') ?? false),
-            Radio::make('form_data.declaro')
+            ToggleButtons::make('form_data.declaro')
                 ->label('Declaro nunca ter participado de nenhuma edição do Acampamento Juvenil ?')
                 ->live()
                 ->columnSpanFull()
                 ->required()
                 ->inline()
                 ->inlineLabel(false)
+                ->colors([
+                    true => 'success',
+                    false => 'danger',
+                ])
                 ->options([
                     true => 'Declaro nunca ter participado',
                     false => 'Não, já participei de alguma edição',

@@ -25,7 +25,7 @@
                 <span>Campistas</span>
             </div>
 
-            <figcaption class="absolute inset-x-0 bottom-0 z-10 p-5 sm:p-7 lg:p-8">
+            <figcaption class="absolute inset-x-0 bottom-0 z-10 p-5 sm:p-7 lg:p-8 lg:pr-20">
                 <div class="grid gap-4 border-t border-[#9ddbef]/28 pt-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                     <div>
                         <p class="text-[0.68rem] font-black uppercase tracking-[0.22em] text-[#9ddbef]">Vivência do acampamento</p>

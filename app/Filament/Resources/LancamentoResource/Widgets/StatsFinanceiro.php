@@ -4,15 +4,15 @@ namespace App\Filament\Resources\LancamentoResource\Widgets;
 
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
+use App\Filament\Widgets\Concerns\SupportsWidgetShield;
 use App\Models\Lancamento;
-use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class StatsFinanceiro extends BaseWidget
 {
-    use HasWidgetShield;
+    use SupportsWidgetShield;
 
     protected ?string $pollingInterval = '60s';
 

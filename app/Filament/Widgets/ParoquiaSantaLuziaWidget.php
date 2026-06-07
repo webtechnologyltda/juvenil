@@ -3,13 +3,13 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\StatusInscricao;
+use App\Filament\Widgets\Concerns\SupportsWidgetShield;
 use App\Models\Campista;
-use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Widgets\ChartWidget;
 
 class ParoquiaSantaLuziaWidget extends ChartWidget
 {
-    use HasWidgetShield;
+    use SupportsWidgetShield;
 
     protected ?string $heading = 'Inscrições por Comunidade - Matriz Santa Luzia';
 

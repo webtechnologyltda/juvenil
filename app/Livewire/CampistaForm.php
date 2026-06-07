@@ -9,10 +9,10 @@ use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -21,6 +21,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\Colors\Color;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use Leandrocfe\FilamentPtbrFormFields\Cep;
@@ -72,6 +73,7 @@ class CampistaForm extends Component implements HasForms
                             ->placeholder(fn () => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
                             ->alignCenter()
                             ->imageEditor()
+                            ->imageEditorAspectRatioOptions(['1:1'])
                             ->directory('foto-formulario')
                             ->columnSpan(1)
                             ->columnStart([
@@ -80,21 +82,29 @@ class CampistaForm extends Component implements HasForms
                                 'xl' => 2,
                             ])
                             ->image()
+                            ->acceptedFileTypes([
+                                'image/jpeg',
+                                'image/png',
+                                'image/webp',
+                            ])
+                            ->rules(['mimes:jpg,jpeg,png,webp'])
                             ->imagePreviewHeight('400')
                             ->loadingIndicatorPosition('center')
                             ->panelAspectRatio('1:1')
                             ->removeUploadedFileButtonPosition('top-center')
                             ->uploadProgressIndicatorPosition('center')
                             ->imageEditorMode(2)
-                            ->imageCropAspectRatio('1:1')
+                            ->imageAspectRatio('1:1')
+                            ->automaticallyOpenImageEditorForAspectRatio()
                             ->orientImagesFromExif(false)
                             ->extraAttributes(['rounded'])
                             ->imagePreviewHeight('250')
-                            ->imageEditorAspectRatios([
-                                '1:1',
-                            ])
                             ->panelLayout('integrated')
                             ->imageEditorEmptyFillColor('#000000')
+                            ->validationMessages([
+                                'mimetypes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
+                                'mimes' => 'Envie uma imagem nos formatos JPG, JPEG, PNG ou WEBP.',
+                            ])
                             ->required(),
                     ]),
                 Placeholder::make('mensagem_foto')
@@ -132,7 +142,7 @@ class CampistaForm extends Component implements HasForms
                             ])
                             ->label('Data de Nascimento'),
 
-                        Radio::make('form_data.sexo')
+                        ToggleButtons::make('form_data.sexo')
                             ->required()
                             ->columnSpan([
                                 'default' => 1,
@@ -145,6 +155,14 @@ class CampistaForm extends Component implements HasForms
                             ->options([
                                 'M' => 'Masculino',
                                 'F' => 'Feminino',
+                            ])
+                            ->colors([
+                                'M' => Color::Blue,
+                                'F' => Color::Pink,
+                            ])
+                            ->icons([
+                                'M' => 'eos-male',
+                                'F' => 'eos-female',
                             ])
                             ->label('Sexo'),
 
@@ -255,13 +273,17 @@ class CampistaForm extends Component implements HasForms
                             ])
                             ->label('Nome do Contato'),
 
-                        Radio::make('form_data.toma_remedio')
+                        ToggleButtons::make('form_data.toma_remedio')
                             ->label('Toma algum Remédio?')
                             ->live()
                             ->columnSpanFull()
                             ->required()
                             ->inline()
                             ->inlineLabel(false)
+                            ->colors([
+                                true => 'success',
+                                false => 'danger',
+                            ])
                             ->options([
                                 true => 'Sim',
                                 false => 'Não',
@@ -274,13 +296,17 @@ class CampistaForm extends Component implements HasForms
                             ->label('Por favor, descreva os medicamentos abaixo e os horários de administração caso se aplique')
                             ->columnSpanFull(),
 
-                        Radio::make('form_data.tem_recomendacao')
+                        ToggleButtons::make('form_data.tem_recomendacao')
                             ->label('Tem alguma recomendação especial?')
                             ->live()
                             ->columnSpanFull()
                             ->required()
                             ->inline()
                             ->inlineLabel(false)
+                            ->colors([
+                                true => 'success',
+                                false => 'danger',
+                            ])
                             ->options([
                                 true => 'Sim',
                                 false => 'Não',
@@ -293,7 +319,7 @@ class CampistaForm extends Component implements HasForms
                             ->rows(3)
                             ->columnSpanFull(),
 
-                        Radio::make('form_data.tamanho_camiseta')
+                        ToggleButtons::make('form_data.tamanho_camiseta')
                             ->label('Tamanho da camiseta')
                             ->columnSpan([
                                 'default' => 1,
@@ -448,7 +474,7 @@ class CampistaForm extends Component implements HasForms
                     ->columns(4)
                     ->schema([
 
-                        Radio::make('form_data.paroquia')
+                        ToggleButtons::make('form_data.paroquia')
                             ->label('Qual paróquia participa?')
                             ->columnSpanFull()
                             ->required()
@@ -466,7 +492,7 @@ class CampistaForm extends Component implements HasForms
 
                             }),
 
-                        Radio::make('form_data.comunidade')
+                        ToggleButtons::make('form_data.comunidade')
                             ->label('Qual comunidade?')
                             ->live()
                             ->columnSpanFull()
@@ -484,7 +510,7 @@ class CampistaForm extends Component implements HasForms
                                 'Comunidade Imaculado Coração de Maria',
                             ]),
 
-                        Radio::make('form_data.comunidade')
+                        ToggleButtons::make('form_data.comunidade')
                             ->label('Qual comunidade?')
                             ->live()
                             ->columns(2)
@@ -512,13 +538,17 @@ class CampistaForm extends Component implements HasForms
                                 return $get('form_data.paroquia') != null && $get('form_data.paroquia') == 2;
                             }),
 
-                        Radio::make('form_data.ja_participou_retiro')
+                        ToggleButtons::make('form_data.ja_participou_retiro')
                             ->label('Já participou de algum acampamento/retiro ?')
                             ->live()
                             ->columnSpanFull()
                             ->required()
                             ->inline()
                             ->inlineLabel(false)
+                            ->colors([
+                                true => 'success',
+                                false => 'danger',
+                            ])
                             ->options([
                                 true => 'Sim',
                                 false => 'Não',
@@ -531,13 +561,17 @@ class CampistaForm extends Component implements HasForms
                             ->requiredIf(fn (Get $get) => $get('form_data.ja_participou_retiro'), false)
                             ->visible(fn (Get $get) => $get('form_data.ja_participou_retiro') ?? false),
 
-                        Radio::make('form_data.algum_parente')
+                        ToggleButtons::make('form_data.algum_parente')
                             ->label('Tem algum amigo/parente próximo que irá participar do acampamento ?')
                             ->live()
                             ->columnSpanFull()
                             ->required()
                             ->inline()
                             ->inlineLabel(false)
+                            ->colors([
+                                true => 'success',
+                                false => 'danger',
+                            ])
                             ->options([
                                 true => 'Sim',
                                 false => 'Não',
@@ -549,13 +583,17 @@ class CampistaForm extends Component implements HasForms
                             ->requiredIf(fn (Get $get) => $get('form_data.algum_parente'), false)
                             ->visible(fn (Get $get) => $get('form_data.algum_parente') ?? false),
 
-                        Radio::make('form_data.declaro')
+                        ToggleButtons::make('form_data.declaro')
                             ->label('Declaro nunca ter participado de nenhuma edição do Acampamento Juvenil ?')
                             ->live()
                             ->columnSpanFull()
                             ->required()
                             ->inline()
                             ->inlineLabel(false)
+                            ->colors([
+                                true => 'success',
+                                false => 'danger',
+                            ])
                             ->options([
                                 true => 'Declaro nunca ter participado',
                                 false => 'Não, já participei de alguma edição',

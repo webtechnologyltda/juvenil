@@ -2,8 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use BezhanSalleh\FilamentShield\Support\Utils;
+use Filament\Facades\Filament;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Spatie\Permission\PermissionRegistrar;
 
 class ShieldSeeder extends Seeder
@@ -12,57 +15,81 @@ class ShieldSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $rolesWithPermissions = '[{"name":"Super Administrador","guard_name":"web","permissions":["view_any_campista","view_campista","create_campista","update_campista","updateTribo_campista","delete_campista","delete_any_campista","audit_campista","restoreAudit_campista","export_campista","view_any_lancamento","create_lancamento","update_lancamento","delete_lancamento","delete_any_lancamento","view_role","view_any_role","create_role","update_role","delete_role","delete_any_role","view_any_tribo","create_tribo","update_tribo","delete_tribo","delete_any_tribo","audit_tribo","restoreAudit_tribo","view_any_user","create_user","update_user","delete_user","delete_any_user","page_GeneralSettingsPage","widget_GeneralStatsOverview","widget_InscriptionsByAgeChart","widget_InscriptionsByCityChart","widget_InscriptionsBySexChart","widget_VlvFormDataChart","widget_UtilizaRemedioTableWidget"]}]';
-        $directPermissions = '[]';
-
-        static::makeRolesWithPermissions($rolesWithPermissions);
-        static::makeDirectPermissions($directPermissions);
+        static::makeSuperAdminWithPermissions(static::getPermissionNames());
 
         $this->command->info('Shield Seeding Completed.');
     }
 
-    protected static function makeRolesWithPermissions(string $rolesWithPermissions): void
+    protected static function makeSuperAdminWithPermissions(array $permissions): void
     {
-        if (! blank($rolePlusPermissions = json_decode($rolesWithPermissions, true))) {
-            /** @var Model $roleModel */
-            $roleModel = Utils::getRoleModel();
-            /** @var Model $permissionModel */
-            $permissionModel = Utils::getPermissionModel();
+        /** @var class-string<\Spatie\Permission\Models\Role> $roleModel */
+        $roleModel = Utils::getRoleModel();
 
-            foreach ($rolePlusPermissions as $rolePlusPermission) {
-                $role = $roleModel::firstOrCreate([
-                    'name' => $rolePlusPermission['name'],
-                    'guard_name' => $rolePlusPermission['guard_name'],
-                ]);
+        /** @var class-string<\Spatie\Permission\Models\Permission> $permissionModel */
+        $permissionModel = Utils::getPermissionModel();
 
-                if (! blank($rolePlusPermission['permissions'])) {
-                    $permissionModels = collect($rolePlusPermission['permissions'])
-                        ->map(fn ($permission) => $permissionModel::firstOrCreate([
-                            'name' => $permission,
-                            'guard_name' => $rolePlusPermission['guard_name'],
-                        ]))
-                        ->all();
+        $guard = 'web';
 
-                    $role->syncPermissions($permissionModels);
-                }
-            }
-        }
+        $role = $roleModel::firstOrCreate([
+            'name' => config('filament-shield.super_admin.name', 'Super Administrador'),
+            'guard_name' => $guard,
+        ]);
+
+        $permissionModels = collect($permissions)
+            ->map(fn (string $permission) => $permissionModel::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => $guard,
+            ]))
+            ->all();
+
+        $role->syncPermissions($permissionModels);
     }
 
-    public static function makeDirectPermissions(string $directPermissions): void
+    protected static function getPermissionNames(): array
     {
-        if (! blank($permissions = json_decode($directPermissions, true))) {
-            /** @var Model $permissionModel */
-            $permissionModel = Utils::getPermissionModel();
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
 
-            foreach ($permissions as $permission) {
-                if ($permissionModel::whereName($permission)->doesntExist()) {
-                    $permissionModel::create([
-                        'name' => $permission['name'],
-                        'guard_name' => $permission['guard_name'],
-                    ]);
-                }
-            }
-        }
+        return collect()
+            ->merge(static::resourcePermissionNames())
+            ->merge(static::pagePermissionNames())
+            ->merge(static::widgetPermissionNames())
+            ->merge(static::customPermissionNames())
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+    }
+
+    protected static function resourcePermissionNames(): Collection
+    {
+        return collect(FilamentShield::getResources())
+            ->flatMap(fn (array $resource): array => collect($resource['permissions'] ?? [])
+                ->pluck('key')
+                ->all());
+    }
+
+    protected static function pagePermissionNames(): Collection
+    {
+        return collect(FilamentShield::getPages())
+            ->flatMap(fn (array $page): array => array_keys($page['permissions'] ?? []));
+    }
+
+    protected static function widgetPermissionNames(): Collection
+    {
+        return collect(FilamentShield::getWidgets())
+            ->flatMap(fn (array $widget): array => array_keys($widget['permissions'] ?? []));
+    }
+
+    protected static function customPermissionNames(): array
+    {
+        return [
+            'audit_campista',
+            'audit_tribo',
+            'export_campista',
+            'restoreAudit_campista',
+            'restoreAudit_tribo',
+            'updateTribo_campista',
+        ];
     }
 }

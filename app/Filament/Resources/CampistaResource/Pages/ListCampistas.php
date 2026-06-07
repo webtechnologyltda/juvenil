@@ -6,8 +6,8 @@ use App\Enums\StatusInscricao;
 use App\Filament\Resources\CampistaResource;
 use App\Models\Campista;
 use Filament\Actions;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
 use Hydrat\TableLayoutToggle\Concerns\HasToggleableTable;
 use Illuminate\Database\Eloquent\Builder;
 

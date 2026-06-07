@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Dashboard;
+use App\Filament\Pages\Auth\Login;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -30,7 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(Login::class)
             ->colors([
                 'primary' => Color::generatePalette('#f46b12'),
                 'info' => Color::Cyan,
@@ -45,6 +46,7 @@ class AdminPanelProvider extends PanelProvider
                 'blue' => Color::Blue,
             ])
             ->sidebarCollapsibleOnDesktop()
+            ->darkMode(isForced: true)
             ->navigationGroups([
                 NavigationGroup::make()
                     ->label('Gestão Acampamento')
@@ -65,11 +67,11 @@ class AdminPanelProvider extends PanelProvider
             ])
 //            ->topNavigation()
             ->maxContentWidth(Width::ScreenTwoExtraLarge)
-            ->favicon(asset('img/logo_simple.png'))
-            ->defaultThemeMode(ThemeMode::Light)
-            ->brandLogo(asset('img/logo_simple.png'))
-            ->darkModeBrandLogo(asset('img/logo_simple.png'))
-            ->brandLogoHeight('40px')
+            ->favicon(asset('img/logo.png'))
+            ->defaultThemeMode(ThemeMode::Dark)
+            ->brandLogo(asset('img/logo.png'))
+            ->darkModeBrandLogo(asset('img/logo.png'))
+            ->brandLogoHeight('54px')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -95,8 +97,8 @@ class AdminPanelProvider extends PanelProvider
                     ->visible(fn () => auth()->user()?->hasRole('Super Administrador'))
                     ->color(fn () => match (app()->environment()) {
                         'production' => null,
-                        'staging' => Color::Orange,
-                        default => Color::Blue,
+                        'staging' => Color::generatePalette('#f46b12'),
+                        default => Color::generatePalette('#f46b12'),
                     }),
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')

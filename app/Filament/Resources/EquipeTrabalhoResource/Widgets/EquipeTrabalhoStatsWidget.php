@@ -3,15 +3,15 @@
 namespace App\Filament\Resources\EquipeTrabalhoResource\Widgets;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
+use App\Filament\Widgets\Concerns\SupportsWidgetShield;
 use App\Models\EquipeTrabalho;
-use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class EquipeTrabalhoStatsWidget extends BaseWidget
 {
-    use HasWidgetShield;
+    use SupportsWidgetShield;
 
     protected ?string $pollingInterval = '60s';
 

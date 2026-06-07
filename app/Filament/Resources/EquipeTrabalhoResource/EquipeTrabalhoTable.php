@@ -17,17 +17,24 @@ abstract class EquipeTrabalhoTable
             TextColumn::make('id')
                 ->label('Cód.')
                 ->sortable()
-                ->searchable(),
+                ->searchable()
+                ->visibleFrom('md'),
 
             ImageColumn::make('avatar_url')
+                ->state(fn ($record): ?string => filter_var($record->avatar_url, FILTER_VALIDATE_URL) ? null : $record->avatar_url)
                 ->square()
                 ->alignCenter()
                 ->size(60)
                 ->grow(false)
-                ->extraImgAttributes(['class' => 'rounded-xl'])
+                ->defaultImageUrl(asset('img/logo.png'))
+                ->extraImgAttributes([
+                    'class' => 'rounded-xl juvenil-admin-table-avatar',
+                    'onerror' => "this.onerror=null;this.src='".asset('img/logo.png')."';",
+                ])
                 ->label('Foto'),
 
             TextColumn::make('nome')
+                ->lineClamp(1)
                 ->sortable()
                 ->searchable(),
 
@@ -37,12 +44,14 @@ abstract class EquipeTrabalhoTable
                 ->sortable()
                 ->alignCenter()
                 ->formatStateUsing(fn($state) => Carbon::createFromFormat('d/m/Y', $state)->age)
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->toggleable(isToggledHiddenByDefault: true)
+                ->visibleFrom('md'),
 
             SelectColumn::make('status')
                 ->alignCenter()
                 ->options(StatusInscricaoEquipeTrabalho::class)
-                ->label('Status'),
+                ->label('Status')
+                ->visibleFrom('md'),
 
             TextColumn::make('data_form.sexo')
                 ->alignCenter()
@@ -52,21 +61,25 @@ abstract class EquipeTrabalhoTable
                 ->formatStateUsing(fn ($state) => $state === 'M' ? 'Masculino' : 'Feminino')
                 ->color(fn ($state) => $state === 'M' ? Color::Blue : Color::Pink)
                 ->sortable()
-                ->label('Sexo'),
+                ->label('Sexo')
+                ->visibleFrom('md'),
 
             TextColumn::make('data_form.tamanho_camiseta')
                 ->label('Tamanho da Camiseta')
                 ->alignCenter()
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->toggleable(isToggledHiddenByDefault: true)
+                ->visibleFrom('md'),
 
             TextColumn::make('data_form.reponsavel_nome')
                 ->label('Nome do Responsável')
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->toggleable(isToggledHiddenByDefault: true)
+                ->visibleFrom('md'),
 
             TextColumn::make('data_form.reponsavel_telefone')
                 ->label('Telefone Responsável')
                 ->alignCenter()
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->toggleable(isToggledHiddenByDefault: true)
+                ->visibleFrom('md'),
         ];
     }
 }

@@ -21,6 +21,8 @@ use Leandrocfe\FilamentPtbrFormFields\Money;
 
 abstract class LancamentoForm
 {
+    private const COMPROVANTE_BLOCK = 'anexar_comprovante';
+
     public static function getFormSchema(): array
     {
         return [
@@ -96,8 +98,12 @@ abstract class LancamentoForm
                           Builder::make('comprovante')
                               ->label('Comprovates')
                               ->required()
+                              ->afterStateHydrated(static function (Builder $component): void {
+                                  $component->rawState(self::normalizeComprovanteState($component->getRawState()));
+                                  $component->hydrateItems();
+                              })
                               ->blocks([
-                                  Block::make('anexar_comprovante')
+                                  Block::make(self::COMPROVANTE_BLOCK)
                                       ->label('Comprovante')
                                       ->schema([
                                           TextInput::make('comprovante_nome')
@@ -121,5 +127,102 @@ abstract class LancamentoForm
 
               ]),
         ];
+    }
+
+    public static function normalizeComprovanteState(mixed $state): array
+    {
+        if (blank($state)) {
+            return [];
+        }
+
+        if (is_string($state)) {
+            return [self::makeComprovanteBlock(files: [$state])];
+        }
+
+        if (! is_array($state)) {
+            return [];
+        }
+
+        if (array_is_list($state) && self::containsOnlyFiles($state)) {
+            return [self::makeComprovanteBlock(files: $state)];
+        }
+
+        $items = [];
+
+        foreach ($state as $item) {
+            if (is_string($item)) {
+                $items[] = self::makeComprovanteBlock(files: [$item]);
+
+                continue;
+            }
+
+            if (! is_array($item)) {
+                continue;
+            }
+
+            if (array_key_exists('type', $item)) {
+                $data = is_array($item['data'] ?? null) ? $item['data'] : [];
+                $data['url'] = self::normalizeFileUploadState($data['url'] ?? []);
+
+                $items[] = [
+                    'type' => filled($item['type'] ?? null) ? $item['type'] : self::COMPROVANTE_BLOCK,
+                    'data' => $data,
+                ];
+
+                continue;
+            }
+
+            if (array_key_exists('url', $item) || array_key_exists('comprovante_nome', $item)) {
+                $items[] = self::makeComprovanteBlock(
+                    name: $item['comprovante_nome'] ?? 'Comprovante',
+                    files: self::normalizeFileUploadState($item['url'] ?? []),
+                );
+            }
+        }
+
+        return $items;
+    }
+
+    private static function makeComprovanteBlock(string $name = 'Comprovante', array $files = []): array
+    {
+        return [
+            'type' => self::COMPROVANTE_BLOCK,
+            'data' => [
+                'comprovante_nome' => filled($name) ? $name : 'Comprovante',
+                'url' => self::normalizeFileUploadState($files),
+            ],
+        ];
+    }
+
+    private static function normalizeFileUploadState(mixed $files): array
+    {
+        if (blank($files)) {
+            return [];
+        }
+
+        if (is_string($files)) {
+            return [$files];
+        }
+
+        if (! is_array($files)) {
+            return [];
+        }
+
+        return array_values(array_filter($files, fn (mixed $file): bool => is_string($file) && filled($file)));
+    }
+
+    private static function containsOnlyFiles(array $items): bool
+    {
+        if ($items === []) {
+            return false;
+        }
+
+        foreach ($items as $item) {
+            if (! is_string($item)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

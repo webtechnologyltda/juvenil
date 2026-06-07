@@ -3,14 +3,14 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\StatusInscricao;
+use App\Filament\Widgets\Concerns\SupportsWidgetShield;
 use App\Models\Campista;
-use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
 
 class InscriptionsByAgeChart extends ChartWidget
 {
-    use HasWidgetShield;
+    use SupportsWidgetShield;
 
     protected ?string $heading = 'Inscrições por Idade';
 

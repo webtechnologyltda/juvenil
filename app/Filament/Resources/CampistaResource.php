@@ -11,6 +11,8 @@ use App\Filament\Resources\CampistaResource\Pages;
 use App\Models\Campista;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Carbon\Carbon;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\Exports\Models\Export;
 use Filament\Forms\Components\FileUpload;
@@ -20,8 +22,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
@@ -187,7 +187,8 @@ class CampistaResource extends Resource implements HasShieldPermissions
                     ->icon('heroicon-s-arrow-left-on-rectangle')
                     ->icon('heroicon-s-arrow-left-on-rectangle'),
                 EditAction::make()
-                    ->label('Editar'),
+                    ->iconButton()
+                    ->tooltip('Editar'),
             ])
             ->paginationPageOptions([5, 10, 30, 50])
             ->extremePaginationLinks()

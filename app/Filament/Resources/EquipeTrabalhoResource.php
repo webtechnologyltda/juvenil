@@ -9,11 +9,11 @@ use App\Filament\Resources\EquipeTrabalhoResource\Pages;
 use App\Filament\Resources\EquipeTrabalhoResource\Widgets\EquipeTrabalhoStatsWidget;
 use App\Models\EquipeTrabalho;
 use Carbon\Carbon;
+use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\Exports\Models\Export;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables;
 use Filament\Tables\Table;
 
 class EquipeTrabalhoResource extends Resource
@@ -47,7 +47,9 @@ class EquipeTrabalhoResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
-                Tables\Actions\EditAction::make(),
+                EditAction::make()
+                    ->iconButton()
+                    ->tooltip('Editar'),
             ])
             ->toolbarActions([
                 ExportBulkAction::make()

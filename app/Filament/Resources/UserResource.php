@@ -5,6 +5,10 @@ namespace App\Filament\Resources;
 use App\Enums\RoleEnum;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
@@ -19,7 +23,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use STS\FilamentImpersonate\Tables\Actions\Impersonate;
+use STS\FilamentImpersonate\Actions\Impersonate;
 
 class UserResource extends Resource
 {
@@ -172,15 +176,17 @@ class UserResource extends Resource
                     ->visible(fn () => auth()->user()->isSuperAdmin())
                     ->label('Simular acesso do usuário')
                     ->color(Color::Amber),
-                Tables\Actions\EditAction::make(),
+                EditAction::make()
+                    ->iconButton()
+                    ->tooltip('Editar'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->emptyStateActions([
-                Tables\Actions\CreateAction::make(),
+                CreateAction::make(),
             ])
             ->deferLoading()
             ->striped()

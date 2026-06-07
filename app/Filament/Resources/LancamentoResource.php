@@ -9,6 +9,7 @@ use App\Filament\Resources\LancamentoResource\Pages;
 use App\Filament\Resources\LancamentoResource\Widgets\StatsFinanceiro;
 use App\Models\Lancamento;
 use Carbon\Carbon;
+use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\Exports\Models\Export;
 use Filament\Resources\Resource;
@@ -84,7 +85,9 @@ class LancamentoResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                EditAction::make()
+                    ->iconButton()
+                    ->tooltip('Editar'),
             ])
             ->toolbarActions([
                 ExportBulkAction::make()
