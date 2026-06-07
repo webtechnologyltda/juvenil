@@ -2,9 +2,9 @@
     <div class="mx-auto max-w-7xl">
         <div class="grid gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:items-end">
             <div>
-                <p class="text-xs font-black uppercase tracking-[0.26em] text-[#f46b12]" data-motion-heading>Local do encontro</p>
+                <p class="text-xs font-black uppercase tracking-[0.26em] text-[#f46b12]" data-motion-heading>Local de embarque</p>
                 <h2 class="mt-4 text-3xl font-black uppercase leading-tight text-white sm:text-4xl" data-motion-heading>
-                    Local do Acampamento Juvenil
+                    Local de Embarque
                 </h2>
                 <p class="mt-5 text-base leading-7 text-[#d8f2fa]">
                     R. José Francisco Laurindo, 944 - São Domingos, Navegantes - SC, 88370-603.
@@ -27,7 +27,7 @@
 
         <div class="mt-10 h-[26rem] overflow-hidden border border-[#9ddbef]/25 bg-[#073d45] shadow-[0_24px_80px_rgba(0,0,0,0.24)] sm:h-[32rem]" data-gsap-image data-motion-card>
             <iframe
-                title="Mapa do local do Acampamento Juvenil"
+                title="Mapa do local de embarque"
                 class="h-full w-full"
                 style="filter: contrast(1.08) saturate(1.08);"
                 marginheight="0"
