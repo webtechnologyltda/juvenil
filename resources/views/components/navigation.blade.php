@@ -42,5 +42,5 @@
         </a>
     </header>
 
-    <x-home-banner></x-home-banner>
+    <x-home-banner :settings="$settings ?? app(\App\Settings\GeneralSettings::class)"></x-home-banner>
 </section>

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Campista;
 use App\Models\User;
 use App\Settings\GeneralSettings;
+use App\Support\CampistaRegistrationAvailability;
 use App\Support\RegistrationAgeLimits;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -56,6 +57,12 @@ class CampistaForm extends Component implements HasActions, HasForms
         $this->settings = app(GeneralSettings::class)->toArray();
         // pega o valor de comprado do localstorage
         $this->getForm('form')->fill();
+    }
+
+    #[Computed]
+    public function availability(): CampistaRegistrationAvailability
+    {
+        return CampistaRegistrationAvailability::fromSettings($this->settings ?? []);
     }
 
     public function form(Schema $schema): Schema
@@ -169,6 +176,7 @@ class CampistaForm extends Component implements HasActions, HasForms
                                 'M' => 'eos-male',
                                 'F' => 'eos-female',
                             ])
+                            ->disableOptionWhen(fn (string $value): bool => ! $this->availability->sexHasVacancy($value))
                             ->label('Sexo'),
 
                         TextInput::make('form_data.altura')
@@ -585,7 +593,57 @@ class CampistaForm extends Component implements HasActions, HasForms
 
     public function submitForm(): void
     {
+        $availability = CampistaRegistrationAvailability::fromSettings(app(GeneralSettings::class));
+
+        if (! $availability->registrationOpen()) {
+            Notification::make()
+                ->title('Inscrições encerradas')
+                ->body($availability->unavailableRegistrationMessage())
+                ->duration(60000)
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $selectedSex = data_get($this->data, 'form_data.sexo');
+
+        if ($selectedSex !== null && $selectedSex !== '' && ! $availability->sexHasVacancy($selectedSex)) {
+            Notification::make()
+                ->title('Vagas indisponíveis')
+                ->body($availability->unavailableSelectedSexMessage($selectedSex))
+                ->duration(60000)
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $this->validate();
+
+        $availability = CampistaRegistrationAvailability::fromSettings(app(GeneralSettings::class));
+
+        if (! $availability->registrationOpen()) {
+            Notification::make()
+                ->title('Inscrições encerradas')
+                ->body($availability->unavailableRegistrationMessage())
+                ->duration(60000)
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        if (! $availability->sexHasVacancy($selectedSex)) {
+            Notification::make()
+                ->title('Vagas indisponíveis')
+                ->body($availability->unavailableSelectedSexMessage($selectedSex))
+                ->duration(60000)
+                ->danger()
+                ->send();
+
+            return;
+        }
 
         $ageLimitMessage = RegistrationAgeLimits::fromSettings(app(GeneralSettings::class))
             ->violationMessage(data_get($this->data, 'form_data.data_nacimento'));

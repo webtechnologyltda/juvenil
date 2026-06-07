@@ -1,3 +1,7 @@
+@php
+    $registrationAvailability = \App\Support\CampistaRegistrationAvailability::fromSettings($settings ?? app(\App\Settings\GeneralSettings::class));
+@endphp
+
 <section id="juvenil-details" class="juvenil-experience-section relative isolate overflow-hidden px-4 py-14 text-white sm:px-6 sm:py-20 lg:px-8 lg:py-28">
     <div class="absolute inset-x-0 top-0 h-px bg-[#9ddbef]/25" aria-hidden="true"></div>
     <div class="absolute inset-x-0 bottom-0 h-px bg-[#9ddbef]/20" aria-hidden="true"></div>
@@ -70,7 +74,7 @@
             <div class="juvenil-experience-note flex items-start gap-4 border border-[#f46b12]/42 bg-[#f46b12]/10 p-4">
                 <i class="bi bi-calendar2-check mt-1 text-lg text-[#f46b12]" aria-hidden="true"></i>
                 <p class="text-sm leading-6 text-[#d8f2fa]">
-                    Inscrições a partir de 07 de Junho, após a Santa Missa das 19h30.
+                    {{ $registrationAvailability->siteDetailsMessage() }}
                 </p>
             </div>
         </div>
