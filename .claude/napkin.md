@@ -21,15 +21,17 @@
    Do instead: render `welcome`/`content-form` with `campista-form` on `/` and `/campista`; keep `/inscricao-equipe-trabalho` redirected away unless explicitly re-enabled.
 2. **[2026-06-06] Mobile public page is app-like and form-first**
    Do instead: keep the mobile bottom bar active by section, hide it on desktop with explicit CSS, and order the Filament form before payment/instructions on mobile.
-3. **[2026-06-06] GSAP anchor scrolling conflicts with Tailwind `scroll-smooth`**
+3. **[2026-06-06] Public page must have only document-level vertical scroll**
+   Do instead: use `overflow-x-clip` for horizontal clipping; avoid `overflow-x-hidden` on `main` because it computes `overflow-y: auto` and creates a second vertical scrollbar.
+4. **[2026-06-06] GSAP anchor scrolling conflicts with Tailwind `scroll-smooth`**
    Do instead: temporarily disable smooth CSS and drive scroll with a GSAP numeric tween plus `window.scrollTo()` on update.
-4. **[2026-06-06] Public Filament forms need official CSS above legacy resets**
+5. **[2026-06-06] Public Filament forms need official CSS above legacy resets**
    Do instead: import Filament support/actions/forms/notifications/schemas CSS in `resources/css/app.css` and keep `output.css` in a `legacy` cascade layer before `components`.
-5. **[2026-06-06] Filament 5 schema components moved namespaces**
+6. **[2026-06-06] Filament 5 schema components moved namespaces**
    Do instead: import layout/action containers like `Section`, `Grid`, `Tabs`, `Fieldset`, and `Actions` from `Filament\Schemas\Components`.
-6. **[2026-06-06] Filament 5 form callbacks use schema utilities**
+7. **[2026-06-06] Filament 5 form callbacks use schema utilities**
    Do instead: type form callback `Get`/`Set` parameters as `Filament\Schemas\Components\Utilities\Get` and `Set`.
-7. **[2026-06-06] Filament 5 FileUpload removed old helper methods**
+8. **[2026-06-06] Filament 5 FileUpload removed old helper methods**
    Do instead: remove stale `optimize()`, `resize()`, and `uploadingMessage()` calls; use supported image/file upload methods from the installed package.
 
 ## User Directives

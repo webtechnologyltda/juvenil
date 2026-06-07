@@ -264,7 +264,7 @@ function initPublicMotion() {
     initScrubbedText();
     initPinnedSplit();
     initComponentMotion();
-    initCardStacking();
+    initExperienceParallax();
 
     ScrollTrigger.refresh();
 }
@@ -419,22 +419,46 @@ function initComponentMotion() {
     });
 }
 
-function initCardStacking() {
-    const cards = gsap.utils.toArray('[data-stack-card]');
+function initExperienceParallax() {
+    const section = document.querySelector('.juvenil-experience-section');
 
-    if (!cards.length || window.innerWidth < 1024) {
+    if (!section) {
         return;
     }
 
-    gsap.to(cards, {
-        y: (index) => index * -10,
-        scale: (index) => 1 - (index * 0.018),
-        ease: 'none',
-        scrollTrigger: {
-            trigger: '.juvenil-bento-grid',
-            start: 'top 68%',
-            end: 'bottom 25%',
-            scrub: true,
-        },
-    });
+    const mobile = isMobileViewport();
+    const video = section.querySelector('.juvenil-experience-video');
+    const copy = section.querySelector('.juvenil-experience-copy');
+
+    if (video) {
+        gsap.fromTo(video, {
+            y: mobile ? 18 : 38,
+            scale: mobile ? 0.98 : 0.965,
+        }, {
+            y: mobile ? -12 : -24,
+            scale: 1,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: section,
+                start: mobile ? 'top 92%' : 'top 88%',
+                end: mobile ? 'bottom 28%' : 'bottom 18%',
+                scrub: mobile ? 0.45 : true,
+            },
+        });
+    }
+
+    if (copy && !mobile) {
+        gsap.fromTo(copy, {
+            y: 30,
+        }, {
+            y: -18,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: section,
+                start: 'top 82%',
+                end: 'bottom 24%',
+                scrub: true,
+            },
+        });
+    }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt_BR" class="scroll-smooth">
+<html lang="pt_BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,10 +31,9 @@
         </div>
 
         @livewire('notifications')
-        <main class="w-full overflow-x-hidden bg-[#052f35]">
+        <main class="w-full overflow-x-clip bg-[#052f35]">
                 @include('components.navigation')
                 @include('components.content-about-details')
-                @include('components.content-camp-video')
                 @include('components.content-form', ['settings' => $settings])
 {{--                @include('components.content-testemunho')--}}
                 @include('components.content-location_tk')

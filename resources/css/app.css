@@ -114,11 +114,56 @@
 
 .filament-registration-shell {
     color-scheme: light;
+    --primary-50: oklch(0.97717647058824 0.01395454545455 45.756);
+    --primary-100: oklch(0.95035294117647 0.03272727272727 45.756);
+    --primary-200: oklch(0.90547058823529 0.06318181818182 45.756);
+    --primary-300: oklch(0.84047058823529 0.10604545454546 45.756);
+    --primary-400: oklch(0.75352941176471 0.15027272727273 45.756);
+    --primary-500: oklch(0.68270588235294 0.17009090909091 45.756);
+    --primary-600: oklch(0.59782352941176 0.16913636363636 45.756);
+    --primary-700: oklch(0.51494117647059 0.14940909090909 45.756);
+    --primary-800: oklch(0.44611764705882 0.12331818181818 45.756);
+    --primary-900: oklch(0.39458823529412 0.09963636363636 45.756);
+    --primary-950: oklch(0.27788235294118 0.07136363636364 45.756);
+    --color-primary-50: var(--primary-50);
+    --color-primary-100: var(--primary-100);
+    --color-primary-200: var(--primary-200);
+    --color-primary-300: var(--primary-300);
+    --color-primary-400: var(--primary-400);
+    --color-primary-500: var(--primary-500);
+    --color-primary-600: var(--primary-600);
+    --color-primary-700: var(--primary-700);
+    --color-primary-800: var(--primary-800);
+    --color-primary-900: var(--primary-900);
+    --color-primary-950: var(--primary-950);
 }
 
 .filament-registration-shell,
 .filament-registration-shell * {
     min-width: 0;
+}
+
+.filament-registration-shell :is(input[type='checkbox'], input[type='radio']) {
+    color: #f46b12;
+    --tw-ring-color: #f46b12;
+}
+
+.filament-registration-shell :is(input[type='checkbox'], input[type='radio']):focus {
+    --tw-ring-color: #f46b12;
+}
+
+.filament-registration-shell .fi-color-primary {
+    --color-50: var(--primary-50);
+    --color-100: var(--primary-100);
+    --color-200: var(--primary-200);
+    --color-300: var(--primary-300);
+    --color-400: var(--primary-400);
+    --color-500: var(--primary-500);
+    --color-600: var(--primary-600);
+    --color-700: var(--primary-700);
+    --color-800: var(--primary-800);
+    --color-900: var(--primary-900);
+    --color-950: var(--primary-950);
 }
 
 .juvenil-poster-title {
@@ -164,15 +209,98 @@
     background: linear-gradient(180deg, rgba(5, 47, 53, 0), #052f35 88%);
 }
 
-.juvenil-video-shell {
-    aspect-ratio: 16 / 9;
-}
-
 .juvenil-site-video {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.juvenil-experience-section {
+    background:
+        linear-gradient(120deg, rgba(157, 219, 239, 0.06) 0 1px, transparent 1px 5.75rem),
+        linear-gradient(180deg, #052f35 0%, #063a42 44%, #052f35 100%);
+}
+
+.juvenil-experience-section::before,
+.juvenil-experience-section::after {
+    position: absolute;
+    z-index: -1;
+    content: '';
+    pointer-events: none;
+}
+
+.juvenil-experience-section::before {
+    top: 12%;
+    right: -12%;
+    width: min(48rem, 72vw);
+    height: 42rem;
+    background:
+        linear-gradient(135deg, transparent 0 18%, rgba(244, 107, 18, 0.16) 18% 28%, transparent 28% 100%),
+        linear-gradient(135deg, transparent 0 58%, rgba(157, 219, 239, 0.1) 58% 64%, transparent 64% 100%);
+    transform: rotate(-8deg);
+}
+
+.juvenil-experience-section::after {
+    bottom: 7%;
+    left: -10%;
+    width: min(38rem, 80vw);
+    height: 22rem;
+    border-top: 1px solid rgba(157, 219, 239, 0.2);
+    border-bottom: 1px solid rgba(157, 219, 239, 0.12);
+    transform: rotate(7deg);
+}
+
+.juvenil-experience-video {
+    aspect-ratio: 0.78;
+    clip-path: polygon(0 0, 100% 0, 100% 92%, 88% 100%, 0 100%);
+    box-shadow: 0 34px 110px rgba(0, 0, 0, 0.34);
+}
+
+.juvenil-experience-video__shade {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+        linear-gradient(180deg, rgba(3, 24, 28, 0.03) 0%, rgba(3, 24, 28, 0.08) 48%, rgba(3, 24, 28, 0.74) 100%),
+        linear-gradient(90deg, rgba(3, 24, 28, 0.28) 0%, rgba(3, 24, 28, 0) 48%, rgba(3, 24, 28, 0.12) 100%);
+}
+
+.juvenil-experience-video__rail {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-bottom: 1px solid rgba(157, 219, 239, 0.26);
+    padding-bottom: 0.85rem;
+    color: #d8f2fa;
+    font-size: 0.64rem;
+    font-weight: 900;
+    letter-spacing: 0.22em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.juvenil-experience-copy {
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.juvenil-experience-note {
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 480px) {
+    .juvenil-experience-video__rail {
+        justify-content: flex-start;
+    }
+
+    .juvenil-experience-video__rail span:not(:first-child) {
+        display: none;
+    }
 }
 
 @media (min-width: 1024px) {
@@ -185,6 +313,17 @@
         background:
             linear-gradient(90deg, rgba(3, 24, 28, 0.22) 0%, rgba(3, 24, 28, 0) 48%, rgba(3, 24, 28, 0.03) 100%),
             linear-gradient(180deg, rgba(3, 24, 28, 0) 0%, rgba(3, 24, 28, 0.04) 52%, rgba(3, 24, 28, 0.42) 100%);
+    }
+
+    .juvenil-experience-video {
+        aspect-ratio: auto;
+        clip-path: polygon(0 0, 96% 0, 100% 84%, 90% 100%, 0 100%);
+    }
+
+    .juvenil-experience-video__rail {
+        top: 1.5rem;
+        right: 1.5rem;
+        left: 1.5rem;
     }
 }
 
@@ -518,8 +657,4 @@ html.gsap-scrolling body {
 [data-motion-card],
 [data-gsap-image] {
     will-change: transform, opacity;
-}
-
-.juvenil-bento-grid summary::-webkit-details-marker {
-    display: none;
 }

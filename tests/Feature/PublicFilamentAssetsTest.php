@@ -30,10 +30,12 @@ it('ships the public GSAP motion layer and custom loader asset', function () {
         ->toContain('isMobileViewport')
         ->toContain('initCampfireLoader')
         ->toContain('initMobileBottomNav')
+        ->toContain('initExperienceParallax')
         ->toContain('data-motion-card')
         ->toContain('data-anchor-scroll')
         ->toContain('data-mobile-nav-item')
         ->toContain('gsap-scrolling')
+        ->toContain('scrollToTarget')
         ->and($css)
         ->toContain('.juvenil-page-loader')
         ->toContain('.juvenil-mobile-bottom-nav')
@@ -45,11 +47,12 @@ it('ships the public GSAP motion layer and custom loader asset', function () {
         ->toBeFile();
 });
 
-it('uses responsive hero artwork and the autoplay camp video', function () {
+it('uses responsive hero artwork and the unified autoplay camp experience section', function () {
     $navigation = file_get_contents(resource_path('views/components/navigation.blade.php'));
     $banner = file_get_contents(resource_path('views/components/home-banner.blade.php'));
-    $video = file_get_contents(resource_path('views/components/content-camp-video.blade.php'));
+    $details = file_get_contents(resource_path('views/components/content-about-details.blade.php'));
     $css = file_get_contents(resource_path('css/app.css'));
+    $js = file_get_contents(resource_path('js/app.js'));
 
     expect($navigation)
         ->toContain('juvenil-hero-backdrop')
@@ -62,18 +65,28 @@ it('uses responsive hero artwork and the autoplay camp video', function () {
         ->toContain('sr-only')
         ->toContain('min-h-[100dvh]')
         ->not->toContain('acampamento-juvenil-divulgacao')
-        ->and($video)
+        ->and($details)
+        ->toContain('juvenil-experience-section')
+        ->toContain('juvenil-experience-video')
+        ->toContain('juvenil-experience-copy')
         ->toContain('barraca.mp4')
         ->toContain('autoplay')
         ->toContain('muted')
         ->toContain('loop')
         ->toContain('playsinline')
+        ->not->toContain('juvenil-bento-grid')
         ->not->toContain('controls')
         ->and($css)
         ->toContain('.juvenil-hero-backdrop')
         ->toContain('var(--juvenil-hero-mobile)')
         ->toContain('var(--juvenil-hero-desktop)')
+        ->toContain('.juvenil-experience-section')
+        ->toContain('.juvenil-experience-video')
         ->toContain('.juvenil-site-video')
+        ->not->toContain('.juvenil-bento-grid')
+        ->and($js)
+        ->toContain('initExperienceParallax')
+        ->not->toContain('juvenil-bento-grid')
         ->and(public_path('img/hero-mobile.png'))
         ->toBeFile()
         ->and(public_path('img/hero-desktop.png'))

@@ -59,7 +59,7 @@
             <form wire:submit.prevent="submitForm" class="space-y-6">
                 {{ $this->form }}
                 <button type="submit" role="button"
-                        class="bg-color1 rounded mt-8 p-2 w-full text-gray-800 sm:p-4 sm:max-w-full flex items-center justify-center hover:text-[20px] min-h-12 max-h-12 transition-all duration-500 text-[18px] hover:bg-[#f6b53c]">
+                        class="mt-8 flex min-h-12 max-h-12 w-full items-center justify-center bg-[#f46b12] p-2 text-[18px] font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] sm:max-w-full sm:p-4">
                     <i class="bi bi-cart-fill mr-2"></i>Comprar
                 </button>
             </form>

@@ -21,7 +21,6 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Filament\Support\Colors\Color;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use Leandrocfe\FilamentPtbrFormFields\Cep;
@@ -100,7 +99,7 @@ class CampistaForm extends Component implements HasForms
                     ]),
                 Placeholder::make('mensagem_foto')
                     ->hiddenLabel()
-                    ->hintColor(Color::Yellow)
+                    ->hintColor('primary')
                     ->hintIcon('heroicon-o-exclamation-circle')
                     ->columnSpanFull()
                     ->hint('Por favor, envie uma foto SEM óculos escuros ou acessórios que possam dificultar a sua identificação.'),
@@ -211,7 +210,7 @@ class CampistaForm extends Component implements HasForms
                         Placeholder::make('info_endereco')
                             ->hint('Precisaria fornecer os dados de duas pessoas responsáveis de fora, incluindo o nome e o
                                         telefone de cada uma delas.')
-                            ->hintColor(Color::Yellow)
+                            ->hintColor('primary')
                             ->hintIcon('heroicon-o-exclamation-circle')
                             ->hiddenLabel()
                             ->columnSpanFull(),
@@ -344,7 +343,7 @@ class CampistaForm extends Component implements HasForms
 
                         Placeholder::make('info_endereco')
                             ->hint('Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.')
-                            ->hintColor(Color::Yellow)
+                            ->hintColor('primary')
                             ->hintIcon('heroicon-o-exclamation-circle')
                             ->hiddenLabel()
                             ->columnSpanFull(),
@@ -564,16 +563,16 @@ class CampistaForm extends Component implements HasForms
 
                         Placeholder::make('info_termo')
                             ->hint('Necessario aceitar os termos abaixo, para finalizar a inscrição.')
-                            ->hintColor(Color::Yellow)
+                            ->hintColor('primary')
                             ->hintIcon('heroicon-o-exclamation-circle')
                             ->columnSpanFull(4)
                             ->hiddenLabel(),
 
                         Checkbox::make('form_data.aceite_termo_inscricao')
-                            ->label(new HtmlString('Eu aceito os <a href="/termos-inscricao" target="_blank" class="text-yellow-500">Termos de Inscrição</a>'))
+                            ->label(new HtmlString('Eu aceito os <a href="/termos-inscricao" target="_blank" class="text-primary-600 font-bold">Termos de Inscrição</a>'))
                             ->columnSpanFull(),
                         Checkbox::make('form_data.aceitar_politica_privacidade')
-                            ->label(new HtmlString('Eu aceito a <a href="/politica-privacidade" target="_blank" class="text-yellow-500">Politica de Privacidade</a>'))
+                            ->label(new HtmlString('Eu aceito a <a href="/politica-privacidade" target="_blank" class="text-primary-600 font-bold">Politica de Privacidade</a>'))
                             ->columnSpanFull(),
                     ]),
 
@@ -603,8 +602,8 @@ class CampistaForm extends Component implements HasForms
             Notification::make()
                 ->title('Inscrição não permitida')
                 ->body(new HtmlString('Para poder realizar a inscrição, é necessário ler e aceitar os
-                    <a href="/termos-inscricao" target="_blank" class="text-yellow-500">Termos de Inscrição</a> e a nossa
-                    <a href="/politica-privacidade" target="_blank" class="text-yellow-500">Política de Privacidade!</a>'))
+                    <a href="/termos-inscricao" target="_blank" class="text-primary-600 font-bold">Termos de Inscrição</a> e a nossa
+                    <a href="/politica-privacidade" target="_blank" class="text-primary-600 font-bold">Política de Privacidade!</a>'))
                 ->duration(60000)
                 ->danger()
                 ->send();
