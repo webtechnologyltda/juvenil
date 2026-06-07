@@ -240,6 +240,50 @@ test('general settings date picker opens above the following sections', async ({
     });
 });
 
+test('authenticated settings page previews PIX QR code as a square image upload', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    await page.goto('http://juvenil.test/admin/general-settings-page');
+    await page.waitForSelector('.fi-page .fi-section');
+
+    await page.locator('input[type="file"]').first().setInputFiles('/home/lucas/code/juvenil/public/img/hero-desktop.png');
+    await page.waitForSelector('.filepond--item');
+    await page.waitForTimeout(1800);
+
+    const previewState = await page.evaluate(() => {
+        const paymentSection = [...document.querySelectorAll('.fi-section')]
+            .find((section) => section.textContent.includes('Pagamento PIX'));
+        const root = paymentSection?.querySelector('.filepond--root')?.getBoundingClientRect();
+        const item = paymentSection?.querySelector('.filepond--item')?.getBoundingClientRect();
+        const imagePreview = paymentSection?.querySelector('.filepond--image-preview-wrapper, .filepond--image-preview')?.getBoundingClientRect();
+        const editor = document.querySelector('.fi-fo-file-upload-editor');
+
+        return {
+            hasImagePreview: Boolean(imagePreview),
+            rootAspectDelta: root ? Math.abs((root.width / root.height) - 1) : 1,
+            itemAspectDelta: item ? Math.abs((item.width / item.height) - 1) : 1,
+            editorCount: document.querySelectorAll('.fi-fo-file-upload-editor').length,
+            editorVisible: editor ? getComputedStyle(editor).display !== 'none' : false,
+            horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 1
+                || document.body.scrollWidth > window.innerWidth + 1,
+        };
+    });
+
+    expect(previewState.hasImagePreview).toBe(true);
+    expect(previewState.rootAspectDelta).toBeLessThan(0.08);
+    expect(previewState.itemAspectDelta).toBeLessThan(0.08);
+    expect(previewState.editorCount).toBe(0);
+    expect(previewState.editorVisible).toBe(false);
+    expect(previewState.horizontalOverflow).toBe(false);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-pix-qrcode-upload-preview.png',
+        fullPage: false,
+    });
+});
+
 test('authenticated Campista view renders as a ficha before editing', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 

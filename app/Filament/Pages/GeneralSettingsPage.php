@@ -201,6 +201,7 @@ class GeneralSettingsPage extends SettingsPage
                                     ->label('Imagem do QR Code PIX')
                                     ->disk('public')
                                     ->directory('settings/pix')
+                                    ->visibility('public')
                                     ->image()
                                     ->acceptedFileTypes([
                                         'image/jpeg',
@@ -212,7 +213,16 @@ class GeneralSettingsPage extends SettingsPage
                                     ->downloadable()
                                     ->openable()
                                     ->previewable(true)
-                                    ->imagePreviewHeight('160')
+                                    ->imageAspectRatio('1:1')
+                                    ->automaticallyCropImagesToAspectRatio()
+                                    ->automaticallyResizeImagesMode('cover')
+                                    ->automaticallyResizeImagesToWidth('600')
+                                    ->automaticallyResizeImagesToHeight('600')
+                                    ->automaticallyUpscaleImagesWhenResizing(false)
+                                    ->panelAspectRatio('1:1')
+                                    ->itemPanelAspectRatio('1:1')
+                                    ->panelLayout('integrated')
+                                    ->imagePreviewHeight('220')
                                     ->columnSpan([
                                         'default' => 'full',
                                         'lg' => '8',
