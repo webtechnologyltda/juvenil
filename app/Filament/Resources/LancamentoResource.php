@@ -32,7 +32,9 @@ class LancamentoResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components(LancamentoForm::getFormSchema());
+        return $schema
+            ->columns(1)
+            ->components(LancamentoForm::getFormSchema());
     }
 
     public static function table(Table $table): Table

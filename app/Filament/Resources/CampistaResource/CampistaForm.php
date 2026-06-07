@@ -536,8 +536,8 @@ abstract class CampistaForm
 
             Textarea::make('form_data.remedio')
                 ->rows(3)
-                ->required(fn(Get $get) => $get('form_data.toma_remedio') == true)
-                ->visible(fn(Get $get) => $get('form_data.toma_remedio') == true)
+                ->required(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.toma_remedio') == true)
+                ->visible(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.toma_remedio') == true)
                 ->label('Por favor, descreva os medicamentos abaixo e os horários de administração caso se aplique')
                 ->columnSpanFull(),
 
@@ -559,8 +559,8 @@ abstract class CampistaForm
 
             Textarea::make('form_data.recomendacao')
                 ->label('Qual?')
-                ->required(fn(Get $get) => $get('form_data.tem_recomendacao') == true)
-                ->visible(fn(Get $get) => $get('form_data.tem_recomendacao') == true)
+                ->required(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.tem_recomendacao') == true)
+                ->visible(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.tem_recomendacao') == true)
                 ->rows(3)
                 ->columnSpanFull(),
 
@@ -749,5 +749,34 @@ abstract class CampistaForm
         ];
     }
 
+    public static function canViewSensitiveHealth(): bool
+    {
+        return auth()->user()?->can('view_sensitive_health_campista') ?? false;
+    }
 
+    public static function redactSensitiveHealthDetails(array $data): array
+    {
+        if (self::canViewSensitiveHealth()) {
+            return $data;
+        }
+
+        unset($data['form_data']['remedio'], $data['form_data']['recomendacao']);
+
+        return $data;
+    }
+
+    public static function preserveSensitiveHealthDetails(array $data, Model $record): array
+    {
+        if (self::canViewSensitiveHealth()) {
+            return $data;
+        }
+
+        foreach (['remedio', 'recomendacao'] as $key) {
+            if (array_key_exists($key, $record->form_data ?? [])) {
+                $data['form_data'][$key] = $record->form_data[$key];
+            }
+        }
+
+        return $data;
+    }
 }

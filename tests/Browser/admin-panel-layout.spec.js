@@ -39,6 +39,35 @@ async function expectNoFilamentTableHorizontalOverflow(page) {
     expect(hasTableOverflow).toBe(false);
 }
 
+async function expectPageHeadingIsCompact(page) {
+    const headingFontSize = await page.locator('h1').evaluate((heading) => (
+        Number.parseFloat(getComputedStyle(heading).fontSize)
+    ));
+
+    expect(headingFontSize).toBeLessThanOrEqual(44);
+}
+
+async function expectSectionsUsePageWidth(page) {
+    const widthUsage = await page.evaluate(() => {
+        const pageElement = document.querySelector('.fi-page');
+        const sections = [...document.querySelectorAll('.fi-page .fi-section')]
+            .map((section) => section.getBoundingClientRect())
+            .filter((rect) => rect.width > 0 && rect.height > 0);
+
+        if (! pageElement || sections.length === 0) {
+            return 1;
+        }
+
+        const pageRect = pageElement.getBoundingClientRect();
+        const left = Math.min(...sections.map((rect) => rect.left));
+        const right = Math.max(...sections.map((rect) => rect.right));
+
+        return (right - left) / pageRect.width;
+    });
+
+    expect(widthUsage).toBeGreaterThanOrEqual(0.84);
+}
+
 test('authenticated Filament panel keeps branded layout clear of visual obstructions', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
@@ -106,6 +135,73 @@ test('authenticated Filament panel keeps branded layout clear of visual obstruct
 
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-lancamentos-stats-layout.png',
+        fullPage: false,
+    });
+});
+
+test('authenticated Filament form pages use compact headings and the available width', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    for (const path of [
+        '/admin/lancamentos/10/edit',
+        '/admin/users/1/edit',
+        '/admin/campistas/10/edit',
+    ]) {
+        await page.goto(`http://juvenil.test${path}`);
+        await page.waitForSelector('h1');
+        await page.waitForSelector('.fi-page .fi-section');
+
+        await expectPageHeadingIsCompact(page);
+        await expectSectionsUsePageWidth(page);
+    }
+
+    await page.goto('http://juvenil.test/admin/lancamentos/10/edit');
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-lancamento-edit-form-layout.png',
+        fullPage: false,
+    });
+});
+
+test('authenticated Filament user menu opens downward without orange trigger highlight', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    const trigger = page.locator('.fi-user-menu-trigger').first();
+
+    await trigger.click();
+    await page.waitForSelector('.fi-dropdown-panel:visible');
+
+    const menuGeometry = await page.evaluate(() => {
+        const triggerElement = document.querySelector('.fi-user-menu-trigger');
+        const panelElement = [...document.querySelectorAll('.fi-dropdown-panel')]
+            .find((element) => {
+                const rect = element.getBoundingClientRect();
+
+                return rect.width > 0 && rect.height > 0;
+            });
+
+        const triggerRect = triggerElement.getBoundingClientRect();
+        const panelRect = panelElement.getBoundingClientRect();
+        const triggerStyle = getComputedStyle(triggerElement);
+
+        return {
+            opensDown: panelRect.top >= triggerRect.bottom,
+            panelTop: panelRect.top,
+            triggerBottom: triggerRect.bottom,
+            triggerBorderColor: triggerStyle.borderTopColor,
+            triggerBackgroundColor: triggerStyle.backgroundColor,
+        };
+    });
+
+    expect(menuGeometry.opensDown).toBe(true);
+    expect(menuGeometry.triggerBorderColor).not.toBe('rgb(244, 107, 18)');
+    expect(menuGeometry.triggerBackgroundColor).not.toContain('244, 107, 18');
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-user-menu-downward.png',
         fullPage: false,
     });
 });

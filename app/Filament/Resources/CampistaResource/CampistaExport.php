@@ -62,11 +62,7 @@ abstract class CampistaExport
             ExportColumn::make('form_data.rede_social')
                 ->label('Rede Social'),
 
-            ExportColumn::make('form_data.remedio')
-                ->label('Remedio'),
-
-            ExportColumn::make('form_data.recomendacao')
-                ->label('Recomendacao'),
+            ...self::getSensitiveHealthExportColumns(),
 
             ExportColumn::make('form_data.nome_pai')
                 ->label('Nome do Pai'),
@@ -112,6 +108,21 @@ abstract class CampistaExport
 
             ExportColumn::make('form_data.algum_parente_participante')
                 ->label('Algum Parente Participante'),
+        ];
+    }
+
+    private static function getSensitiveHealthExportColumns(): array
+    {
+        if (! (auth()->user()?->can('view_sensitive_health_campista') ?? false)) {
+            return [];
+        }
+
+        return [
+            ExportColumn::make('form_data.remedio')
+                ->label('Remedio'),
+
+            ExportColumn::make('form_data.recomendacao')
+                ->label('Recomendacao'),
         ];
     }
 }

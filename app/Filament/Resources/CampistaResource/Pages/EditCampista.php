@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CampistaResource\Pages;
 
 use App\Enums\StatusInscricao;
 use App\Filament\Resources\CampistaResource;
+use App\Filament\Resources\CampistaResource\CampistaForm;
 use App\Models\User;
 use Filament\Actions;
 use Filament\Notifications\Actions\Action;
@@ -25,6 +26,7 @@ class EditCampista extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
+        $data = CampistaForm::preserveSensitiveHealthDetails($data, $record);
         $sendNotificationStatusUpdate = false;
         if(isset($data['status']) && $data['status'] != $record['status']) {
             $sendNotificationStatusUpdate = true;
@@ -57,5 +59,10 @@ class EditCampista extends EditRecord
         }
 
         return $record;
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        return CampistaForm::redactSensitiveHealthDetails($data);
     }
 }

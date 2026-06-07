@@ -1,3 +1,11 @@
+@php
+    $fallbackPixCopiaCola = '00020126910014br.gov.bcb.pix01368c973c48-8687-4977-b585-cb4cfeb9d7a30229ACAMPAMENTO TK  NAVEGANTES SC5204000053039865406250.005802BR5919DIOCESE DE BLUMENAU6010NAVEGANTES62290525VE7Y10G0K87QFK28YPAD0HGV463047FBD';
+    $pixCopiaCola = filled($settings->pix_copia_cola) ? $settings->pix_copia_cola : $fallbackPixCopiaCola;
+    $pixQrCode = is_array($settings->pix_qr_code) ? reset($settings->pix_qr_code) : $settings->pix_qr_code;
+    $pixQrCodeUrl = filled($pixQrCode) ? \Illuminate\Support\Facades\Storage::disk('public')->url($pixQrCode) : asset('img/qr_code_pix.png');
+    $valorAcampamento = $settings->valor_acampamento ?? 25000;
+@endphp
+
 <section id="registration" class="juvenil-form-shell relative z-10 bg-[#06343b] px-4 py-20 text-white sm:px-6 sm:py-24 lg:px-8 lg:py-28">
     <div
         class="absolute inset-0 opacity-70"
@@ -38,12 +46,12 @@
                     <p class="text-center text-2xl font-black uppercase leading-tight text-white">Informações de pagamento</p>
                     <img
                         class="mx-auto mb-7 mt-7 bg-white p-3"
-                        src="{{ asset('img/qr_code_pix.png') }}?20231021"
+                        src="{{ $pixQrCodeUrl }}"
                         alt="QR Code PIX para pagamento da inscrição"
                         width="170"
                     >
                     <button
-                        onclick="navigator.clipboard.writeText('00020126910014br.gov.bcb.pix01368c973c48-8687-4977-b585-cb4cfeb9d7a30229ACAMPAMENTO TK  NAVEGANTES SC5204000053039865406250.005802BR5919DIOCESE DE BLUMENAU6010NAVEGANTES62290525VE7Y10G0K87QFK28YPAD0HGV463047FBD')"
+                        onclick="navigator.clipboard.writeText(@js($pixCopiaCola))"
                         type="button"
                         class="inline-flex min-h-11 w-full items-center justify-center bg-[#9ddbef] px-4 text-sm font-black uppercase tracking-[0.1em] text-[#052f35] transition-colors duration-300 hover:bg-white"
                     >
@@ -57,7 +65,9 @@
                     </p>
                     <p class="mt-7 text-center text-sm font-bold uppercase tracking-[0.18em] text-[#9ddbef]">
                         Valor da inscrição
-                        <span class="mt-2 block text-3xl font-black tracking-normal text-[#f46b12]">R$ 250,00</span>
+                        <span class="mt-2 block text-3xl font-black tracking-normal text-[#f46b12]">
+                            R$ {{ number_format($valorAcampamento / 100, 2, ',', '.') }}
+                        </span>
                     </p>
                 </div>
 

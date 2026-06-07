@@ -18,4 +18,9 @@ class ViewCampista extends ViewRecord
                 ...CampistaForm::getFormView(),
             ]);
     }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        return CampistaForm::redactSensitiveHealthDetails($data);
+    }
 }

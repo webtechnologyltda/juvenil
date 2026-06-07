@@ -43,6 +43,7 @@ class CampistaResource extends Resource implements HasShieldPermissions
     public static function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 ...CampistaForm::getFormUpdate(),
             ]);

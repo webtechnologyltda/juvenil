@@ -1,3 +1,12 @@
+@php
+    $fallbackPixCopiaCola = '00020126910014br.gov.bcb.pix01368c973c48-8687-4977-b585-cb4cfeb9d7a30229ACAMPAMENTO TK  NAVEGANTES SC5204000053039865406250.005802BR5919DIOCESE DE BLUMENAU6010NAVEGANTES62290525VE7Y10G0K87QFK28YPAD0HGV463047FBD';
+    $pixCopiaCola = filled($this->settings['pix_copia_cola'] ?? null) ? $this->settings['pix_copia_cola'] : $fallbackPixCopiaCola;
+    $pixQrCode = $this->settings['pix_qr_code'] ?? null;
+    $pixQrCode = is_array($pixQrCode) ? reset($pixQrCode) : $pixQrCode;
+    $pixQrCodeUrl = filled($pixQrCode) ? \Illuminate\Support\Facades\Storage::disk('public')->url($pixQrCode) : asset('img/qr_code_pix.png');
+    $valorAcampamento = $this->settings['valor_acampamento'] ?? 25000;
+@endphp
+
 <div>
     @if(App\Enums\LiberacaoInscricoesStatusEnum::tryFrom($this->settings['liberacao_inscricoes_status']) == App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO)
         @if($this->comprado)
@@ -17,11 +26,17 @@
                     </div>
 
                     <p class="mt-4 text-center text-2xl font-black uppercase tracking-[0.14em] text-white">Informações de pagamento</p>
-                    <img class="mx-auto mb-8 mt-8 bg-white p-3" src="{{ asset('img/qr_code_pix.png') }}?20231021" alt="QR Code PIX" width="150" />
+                    <p class="mt-3 text-center text-sm font-bold uppercase tracking-[0.18em] text-[#9ddbef]">
+                        Valor da inscrição
+                        <span class="mt-2 block text-3xl font-black tracking-normal text-[#f46b12]">
+                            R$ {{ number_format($valorAcampamento / 100, 2, ',', '.') }}
+                        </span>
+                    </p>
+                    <img class="mx-auto mb-8 mt-8 bg-white p-3" src="{{ $pixQrCodeUrl }}" alt="QR Code PIX" width="150" />
 
                     <div class="grid justify-items-center mb-4">
                         <button
-                            onclick="navigator.clipboard.writeText('00020126910014br.gov.bcb.pix01368c973c48-8687-4977-b585-cb4cfeb9d7a30229ACAMPAMENTO TK  NAVEGANTES SC5204000053039865406250.005802BR5919DIOCESE DE BLUMENAU6010NAVEGANTES62290525VE7Y10G0K87QFK28YPAD0HGV463047FBD')"
+                            onclick="navigator.clipboard.writeText(@js($pixCopiaCola))"
                             type="button"
                             class="flex min-h-11 items-center justify-center bg-[#9ddbef] px-4 text-sm font-black uppercase tracking-[0.1em] text-[#052f35] transition-colors duration-300 hover:bg-white">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"

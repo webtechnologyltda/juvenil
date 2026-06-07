@@ -26,6 +26,7 @@
         "larabug/larabug": "^3.7",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
+        "leandrocfe/filament-apex-charts": "^5.0",
         "leandrocfe/filament-ptbr-form-fields": "^5.0",
         "livewire/livewire": "^4.0",
         "owenvoke/blade-fontawesome": "^3.2",

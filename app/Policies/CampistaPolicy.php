@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\Campista;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 class CampistaPolicy
 {
@@ -77,6 +77,11 @@ class CampistaPolicy
         return $authUser->can('updateTribo_campista');
     }
 
+    public function viewSensitiveHealth(AuthUser $authUser): bool
+    {
+        return $authUser->can('view_sensitive_health_campista');
+    }
+
     public function audit(AuthUser $authUser): bool
     {
         return $authUser->can('audit_campista');
@@ -91,5 +96,4 @@ class CampistaPolicy
     {
         return $authUser->can('export_campista');
     }
-
 }

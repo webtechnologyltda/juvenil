@@ -82,19 +82,40 @@ it('renders the campista registration route', function () {
         ->assertSee('Comprar');
 });
 
-function seedGeneralRegistrationSettings(): void
+it('renders the configured payment settings on the campista registration page', function () {
+    seedGeneralRegistrationSettings([
+        'valor_acampamento' => 32550,
+        'pix_copia_cola' => 'PIX_CONFIGURADO_ACAMPAMENTO_JUVENIL',
+        'pix_qr_code' => 'settings/pix/qr-code-juvenil.png',
+    ]);
+
+    $this->withoutVite();
+
+    $this->get(route('campista'))
+        ->assertOk()
+        ->assertSee('R$ 325,50')
+        ->assertSee('PIX_CONFIGURADO_ACAMPAMENTO_JUVENIL')
+        ->assertSee('settings/pix/qr-code-juvenil.png');
+});
+
+function seedGeneralRegistrationSettings(array $overrides = []): void
 {
-    foreach ([
+    $settings = array_merge([
         'telefone_atendente' => '(47) 9 9999-9999',
+        'valor_acampamento' => null,
         'qtd_max_vagas' => null,
         'qtd_max_vagas_feminino' => null,
         'qtd_max_vagas_masculino' => null,
         'data_inicio_inscricoes' => null,
         'data_final_inscricoes' => null,
+        'pix_copia_cola' => null,
+        'pix_qr_code' => null,
         'liberacao_inscricoes_status' => LiberacaoInscricoesStatusEnum::LIBERADO->value,
         'liberacao_inscricoes_equipe_trabalho_status' => LiberacaoInscricoesEquipeTrabalhoStatusEnum::LIBERADO->value,
         'liberacao_inscricoes_bloco' => null,
-    ] as $name => $payload) {
+    ], $overrides);
+
+    foreach ($settings as $name => $payload) {
         DB::table('settings')->updateOrInsert(
             [
                 'group' => 'general',

@@ -31,6 +31,7 @@ class EquipeTrabalhoResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components(
                 EquipeTrabalhoForm::getFormUpdate(),
             );
