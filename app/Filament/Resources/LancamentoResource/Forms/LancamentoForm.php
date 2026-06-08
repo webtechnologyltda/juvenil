@@ -102,6 +102,7 @@ abstract class LancamentoForm
                                 ->allowHtml()
                                 ->enum(FormaPagamento::class)
                                 ->searchable()
+                                ->live()
                                 ->required()
                                 ->columnSpan([
                                     'default' => 'full',
@@ -238,7 +239,8 @@ abstract class LancamentoForm
                         ->schema([
                             Repeater::make('comprovante')
                                 ->label('Comprovantes')
-                                ->required()
+                                ->required(fn (Get $get): bool => self::requiresComprovante($get('tipo'), $get('forma_pagamento')))
+                                ->minItems(fn (Get $get): int => self::requiresComprovante($get('tipo'), $get('forma_pagamento')) ? 1 : 0)
                                 ->afterStateHydrated(static function (Repeater $component): void {
                                     $component->rawState(self::comprovanteRepeaterFormState($component->getRawState()));
                                     $component->hydrateItems();
@@ -250,7 +252,7 @@ abstract class LancamentoForm
                                         ->placeholder('Tamanho max.: 2MB')
                                         ->hint('Tamanho máximo: 2MB')
                                         ->label('Documento')
-                                        ->required()
+                                        ->required(fn (Get $get): bool => self::requiresComprovante($get('../../tipo'), $get('../../forma_pagamento')))
                                         ->downloadable()
                                         ->openable()
                                         ->multiple()
@@ -313,7 +315,7 @@ abstract class LancamentoForm
 
         foreach ($state as $item) {
             if (is_string($item)) {
-                $items[] = self::makeComprovanteBlock(files: [$item]);
+                $items[] = self::makeFilledComprovanteBlock(files: [$item]);
 
                 continue;
             }
@@ -329,19 +331,27 @@ abstract class LancamentoForm
                 $data['observacao'] = self::normalizeObservation($data['observacao'] ?? $legacyName);
                 unset($data['comprovante_nome']);
 
-                $items[] = [
+                $block = [
                     'type' => filled($item['type'] ?? null) ? $item['type'] : self::COMPROVANTE_BLOCK,
                     'data' => $data,
                 ];
+
+                if (self::filledComprovanteBlock($block)) {
+                    $items[] = $block;
+                }
 
                 continue;
             }
 
             if (array_key_exists('url', $item) || array_key_exists('observacao', $item) || array_key_exists('comprovante_nome', $item)) {
-                $items[] = self::makeComprovanteBlock(
+                $block = self::makeFilledComprovanteBlock(
                     files: self::normalizeFileUploadState($item['url'] ?? []),
                     observation: $item['observacao'] ?? $item['comprovante_nome'] ?? null,
                 );
+
+                if ($block !== null) {
+                    $items[] = $block;
+                }
             }
         }
 
@@ -384,6 +394,18 @@ abstract class LancamentoForm
                 'observacao' => self::normalizeObservation($observation),
             ],
         ];
+    }
+
+    private static function makeFilledComprovanteBlock(array $files = [], ?string $observation = null): ?array
+    {
+        $block = self::makeComprovanteBlock($files, $observation);
+
+        return self::filledComprovanteBlock($block) ? $block : null;
+    }
+
+    private static function filledComprovanteBlock(array $block): bool
+    {
+        return filled(data_get($block, 'data.url')) || filled(data_get($block, 'data.observacao'));
     }
 
     private static function normalizeFileUploadState(mixed $files): array
@@ -440,6 +462,37 @@ abstract class LancamentoForm
         }
 
         return (int) $type === TipoLacamento::Despesa->value;
+    }
+
+    private static function requiresComprovante(mixed $type, mixed $paymentMethod): bool
+    {
+        return ! (self::isRevenueType($type) && self::isCashPayment($paymentMethod));
+    }
+
+    private static function isRevenueType(mixed $type): bool
+    {
+        if ($type instanceof TipoLacamento) {
+            return $type === TipoLacamento::Receita;
+        }
+
+        if (blank($type)) {
+            return false;
+        }
+
+        return (int) $type === TipoLacamento::Receita->value;
+    }
+
+    private static function isCashPayment(mixed $paymentMethod): bool
+    {
+        if ($paymentMethod instanceof FormaPagamento) {
+            return $paymentMethod === FormaPagamento::Dinheiro;
+        }
+
+        if (blank($paymentMethod)) {
+            return false;
+        }
+
+        return (int) $paymentMethod === FormaPagamento::Dinheiro->value;
     }
 
     private static function categoryOptions(mixed $type): array
