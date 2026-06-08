@@ -27,7 +27,10 @@ function makeFinancialDashboardCategory(string $name, TipoLacamento $type): Cate
 
 function makeFinancialDashboardEntry(array $attributes = []): Lancamento
 {
-    return Lancamento::query()->create(array_merge([
+    $category = $attributes['categoria_lancamento_id'] ?? null;
+    unset($attributes['categoria_lancamento_id']);
+
+    $lancamento = Lancamento::query()->create(array_merge([
         'nome' => 'Lançamento financeiro',
         'descricao' => null,
         'comprador' => null,
@@ -37,9 +40,19 @@ function makeFinancialDashboardEntry(array $attributes = []): Lancamento
         'status' => StatusLacamento::Pago->value,
         'forma_pagamento' => FormaPagamento::Pix->value,
         'comprovante' => [],
-        'categoria_lancamento_id' => null,
         'user_id' => null,
     ], $attributes));
+
+    if ($category !== null) {
+        $lancamento->items()->create([
+            'nome' => $lancamento->nome,
+            'descricao' => $lancamento->descricao,
+            'valor' => abs((int) $lancamento->valor),
+            'categoria_lancamento_id' => $category,
+        ]);
+    }
+
+    return $lancamento;
 }
 
 it('summarizes paid financial entries as revenue donations expenses and balance by default', function () {

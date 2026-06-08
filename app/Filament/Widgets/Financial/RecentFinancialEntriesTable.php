@@ -47,8 +47,8 @@ class RecentFinancialEntriesTable extends TableWidget
                     ->label('Tipo')
                     ->badge()
                     ->alignCenter(),
-                TextColumn::make('categoria.nome')
-                    ->label('Categoria')
+                TextColumn::make('categories_summary')
+                    ->label('Categorias')
                     ->placeholder('Sem categoria')
                     ->badge(),
                 TextColumn::make('status')

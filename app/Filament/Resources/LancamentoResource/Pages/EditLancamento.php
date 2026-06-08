@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\LancamentoResource\Pages;
 
-use App\Enums\TipoLacamento;
 use App\Filament\Resources\LancamentoResource;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
@@ -16,7 +15,7 @@ class EditLancamento extends EditRecord
     /**
      * @var array<int, array<string, mixed>>
      */
-    private array $registrationPaymentData = [];
+    private array $itemData = [];
 
     protected function getHeaderActions(): array
     {
@@ -28,25 +27,25 @@ class EditLancamento extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data['comprovante'] = LancamentoForm::comprovanteRepeaterFormState($data['comprovante'] ?? null);
-        $data['registration_payments'] = LancamentoForm::registrationPaymentsFormState($this->record);
+        $data['items'] = LancamentoForm::itemsFormState($this->record);
 
         return parent::mutateFormDataBeforeFill($data);
     }
 
     public function mutateFormDataBeforeSave(array $data): array
     {
-        $this->registrationPaymentData = $data['registration_payments'] ?? [];
-        unset($data['registration_payments']);
+        $this->itemData = $data['items'] ?? [];
+        unset($data['items']);
 
         $data = LancamentoForm::normalizeCompradorForType($data);
-        $data['valor'] = self::signedValue($data);
+        $data['valor'] = app(RegistrationPaymentAllocator::class)->signedTotalForItems($data['tipo'] ?? null, $this->itemData);
         $data['comprovante'] = LancamentoForm::normalizeComprovanteState($data['comprovante'] ?? null);
 
         $this->record->forceFill($data);
 
-        app(RegistrationPaymentAllocator::class)->validateAllocations(
+        app(RegistrationPaymentAllocator::class)->validateItems(
             $this->record,
-            $this->registrationPaymentData,
+            $this->itemData,
         );
 
         return parent::mutateFormDataBeforeSave($data);
@@ -54,18 +53,6 @@ class EditLancamento extends EditRecord
 
     protected function afterSave(): void
     {
-        app(RegistrationPaymentAllocator::class)->sync($this->record, $this->registrationPaymentData);
-    }
-
-    private static function signedValue(array $data): int
-    {
-        $value = (int) ($data['valor'] ?? 0);
-        $type = $data['tipo'] ?? null;
-
-        if (($type == TipoLacamento::Despesa->value && $value > 0) || ($type != TipoLacamento::Despesa->value && $value < 0)) {
-            return $value * -1;
-        }
-
-        return $value;
+        app(RegistrationPaymentAllocator::class)->syncItems($this->record, $this->itemData);
     }
 }

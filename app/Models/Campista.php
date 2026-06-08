@@ -41,8 +41,8 @@ class Campista extends Model implements Auditable
         return $this->belongsTo(Tribo::class);
     }
 
-    public function financialEntryRegistrations(): MorphMany
+    public function lancamentoItems(): MorphMany
     {
-        return $this->morphMany(FinancialEntryRegistration::class, 'registration');
+        return $this->morphMany(LancamentoItem::class, 'registration');
     }
 }

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\EquipeTrabalho;
 use App\Models\User;
 use App\Settings\GeneralSettings;
+use App\Support\FilamentUploadState;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -57,7 +58,7 @@ class EquipeTrabalhoForm extends Component implements HasActions, HasForms
 
             $this->data = Arr::only($this->data, ['nome', 'avatar_url', 'data_form']);
 
-            $this->data['avatar_url'] = $this->data['avatar_url'][array_key_first($this->data['avatar_url'])]->store('foto-formulario-equipe-trabalho', 'public');
+            $this->data['avatar_url'] = FilamentUploadState::storedPath($this->data['avatar_url'] ?? null, 'foto-formulario-equipe-trabalho');
 
             $voluntario = EquipeTrabalho::create($this->data);
 

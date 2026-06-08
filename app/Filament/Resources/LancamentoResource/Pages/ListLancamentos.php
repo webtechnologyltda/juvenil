@@ -13,6 +13,12 @@ class ListLancamentos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('batch')
+                ->label('Lançamento em lote')
+                ->icon('heroicon-o-queue-list')
+                ->color('gray')
+                ->url(LancamentoResource::getUrl('batch'))
+                ->visible(fn (): bool => LancamentoResource::canCreate()),
             Actions\CreateAction::make(),
         ];
     }

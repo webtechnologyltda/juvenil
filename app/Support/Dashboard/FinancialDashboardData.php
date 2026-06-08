@@ -4,6 +4,7 @@ namespace App\Support\Dashboard;
 
 use App\Enums\TipoLacamento;
 use App\Models\Lancamento;
+use App\Models\LancamentoItem;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -14,6 +15,7 @@ class FinancialDashboardData
     {
         return new FinancialDashboardDataSet(
             records: $this->records($filters),
+            categoryIds: FinancialDashboardFilters::categoryIds($filters),
         );
     }
 
@@ -27,12 +29,12 @@ class FinancialDashboardData
         $paymentMethods = FinancialDashboardFilters::paymentMethodValues($filters);
 
         return Lancamento::query()
-            ->with('categoria')
+            ->with('items.categoria')
             ->when($startDate !== null, fn (Builder $query): Builder => $query->where('data', '>=', $startDate))
             ->when($endDate !== null, fn (Builder $query): Builder => $query->where('data', '<=', $endDate))
             ->when($statuses !== [], fn (Builder $query): Builder => $query->whereIn('status', $statuses))
             ->when($types !== [], fn (Builder $query): Builder => $query->whereIn('tipo', $types))
-            ->when($categoryIds !== [], fn (Builder $query): Builder => $query->whereIn('categoria_lancamento_id', $categoryIds))
+            ->when($categoryIds !== [], fn (Builder $query): Builder => $query->whereHas('items', fn (Builder $query): Builder => $query->whereIn('categoria_lancamento_id', $categoryIds)))
             ->when($paymentMethods !== [], fn (Builder $query): Builder => $query->whereIn('forma_pagamento', $paymentMethods));
     }
 
@@ -49,6 +51,7 @@ class FinancialDashboardDataSet
 {
     public function __construct(
         private readonly Collection $records,
+        private readonly array $categoryIds = [],
     ) {}
 
     public function summary(): array
@@ -80,8 +83,9 @@ class FinancialDashboardDataSet
     public function categoryTotals(int $limit = 10): array
     {
         return $this->records
-            ->groupBy(fn (Lancamento $lancamento): string => $lancamento->categoria?->nome ?: 'Sem categoria')
-            ->map(fn (Collection $records): int => $records->sum(fn (Lancamento $lancamento): int => $this->amount($lancamento)))
+            ->flatMap(fn (Lancamento $lancamento): Collection => $this->categoryItems($lancamento))
+            ->groupBy(fn (LancamentoItem $item): string => $item->categoria?->nome ?: 'Sem categoria')
+            ->map(fn (Collection $items): int => $items->sum(fn (LancamentoItem $item): int => abs((int) $item->valor)))
             ->sortDesc()
             ->take($limit)
             ->all();
@@ -122,7 +126,27 @@ class FinancialDashboardDataSet
 
     private function amount(Lancamento $lancamento): int
     {
+        if ($this->categoryIds !== []) {
+            return $this->categoryItems($lancamento)
+                ->sum(fn (LancamentoItem $item): int => abs((int) $item->valor));
+        }
+
         return abs((int) $lancamento->valor);
+    }
+
+    private function categoryItems(Lancamento $lancamento): Collection
+    {
+        $items = $lancamento->relationLoaded('items')
+            ? $lancamento->items
+            : $lancamento->items()->with('categoria')->get();
+
+        if ($this->categoryIds === []) {
+            return $items;
+        }
+
+        return $items
+            ->filter(fn (LancamentoItem $item): bool => in_array((int) $item->categoria_lancamento_id, $this->categoryIds, true))
+            ->values();
     }
 
     private function dateKey(Lancamento $lancamento): string

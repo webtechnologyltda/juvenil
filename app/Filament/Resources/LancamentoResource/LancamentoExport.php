@@ -33,8 +33,11 @@ abstract class LancamentoExport
                     default => 'Indefinido',
                 }),
 
-            ExportColumn::make('categoria.nome')
-                ->label('Categoria'),
+            ExportColumn::make('categories_summary')
+                ->label('Categorias'),
+
+            ExportColumn::make('batch_code')
+                ->label('Lote'),
 
             ExportColumn::make('status')
                 ->label('Status')

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\TipoLacamento;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CategoriaLancamento extends Model
@@ -48,9 +49,19 @@ class CategoriaLancamento extends Model
         static::deleting(fn (CategoriaLancamento $categoriaLancamento): bool => ! $categoriaLancamento->isSystemDefault());
     }
 
-    public function lancamentos(): HasMany
+    public function items(): HasMany
     {
-        return $this->hasMany(Lancamento::class, 'categoria_lancamento_id');
+        return $this->hasMany(LancamentoItem::class, 'categoria_lancamento_id');
+    }
+
+    public function lancamentos(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Lancamento::class,
+            'lancamento_items',
+            'categoria_lancamento_id',
+            'lancamento_id',
+        )->distinct();
     }
 
     public function isSystemDefault(): bool
