@@ -7,7 +7,9 @@ use App\Filament\Exports\LancamentoExporter;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages;
 use App\Filament\Resources\LancamentoResource\Widgets\StatsFinanceiro;
+use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
+use App\Models\LancamentoItem;
 use App\Support\IconBadge;
 use Carbon\Carbon;
 use Filament\Actions\EditAction;
@@ -21,6 +23,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 class LancamentoResource extends Resource
 {
@@ -44,7 +47,7 @@ class LancamentoResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['categoria', 'registrationPayments.registration']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['items.categoria', 'items.registration']))
             ->columns([
                 TextColumn::make('id')
                     ->label('Código')
@@ -71,18 +74,13 @@ class LancamentoResource extends Resource
                     ->alignCenter()
                     ->label('Lançamento'),
 
-                TextColumn::make('categoria.nome')
-                    ->label('Categoria')
+                TextColumn::make('categories_summary')
+                    ->label('Categorias')
                     ->html()
-                    ->formatStateUsing(fn (?string $state, Lancamento $record) => IconBadge::tileIcon(
-                        $record->categoria,
-                        $state ?? 'Sem categoria',
-                        fallbackIcon: 'heroicon-o-tag',
-                    ))
-                    ->tooltip(fn (?string $state): string => $state ?? 'Sem categoria')
+                    ->formatStateUsing(fn (mixed $state, Lancamento $record): HtmlString => self::categoryBadges($record))
+                    ->tooltip(fn (Lancamento $record): string => $record->categories_summary)
                     ->placeholder('Sem categoria')
-                    ->alignCenter()
-                    ->sortable(),
+                    ->alignCenter(),
 
                 TextColumn::make('registration_payments_summary')
                     ->label('Inscrições')
@@ -96,6 +94,12 @@ class LancamentoResource extends Resource
                     ->alignCenter()
                     ->label('Status'),
 
+                TextColumn::make('batch_code')
+                    ->label('Lote')
+                    ->badge()
+                    ->placeholder('Sem lote')
+                    ->searchable(),
+
                 TextColumn::make('data')
                     ->alignCenter()
                     ->label('Data lançamento')
@@ -106,17 +110,32 @@ class LancamentoResource extends Resource
             ->groups([
                 Group::make('status')->collapsible(),
                 Group::make('tipo')->collapsible(),
-                Group::make('categoria.nome')
-                    ->label('Categoria')
+                Group::make('batch_code')
+                    ->label('Lote')
                     ->collapsible(),
             ])
             ->defaultSort('id', 'desc')
             ->filters([
                 SelectFilter::make('categoria_lancamento_id')
                     ->label('Categoria')
-                    ->relationship('categoria', 'nome')
+                    ->options(fn (): array => CategoriaLancamento::query()
+                        ->orderBy('nome')
+                        ->pluck('nome', 'id')
+                        ->all())
+                    ->query(fn (Builder $query, array $data): Builder => blank($data['value'] ?? null)
+                        ? $query
+                        : $query->whereHas('items', fn (Builder $query): Builder => $query->where('categoria_lancamento_id', $data['value'])))
                     ->searchable()
                     ->preload(),
+                SelectFilter::make('batch_code')
+                    ->label('Lote')
+                    ->options(fn (): array => Lancamento::query()
+                        ->whereNotNull('batch_code')
+                        ->distinct()
+                        ->orderByDesc('batch_code')
+                        ->pluck('batch_code', 'batch_code')
+                        ->all())
+                    ->searchable(),
             ])
             ->actions([
                 EditAction::make()
@@ -143,6 +162,7 @@ class LancamentoResource extends Resource
         return [
             'index' => Pages\ListLancamentos::route('/'),
             'create' => Pages\CreateLancamento::route('/create'),
+            'batch' => Pages\BatchLancamentos::route('/batch'),
             'edit' => Pages\EditLancamento::route('/{record}/edit'),
         ];
     }
@@ -152,5 +172,38 @@ class LancamentoResource extends Resource
         return [
             StatsFinanceiro::class,
         ];
+    }
+
+    private static function categoryBadges(Lancamento $record): HtmlString
+    {
+        $items = $record->relationLoaded('items')
+            ? $record->items
+            : $record->items()->with('categoria')->get();
+
+        $categories = $items
+            ->map(fn (LancamentoItem $item) => $item->categoria)
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        if ($categories->isEmpty()) {
+            return new HtmlString('Sem categoria');
+        }
+
+        $visible = $categories
+            ->take(2)
+            ->map(fn (CategoriaLancamento $category): string => (string) IconBadge::tileIcon(
+                $category,
+                $category->nome,
+                fallbackIcon: 'heroicon-o-tag',
+            ))
+            ->implode('');
+
+        $extra = $categories->count() - 2;
+        $extraBadge = $extra > 0
+            ? '<span title="'.e($categories->skip(2)->pluck('nome')->implode(', ')).'" style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:999px;background:rgba(148,163,184,.26);color:#f4fbfd;font-size:.75rem;font-weight:900;">+'.e((string) $extra).'</span>'
+            : '';
+
+        return new HtmlString('<span style="display:inline-flex;align-items:center;gap:.25rem;">'.$visible.$extraBadge.'</span>');
     }
 }

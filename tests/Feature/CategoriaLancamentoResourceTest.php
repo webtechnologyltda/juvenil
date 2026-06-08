@@ -242,7 +242,9 @@ it('renders category tiles in launch tables and select options', function () {
         ->toContain('use App\Support\IconBadge;')
         ->toContain('IconBadge::tileIcon')
         ->toContain('->html()')
-        ->toContain('->tooltip(fn (?string $state): string => $state ?? \'Sem categoria\')')
+        ->toContain('->tooltip(fn (Lancamento $record): string => $record->categories_summary)')
+        ->toContain('$extra = $categories->count() - 2')
+        ->toContain('$extraBadge = $extra > 0')
         ->not->toContain("->badge()\n                    ->sortable(),\n\n                TextColumn::make('status')");
 
     expect(file_get_contents(app_path('Filament/Resources/LancamentoResource/Forms/LancamentoForm.php')))
@@ -262,11 +264,16 @@ it('links a financial entry to a launch category', function () {
 
     $lancamento = Lancamento::factory()->create([
         'tipo' => TipoLacamento::Despesa,
-        'categoria_lancamento_id' => $category->id,
         'user_id' => null,
     ]);
 
-    expect($lancamento->fresh()->categoria)
+    $lancamento->items()->create([
+        'nome' => 'Alimentação da equipe',
+        'valor' => 5579,
+        'categoria_lancamento_id' => $category->id,
+    ]);
+
+    expect($lancamento->fresh()->categories->first())
         ->toBeInstanceOf(CategoriaLancamento::class)
         ->nome->toBe('Alimentação');
 });
@@ -278,7 +285,8 @@ it('exposes the category field on the financial entry form and table', function 
         ->toContain("->where('tipo', (int) \$type)");
 
     expect(file_get_contents(app_path('Filament/Resources/LancamentoResource.php')))
-        ->toContain("TextColumn::make('categoria.nome')")
+        ->toContain("TextColumn::make('categories_summary')")
         ->toContain("SelectFilter::make('categoria_lancamento_id')")
-        ->toContain("Group::make('categoria.nome')");
+        ->toContain("whereHas('items'")
+        ->toContain("Group::make('batch_code')");
 });

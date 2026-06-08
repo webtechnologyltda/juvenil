@@ -4,7 +4,7 @@ namespace App\Filament\Resources\CampistaResource;
 
 use App\Enums\StatusInscricao;
 use App\Models\Campista;
-use App\Models\FinancialEntryRegistration;
+use App\Models\LancamentoItem;
 use Carbon\Carbon;
 use Filament\Actions\Action as FormAction;
 use Filament\Forms\Components\Checkbox;
@@ -693,7 +693,7 @@ abstract class CampistaForm
             return new HtmlString(self::paymentSummaryEmptyHtml('Salve a inscrição para vincular lançamentos financeiros.'));
         }
 
-        $payments = $record->financialEntryRegistrations()
+        $payments = $record->lancamentoItems()
             ->with('lancamento')
             ->orderByDesc('id')
             ->get();
@@ -703,7 +703,7 @@ abstract class CampistaForm
         }
 
         $items = $payments
-            ->map(fn (FinancialEntryRegistration $payment): string => self::paymentSummaryItemHtml($payment))
+            ->map(fn (LancamentoItem $payment): string => self::paymentSummaryItemHtml($payment))
             ->implode('');
 
         return new HtmlString('<div style="display:grid;gap:.75rem;">'.$items.'</div>');
@@ -716,7 +716,7 @@ abstract class CampistaForm
             .'</div>';
     }
 
-    private static function paymentSummaryItemHtml(FinancialEntryRegistration $payment): string
+    private static function paymentSummaryItemHtml(LancamentoItem $payment): string
     {
         $lancamento = $payment->lancamento;
         $status = $lancamento?->status?->getLabel() ?? 'Sem status';
@@ -728,7 +728,7 @@ abstract class CampistaForm
             .'<p style="margin:0 0 .35rem;color:#9ddbef;font-size:.72rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase;">Lançamento financeiro</p>'
             .'<strong style="display:block;color:#f4fbfd;font-size:1rem;line-height:1.25;">'.e($name).'</strong>'
             .'<dl style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:.85rem 0 0;">'
-            .self::paymentSummaryFieldHtml('Valor aplicado', self::money((int) $payment->amount))
+            .self::paymentSummaryFieldHtml('Valor aplicado', self::money((int) $payment->valor))
             .self::paymentSummaryFieldHtml('Data', $date)
             .self::paymentSummaryFieldHtml('Forma', $method)
             .self::paymentSummaryFieldHtml('Status', $status)

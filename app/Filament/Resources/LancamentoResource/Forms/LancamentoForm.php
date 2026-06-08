@@ -59,18 +59,6 @@ abstract class LancamentoForm
                                     'xl' => 4,
                                 ]),
 
-                            Money::make('valor')
-                                ->label('Valor')
-                                ->columns(1)
-                                ->intFormat()
-                                ->prefix(RawJs::make('R$'))
-                                ->required()
-                                ->columnSpan([
-                                    'default' => 'full',
-                                    'md' => 1,
-                                    'xl' => 2,
-                                ]),
-
                             DatePicker::make('data')
                                 ->label('Data de Lançamento')
                                 ->required()
@@ -116,7 +104,7 @@ abstract class LancamentoForm
                                 ->inline()
                                 ->live()
                                 ->afterStateUpdated(static function (Set $set, mixed $state): void {
-                                    $set('categoria_lancamento_id', null);
+                                    $set('items', []);
 
                                     if (! self::isExpenseType($state)) {
                                         $set('comprador', null);
@@ -126,21 +114,6 @@ abstract class LancamentoForm
                                 ->columnSpan([
                                     'default' => 'full',
                                     'md' => 2,
-                                    'xl' => 4,
-                                ]),
-
-                            Select::make('categoria_lancamento_id')
-                                ->label('Categoria')
-                                ->options(fn (Get $get): array => self::categoryOptions($get('tipo')))
-                                ->allowHtml()
-                                ->searchable()
-                                ->preload()
-                                ->placeholder('Selecione uma categoria')
-                                ->helperText('As opções acompanham o tipo do lançamento.')
-                                ->disabled(fn (Get $get): bool => blank($get('tipo')))
-                                ->columnSpan([
-                                    'default' => 'full',
-                                    'md' => 1,
                                     'xl' => 4,
                                 ]),
 
@@ -162,17 +135,48 @@ abstract class LancamentoForm
                                 ->columnSpanFull(),
                         ]),
 
-                    Section::make('Inscrições vinculadas')
-                        ->description('Aplique este lançamento em uma ou mais inscrições.')
+                    Section::make('Itens do lançamento')
+                        ->description('Classifique valores, categorias e vínculos financeiros.')
                         ->columnSpan([
                             'default' => 1,
                             'lg' => 8,
                         ])
                         ->schema([
-                            Repeater::make('registration_payments')
-                                ->label('Pagamentos de inscrições')
-                                ->helperText('A soma dos valores aplicados não pode ultrapassar o valor total do lançamento.')
+                            Repeater::make('items')
+                                ->label('Itens')
                                 ->schema([
+                                    TextInput::make('nome')
+                                        ->label('Nome')
+                                        ->required()
+                                        ->maxLength(255)
+                                        ->columnSpan([
+                                            'default' => 'full',
+                                            'lg' => 4,
+                                        ]),
+
+                                    Money::make('valor')
+                                        ->label('Valor')
+                                        ->intFormat()
+                                        ->prefix(RawJs::make('R$'))
+                                        ->required()
+                                        ->columnSpan([
+                                            'default' => 'full',
+                                            'lg' => 2,
+                                        ]),
+
+                                    Select::make('categoria_lancamento_id')
+                                        ->label('Categoria')
+                                        ->options(fn (Get $get): array => self::categoryOptions($get('../../tipo')))
+                                        ->allowHtml()
+                                        ->searchable()
+                                        ->preload()
+                                        ->required()
+                                        ->disabled(fn (Get $get): bool => blank($get('../../tipo')))
+                                        ->columnSpan([
+                                            'default' => 'full',
+                                            'lg' => 3,
+                                        ]),
+
                                     Select::make('registration_type')
                                         ->label('Tipo da inscrição')
                                         ->options(RegistrationPaymentAllocator::registrationTypeOptions())
@@ -180,9 +184,8 @@ abstract class LancamentoForm
                                         ->live()
                                         ->afterStateUpdated(function (Set $set): void {
                                             $set('registration_id', null);
-                                            $set('amount', null);
                                         })
-                                        ->required()
+                                        ->placeholder('Sem vínculo')
                                         ->columnSpan([
                                             'default' => 'full',
                                             'lg' => 3,
@@ -201,30 +204,33 @@ abstract class LancamentoForm
                                                 $get('registration_type'),
                                                 $search,
                                                 $record?->id,
-                                                filled($get('registration_id')) ? (int) $get('registration_id') : null,
-                                            ))
+                                            filled($get('registration_id')) ? (int) $get('registration_id') : null,
+                                        ))
                                         ->searchable()
                                         ->preload()
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get, mixed $state): void {
+                                            $name = self::registrationName($get('registration_type'), $state);
+
+                                            if ($name !== null) {
+                                                $set('nome', $name);
+                                            }
+                                        })
                                         ->disabled(fn (Get $get): bool => blank($get('registration_type')))
-                                        ->required()
                                         ->columnSpan([
                                             'default' => 'full',
                                             'lg' => 6,
                                         ]),
 
-                                    Money::make('amount')
-                                        ->label('Valor aplicado')
-                                        ->intFormat()
-                                        ->prefix(RawJs::make('R$'))
-                                        ->required()
-                                        ->columnSpan([
-                                            'default' => 'full',
-                                            'lg' => 3,
-                                        ]),
+                                    Textarea::make('descricao')
+                                        ->label('Descrição')
+                                        ->rows(2)
+                                        ->columnSpanFull(),
                                 ])
                                 ->columns(12)
-                                ->defaultItems(0)
-                                ->addActionLabel('Adicionar inscrição')
+                                ->defaultItems(1)
+                                ->minItems(1)
+                                ->addActionLabel('Adicionar item')
                                 ->reorderable(false)
                                 ->collapsible()
                                 ->columnSpanFull(),
@@ -278,17 +284,20 @@ abstract class LancamentoForm
     }
 
     /**
-     * @return array<int, array{registration_type: string, registration_id: int, amount: int}>
+     * @return array<int, array{nome: string, valor: int, categoria_lancamento_id: int, registration_type: ?string, registration_id: ?int, descricao: ?string}>
      */
-    public static function registrationPaymentsFormState(Lancamento $lancamento): array
+    public static function itemsFormState(Lancamento $lancamento): array
     {
-        return $lancamento->registrationPayments()
+        return $lancamento->items()
             ->orderBy('id')
-            ->get(['registration_type', 'registration_id', 'amount'])
-            ->map(fn ($payment): array => [
-                'registration_type' => $payment->registration_type,
-                'registration_id' => (int) $payment->registration_id,
-                'amount' => (int) $payment->amount,
+            ->get(['nome', 'valor', 'categoria_lancamento_id', 'registration_type', 'registration_id', 'descricao'])
+            ->map(fn ($item): array => [
+                'nome' => $item->nome,
+                'valor' => (int) $item->valor,
+                'categoria_lancamento_id' => (int) $item->categoria_lancamento_id,
+                'registration_type' => $item->registration_type,
+                'registration_id' => $item->registration_id ? (int) $item->registration_id : null,
+                'descricao' => $item->descricao,
             ])
             ->all();
     }
@@ -495,7 +504,22 @@ abstract class LancamentoForm
         return (int) $paymentMethod === FormaPagamento::Dinheiro->value;
     }
 
-    private static function categoryOptions(mixed $type): array
+    private static function registrationName(?string $registrationType, mixed $registrationId): ?string
+    {
+        if (blank($registrationType) || blank($registrationId)) {
+            return null;
+        }
+
+        if (! array_key_exists($registrationType, RegistrationPaymentAllocator::registrationTypeOptions())) {
+            return null;
+        }
+
+        $registration = $registrationType::query()->find($registrationId);
+
+        return $registration?->getAttribute('nome');
+    }
+
+    public static function categoryOptions(mixed $type): array
     {
         if ($type instanceof TipoLacamento) {
             $type = $type->value;

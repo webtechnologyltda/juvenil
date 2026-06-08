@@ -7,7 +7,7 @@ use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lancamento extends Model
@@ -21,10 +21,10 @@ class Lancamento extends Model
         'data',
         'valor',
         'tipo',
-        'categoria_lancamento_id',
         'status',
         'forma_pagamento',
         'comprovante',
+        'batch_code',
         'user_id',
     ];
 
@@ -36,40 +36,64 @@ class Lancamento extends Model
         'valor' => 'integer',
     ];
 
-    public function categoria(): BelongsTo
+    public function items(): HasMany
     {
-        return $this->belongsTo(CategoriaLancamento::class, 'categoria_lancamento_id');
+        return $this->hasMany(LancamentoItem::class);
     }
 
-    public function registrationPayments(): HasMany
+    public function categories(): BelongsToMany
     {
-        return $this->hasMany(FinancialEntryRegistration::class, 'lancamento_id');
+        return $this->belongsToMany(
+            CategoriaLancamento::class,
+            'lancamento_items',
+            'lancamento_id',
+            'categoria_lancamento_id',
+        )->distinct();
     }
 
     public function getRegistrationPaymentsSummaryAttribute(): string
     {
-        $payments = $this->relationLoaded('registrationPayments')
-            ? $this->registrationPayments
-            : $this->registrationPayments()->with('registration')->get();
+        $items = $this->relationLoaded('items')
+            ? $this->items
+            : $this->items()->with('registration')->get();
 
-        if ($payments->isEmpty()) {
+        $registrationItems = $items->filter(fn (LancamentoItem $item): bool => filled($item->registration_type) && filled($item->registration_id));
+
+        if ($registrationItems->isEmpty()) {
             return 'Sem inscrições vinculadas';
         }
 
-        return $payments
-            ->map(function (FinancialEntryRegistration $payment): string {
-                $registration = $payment->registration;
+        return $registrationItems
+            ->map(function (LancamentoItem $item): string {
+                $registration = $item->registration;
                 $type = $registration instanceof Campista ? 'Campista' : 'Equipe';
                 $name = (string) ($registration?->getAttribute('nome') ?? 'Inscrição removida');
 
                 return sprintf(
                     '%s #%s - %s (%s)',
                     $type,
-                    $payment->registration_id,
+                    $item->registration_id,
                     $name,
-                    'R$ '.number_format($payment->amount / 100, 2, ',', '.'),
+                    'R$ '.number_format($item->valor / 100, 2, ',', '.'),
                 );
             })
             ->implode("\n");
+    }
+
+    public function getCategoriesSummaryAttribute(): string
+    {
+        $items = $this->relationLoaded('items')
+            ? $this->items
+            : $this->items()->with('categoria')->get();
+
+        $categories = $items
+            ->map(fn (LancamentoItem $item): ?string => $item->categoria?->nome)
+            ->filter()
+            ->unique()
+            ->values();
+
+        return $categories->isEmpty()
+            ? 'Sem categoria'
+            : $categories->implode(', ');
     }
 }

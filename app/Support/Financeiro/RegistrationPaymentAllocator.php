@@ -5,10 +5,12 @@ namespace App\Support\Financeiro;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use App\Enums\StatusLacamento;
+use App\Enums\TipoLacamento;
 use App\Models\Campista;
+use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
-use App\Models\FinancialEntryRegistration;
 use App\Models\Lancamento;
+use App\Models\LancamentoItem;
 use App\Settings\GeneralSettings;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -66,28 +68,57 @@ class RegistrationPaymentAllocator
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $allocations
-     * @return array<int, array{registration_type: class-string<Model>, registration_id: int, amount: int}>
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array{nome: string, descricao: ?string, valor: int, categoria_lancamento_id: int, registration_type: class-string<Model>|null, registration_id: int|null}>
      */
-    public function validateAllocations(Lancamento $lancamento, array $allocations): array
+    public function validateItems(Lancamento $lancamento, array $items): array
     {
-        $normalized = $this->normalizeAllocations($allocations);
-        $totalAllocated = array_sum(array_column($normalized, 'amount'));
-        $entryAmount = abs((int) $lancamento->valor);
+        $normalized = $this->normalizeItems($items);
 
-        if ($totalAllocated > $entryAmount) {
+        if ($normalized === []) {
             throw ValidationException::withMessages([
-                'registration_payments' => 'A soma dos valores vinculados às inscrições não pode ultrapassar o valor do lançamento.',
+                'items' => 'Informe pelo menos um item do lançamento.',
             ]);
         }
 
-        foreach ($normalized as $allocation) {
-            $registration = $this->registrationFromAllocation($allocation);
-            $remaining = $this->remainingAmountFor($registration, $lancamento->exists ? (int) $lancamento->getKey() : null);
+        $seenRegistrations = [];
 
-            if ($allocation['amount'] > $remaining) {
+        foreach ($normalized as $item) {
+            $category = CategoriaLancamento::query()->find($item['categoria_lancamento_id']);
+
+            if (! $category || ! $this->categoryMatchesLaunchType($category, $lancamento->tipo)) {
                 throw ValidationException::withMessages([
-                    'registration_payments' => sprintf(
+                    'items' => 'A categoria do item precisa acompanhar o tipo do lançamento.',
+                ]);
+            }
+
+            if ($item['registration_type'] === null || $item['registration_id'] === null) {
+                continue;
+            }
+
+            $key = $item['registration_type'].'#'.$item['registration_id'];
+
+            if (array_key_exists($key, $seenRegistrations)) {
+                throw ValidationException::withMessages([
+                    'items' => 'A mesma inscrição não pode ser vinculada duas vezes ao mesmo lançamento.',
+                ]);
+            }
+
+            $seenRegistrations[$key] = true;
+            $registration = $this->registrationFromItem($item);
+            $excludingLancamentoId = $lancamento->exists ? (int) $lancamento->getKey() : null;
+
+            if ($this->registrationHasLinkedItem($registration, $excludingLancamentoId)) {
+                throw ValidationException::withMessages([
+                    'items' => sprintf('%s já possui lançamento vinculado.', $this->registrationName($registration)),
+                ]);
+            }
+
+            $remaining = $this->remainingAmountFor($registration, $excludingLancamentoId);
+
+            if ($item['valor'] > $remaining) {
+                throw ValidationException::withMessages([
+                    'items' => sprintf(
                         'O valor aplicado em %s não pode ultrapassar o saldo restante da inscrição.',
                         $this->registrationName($registration),
                     ),
@@ -99,27 +130,32 @@ class RegistrationPaymentAllocator
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $allocations
+     * @param  array<int, array<string, mixed>>  $items
      */
-    public function sync(Lancamento $lancamento, array $allocations): void
+    public function syncItems(Lancamento $lancamento, array $items): void
     {
-        $normalized = $this->validateAllocations($lancamento, $allocations);
+        $normalized = $this->validateItems($lancamento, $items);
 
         DB::transaction(function () use ($lancamento, $normalized): void {
-            $previousRegistrations = $lancamento->registrationPayments()
+            $previousRegistrations = $lancamento->items()
                 ->with('registration')
                 ->get()
-                ->map(fn (FinancialEntryRegistration $payment): ?Model => $payment->registration)
+                ->map(fn (LancamentoItem $item): ?Model => $item->registration)
                 ->filter();
 
-            $lancamento->registrationPayments()->delete();
+            $lancamento->items()->delete();
 
-            foreach ($normalized as $allocation) {
-                $lancamento->registrationPayments()->create($allocation);
+            foreach ($normalized as $item) {
+                $lancamento->items()->create($item);
             }
 
             $currentRegistrations = collect($normalized)
-                ->map(fn (array $allocation): Model => $this->registrationFromAllocation($allocation));
+                ->filter(fn (array $item): bool => $item['registration_type'] !== null && $item['registration_id'] !== null)
+                ->map(fn (array $item): Model => $this->registrationFromItem($item));
+
+            $lancamento->forceFill([
+                'valor' => $this->signedTotalForItems($lancamento->tipo, $normalized),
+            ])->save();
 
             $previousRegistrations
                 ->merge($currentRegistrations)
@@ -128,9 +164,47 @@ class RegistrationPaymentAllocator
         });
     }
 
+    /**
+     * Compatibility wrapper for older call sites while forms move to item-based payloads.
+     *
+     * @param  array<int, array<string, mixed>>  $allocations
+     */
+    public function sync(Lancamento $lancamento, array $allocations): void
+    {
+        CategoriaLancamento::ensureSystemDefaults();
+
+        $items = collect($this->normalizeAllocations($allocations))
+            ->map(function (array $allocation): array {
+                $registration = $this->registrationFromAllocation($allocation);
+
+                return [
+                    'nome' => $this->registrationName($registration),
+                    'descricao' => null,
+                    'valor' => $allocation['amount'],
+                    'categoria_lancamento_id' => $this->categoryForRegistrationType($allocation['registration_type'])?->id,
+                    'registration_type' => $allocation['registration_type'],
+                    'registration_id' => $allocation['registration_id'],
+                ];
+            })
+            ->all();
+
+        $this->syncItems($lancamento, $items);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    public function signedTotalForItems(mixed $type, array $items): int
+    {
+        $total = collect($items)
+            ->sum(fn (array $item): int => abs((int) ($item['valor'] ?? $item['amount'] ?? 0)));
+
+        return $this->isExpenseType($type) ? $total * -1 : $total;
+    }
+
     public function paidAmountFor(Model $registration, ?int $excludingLancamentoId = null): int
     {
-        $query = FinancialEntryRegistration::query()
+        $query = LancamentoItem::query()
             ->where('registration_type', $registration::class)
             ->where('registration_id', $registration->getKey())
             ->whereHas('lancamento', fn ($query) => $query->where('status', StatusLacamento::Pago->value));
@@ -139,7 +213,7 @@ class RegistrationPaymentAllocator
             $query->where('lancamento_id', '<>', $excludingLancamentoId);
         }
 
-        return (int) $query->sum('amount');
+        return (int) $query->sum('valor');
     }
 
     public function remainingAmountFor(Model $registration, ?int $excludingLancamentoId = null): int
@@ -162,6 +236,56 @@ class RegistrationPaymentAllocator
         $amount = (int) (app(GeneralSettings::class)->valor_acampamento ?? 0);
 
         return $amount > 0 ? $amount : null;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array{nome: string, descricao: ?string, valor: int, categoria_lancamento_id: int, registration_type: class-string<Model>|null, registration_id: int|null}>
+     */
+    private function normalizeItems(array $items): array
+    {
+        $normalized = [];
+
+        foreach ($items as $item) {
+            $name = trim((string) ($item['nome'] ?? ''));
+            $description = $item['descricao'] ?? null;
+            $amount = abs((int) ($item['valor'] ?? $item['amount'] ?? 0));
+            $categoryId = (int) ($item['categoria_lancamento_id'] ?? 0);
+            $registrationType = $item['registration_type'] ?? null;
+            $registrationId = filled($item['registration_id'] ?? null) ? (int) $item['registration_id'] : null;
+
+            if ($name === '' && $amount === 0 && $categoryId === 0 && blank($registrationType) && $registrationId === null) {
+                continue;
+            }
+
+            if ($name === '' || $amount <= 0 || $categoryId <= 0) {
+                throw ValidationException::withMessages([
+                    'items' => 'Informe nome, valor e categoria em todos os itens.',
+                ]);
+            }
+
+            if (filled($registrationType) || $registrationId !== null) {
+                if (! $this->isSupportedRegistrationType($registrationType) || $registrationId === null || $registrationId <= 0) {
+                    throw ValidationException::withMessages([
+                        'items' => 'Informe tipo e inscrição válidos para itens vinculados.',
+                    ]);
+                }
+            } else {
+                $registrationType = null;
+                $registrationId = null;
+            }
+
+            $normalized[] = [
+                'nome' => $name,
+                'descricao' => is_string($description) && trim($description) !== '' ? trim($description) : null,
+                'valor' => $amount,
+                'categoria_lancamento_id' => $categoryId,
+                'registration_type' => $registrationType,
+                'registration_id' => $registrationId,
+            ];
+        }
+
+        return $normalized;
     }
 
     /**
@@ -218,6 +342,17 @@ class RegistrationPaymentAllocator
         return $registrationType::query()->findOrFail($allocation['registration_id']);
     }
 
+    /**
+     * @param  array{registration_type: class-string<Model>|null, registration_id: int|null}  $item
+     */
+    private function registrationFromItem(array $item): Model
+    {
+        /** @var class-string<Model> $registrationType */
+        $registrationType = $item['registration_type'];
+
+        return $registrationType::query()->findOrFail($item['registration_id']);
+    }
+
     private function syncRegistrationStatus(Model $registration): void
     {
         $expected = $this->expectedAmountFor($registration);
@@ -262,7 +397,7 @@ class RegistrationPaymentAllocator
     private function latestPaidLancamentoFor(Model $registration): ?Lancamento
     {
         return Lancamento::query()
-            ->whereHas('registrationPayments', fn ($query) => $query
+            ->whereHas('items', fn ($query) => $query
                 ->where('registration_type', $registration::class)
                 ->where('registration_id', $registration->getKey()))
             ->where('status', StatusLacamento::Pago->value)
@@ -321,8 +456,58 @@ class RegistrationPaymentAllocator
             return false;
         }
 
-        return $registration->getKey() === $currentRegistrationId
-            || $this->remainingAmountFor($registration, $excludingLancamentoId) > 0;
+        if ($registration->getKey() === $currentRegistrationId) {
+            return true;
+        }
+
+        return ! $this->registrationHasLinkedItem($registration, $excludingLancamentoId)
+            && $this->remainingAmountFor($registration, $excludingLancamentoId) > 0;
+    }
+
+    private function registrationHasLinkedItem(Model $registration, ?int $excludingLancamentoId = null): bool
+    {
+        return LancamentoItem::query()
+            ->where('registration_type', $registration::class)
+            ->where('registration_id', $registration->getKey())
+            ->when($excludingLancamentoId !== null, fn ($query) => $query->where('lancamento_id', '<>', $excludingLancamentoId))
+            ->exists();
+    }
+
+    public function categoryForRegistrationType(string $registrationType): ?CategoriaLancamento
+    {
+        $systemKey = match ($registrationType) {
+            Campista::class => CategoriaLancamento::SYSTEM_CATEGORY_INSCRICAO,
+            EquipeTrabalho::class => CategoriaLancamento::SYSTEM_CATEGORY_CONTRIBUICAO_EQUIPE_TRABALHO,
+            default => null,
+        };
+
+        if ($systemKey === null) {
+            return null;
+        }
+
+        CategoriaLancamento::ensureSystemDefaults();
+
+        return CategoriaLancamento::query()
+            ->where('system_key', $systemKey)
+            ->first();
+    }
+
+    private function categoryMatchesLaunchType(CategoriaLancamento $category, mixed $type): bool
+    {
+        if ($type instanceof TipoLacamento) {
+            return $category->tipo === $type;
+        }
+
+        return ! blank($type) && (int) $category->tipo->value === (int) $type;
+    }
+
+    private function isExpenseType(mixed $type): bool
+    {
+        if ($type instanceof TipoLacamento) {
+            return $type === TipoLacamento::Despesa;
+        }
+
+        return ! blank($type) && (int) $type === TipoLacamento::Despesa->value;
     }
 
     private function registrationName(Model $registration): string

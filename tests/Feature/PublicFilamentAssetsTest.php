@@ -121,6 +121,7 @@ it('stores registration photo uploads on the public disk so previews can load sa
     $campistaTable = file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaTable.php'));
     $equipeTable = file_get_contents(app_path('Filament/Resources/EquipeTrabalhoResource/EquipeTrabalhoTable.php'));
     $campistaView = file_get_contents(app_path('Filament/Resources/CampistaResource/Pages/ViewCampista.php'));
+    $publicCampistaForm = file_get_contents(app_path('Livewire/CampistaForm.php'));
     $publicEquipeForm = file_get_contents(app_path('Livewire/EquipeTrabalhoForm.php'));
 
     expect($campistaForm)
@@ -141,8 +142,10 @@ it('stores registration photo uploads on the public disk so previews can load sa
         ->toContain("->disk('public')")
         ->and($campistaView)
         ->toContain('Storage::disk(\'public\')->url($avatar)')
+        ->and($publicCampistaForm)
+        ->toContain('FilamentUploadState::storedPath($this->data[\'avatar_url\'] ?? null, \'foto-formulario\')')
         ->and($publicEquipeForm)
-        ->toContain("->store('foto-formulario-equipe-trabalho', 'public')");
+        ->toContain('FilamentUploadState::storedPath($this->data[\'avatar_url\'] ?? null, \'foto-formulario-equipe-trabalho\')');
 });
 
 it('keeps parish community fields visible for zero-valued parish options', function () {

@@ -6,6 +6,7 @@ use App\Models\Campista;
 use App\Models\User;
 use App\Settings\GeneralSettings;
 use App\Support\CampistaRegistrationAvailability;
+use App\Support\FilamentUploadState;
 use App\Support\RegistrationAgeLimits;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -694,7 +695,7 @@ class CampistaForm extends Component implements HasActions, HasForms
 
             $this->data = Arr::only($this->data, ['nome', 'avatar_url', 'form_data']);
 
-            $this->data['avatar_url'] = $this->data['avatar_url'][array_key_first($this->data['avatar_url'])]->store('foto-formulario', 'public');
+            $this->data['avatar_url'] = FilamentUploadState::storedPath($this->data['avatar_url'] ?? null, 'foto-formulario');
 
             $campista = Campista::create($this->data);
 

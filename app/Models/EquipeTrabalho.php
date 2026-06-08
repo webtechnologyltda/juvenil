@@ -28,8 +28,8 @@ class EquipeTrabalho extends Model implements Auditable
         'status' => StatusInscricaoEquipeTrabalho::class,
     ];
 
-    public function financialEntryRegistrations(): MorphMany
+    public function lancamentoItems(): MorphMany
     {
-        return $this->morphMany(FinancialEntryRegistration::class, 'registration');
+        return $this->morphMany(LancamentoItem::class, 'registration');
     }
 }

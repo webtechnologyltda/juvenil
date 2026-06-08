@@ -8,6 +8,7 @@ use App\Filament\Resources\CampistaResource\CampistaForm;
 use App\Filament\Resources\CampistaResource\Pages\EditCampista;
 use App\Filament\Resources\CampistaResource\Pages\ListCampistas;
 use App\Models\Campista;
+use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
 use App\Models\User;
 use Database\Seeders\ShieldSeeder;
@@ -61,9 +62,12 @@ it('renders campista payment information only from linked financial entries', fu
         'user_id' => null,
     ]);
 
-    $campista->financialEntryRegistrations()->create([
-        'lancamento_id' => $lancamento->id,
-        'amount' => 25000,
+    $lancamento->items()->create([
+        'nome' => $campista->nome,
+        'valor' => 25000,
+        'categoria_lancamento_id' => campistaActionsInscricaoCategory()->id,
+        'registration_type' => $campista::class,
+        'registration_id' => $campista->id,
     ]);
 
     expect((string) CampistaForm::paymentSummaryHtml($campista))
@@ -101,9 +105,12 @@ it('renders the linked payment summary on the campista edit form', function () {
         'user_id' => null,
     ]);
 
-    $campista->financialEntryRegistrations()->create([
-        'lancamento_id' => $lancamento->id,
-        'amount' => 25000,
+    $lancamento->items()->create([
+        'nome' => $campista->nome,
+        'valor' => 25000,
+        'categoria_lancamento_id' => campistaActionsInscricaoCategory()->id,
+        'registration_type' => $campista::class,
+        'registration_id' => $campista->id,
     ]);
 
     Livewire::test(EditCampista::class, ['record' => $campista->getKey()])
@@ -113,3 +120,12 @@ it('renders the linked payment summary on the campista edit form', function () {
         ->assertDontSee('Nome Comprovante')
         ->assertDontSee('Data de Pagamento');
 });
+
+function campistaActionsInscricaoCategory(): CategoriaLancamento
+{
+    CategoriaLancamento::ensureSystemDefaults();
+
+    return CategoriaLancamento::query()
+        ->where('system_key', CategoriaLancamento::SYSTEM_CATEGORY_INSCRICAO)
+        ->firstOrFail();
+}

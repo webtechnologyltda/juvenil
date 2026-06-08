@@ -33,7 +33,10 @@ function financialDashboardChartExtraJs(string $chart): string
 
 function makeFinancialDashboardWidgetEntry(array $attributes = []): Lancamento
 {
-    return Lancamento::query()->create(array_merge([
+    $category = $attributes['categoria_lancamento_id'] ?? null;
+    unset($attributes['categoria_lancamento_id']);
+
+    $lancamento = Lancamento::query()->create(array_merge([
         'nome' => 'Lançamento financeiro',
         'descricao' => null,
         'comprador' => null,
@@ -43,9 +46,19 @@ function makeFinancialDashboardWidgetEntry(array $attributes = []): Lancamento
         'status' => StatusLacamento::Pago->value,
         'forma_pagamento' => 1,
         'comprovante' => [],
-        'categoria_lancamento_id' => null,
         'user_id' => null,
     ], $attributes));
+
+    if ($category !== null) {
+        $lancamento->items()->create([
+            'nome' => $lancamento->nome,
+            'descricao' => $lancamento->descricao,
+            'valor' => abs((int) $lancamento->valor),
+            'categoria_lancamento_id' => $category,
+        ]);
+    }
+
+    return $lancamento;
 }
 
 it('registers a financial dashboard page in the finance navigation group with global filters', function () {
@@ -109,16 +122,11 @@ it('renders financial category values as pie chart slices', function () {
         'categoria_lancamento_id' => $market->id,
     ]);
 
-    makeFinancialDashboardWidgetEntry([
-        'valor' => 347,
-        'categoria_lancamento_id' => null,
-    ]);
-
     $options = financialDashboardChartOptions(FinancialCategoryChart::class);
 
     expect($options['chart']['type'])->toBe('pie')
-        ->and($options['labels'])->toBe(['Mercado', 'Sem categoria'])
-        ->and($options['series'])->toBe([560, 347]);
+        ->and($options['labels'])->toBe(['Mercado'])
+        ->and($options['series'])->toBe([560]);
 });
 
 it('keeps the daily financial flow y axis able to show negative balances', function () {

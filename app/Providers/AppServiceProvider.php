@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Support\Livewire\FilamentNotificationsWireableSynth;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
 use Filament\Tables\Table;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,5 +31,7 @@ class AppServiceProvider extends ServiceProvider
         Table::configureUsing(function (Table $table): void {
             $table->deferColumnManager(false);
         });
+
+        Livewire::propertySynthesizer(FilamentNotificationsWireableSynth::class);
     }
 }

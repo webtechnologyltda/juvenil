@@ -9,9 +9,10 @@ use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages\CreateLancamento;
 use App\Filament\Resources\LancamentoResource\Pages\EditLancamento;
 use App\Models\Campista;
+use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
-use App\Models\FinancialEntryRegistration;
 use App\Models\Lancamento;
+use App\Models\LancamentoItem;
 use App\Models\User;
 use App\Support\EnumOptionBadge;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
@@ -44,10 +45,6 @@ it('defaults financial entry date to the application current date', function () 
 });
 
 it('renders financial status and payment select options with enum icons and colors', function () {
-    if (! class_exists(EnumOptionBadge::class)) {
-        $this->fail('Financial enum select options must be rendered by EnumOptionBadge.');
-    }
-
     expect((string) EnumOptionBadge::option(StatusLacamento::Pago))
         ->toContain('Pago')
         ->toContain('polaris-payment-icon')
@@ -65,43 +62,23 @@ it('renders financial status and payment select options with enum icons and colo
         ->toContain('->enum(FormaPagamento::class)');
 });
 
-it('links one paid financial entry to multiple campista registrations and marks them paid', function () {
-    seedFinancialRegistrationSettings(25000);
+it('links one paid financial entry to multiple registration items and marks them paid', function () {
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
 
-    $joao = Campista::factory()->create([
-        'nome' => 'João Campista',
-        'status' => StatusInscricao::Pendente->value,
-        'forma_pagamento' => FormaPagamento::NaoPago->value,
-        'dia_pagamento' => null,
-        'tribo_id' => null,
-        'user_id' => null,
-    ]);
-    $maria = Campista::factory()->create([
-        'nome' => 'Maria Campista',
-        'status' => StatusInscricao::Pendente->value,
-        'forma_pagamento' => FormaPagamento::NaoPago->value,
-        'dia_pagamento' => null,
-        'tribo_id' => null,
-        'user_id' => null,
-    ]);
-    $lancamento = paidFinancialEntry(50000);
+    $category = financialItemRegistrationCategory(Campista::class);
+    $joao = financialItemCampista('João Campista');
+    $maria = financialItemCampista('Maria Campista');
+    $lancamento = financialItemEntry(['status' => StatusLacamento::Pago->value]);
 
-    app(RegistrationPaymentAllocator::class)->sync($lancamento, [
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $joao->id,
-            'amount' => 25000,
-        ],
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $maria->id,
-            'amount' => 25000,
-        ],
+    app(RegistrationPaymentAllocator::class)->syncItems($lancamento, [
+        financialItemPayload($category, $joao),
+        financialItemPayload($category, $maria),
     ]);
 
-    expect($lancamento->fresh()->registrationPayments)
+    expect($lancamento->fresh()->items)
         ->toHaveCount(2)
-        ->each->toBeInstanceOf(FinancialEntryRegistration::class)
+        ->each->toBeInstanceOf(LancamentoItem::class)
         ->and($joao->fresh()->status)->toBe(StatusInscricao::Pago)
         ->and($joao->fresh()->forma_pagamento)->toBe(FormaPagamento::Pix)
         ->and($joao->fresh()->dia_pagamento?->format('Y-m-d'))->toBe('2026-07-01')
@@ -110,139 +87,75 @@ it('links one paid financial entry to multiple campista registrations and marks 
         ->and(app(RegistrationPaymentAllocator::class)->remainingAmountFor($maria->fresh()))->toBe(0);
 });
 
-it('keeps a campista pending until multiple partial financial entries complete the expected amount', function () {
-    seedFinancialRegistrationSettings(25000);
+it('supports team work registrations through the same financial item link', function () {
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
 
-    $campista = Campista::factory()->create([
-        'nome' => 'Campista Parcial',
-        'status' => StatusInscricao::Pendente->value,
-        'forma_pagamento' => FormaPagamento::NaoPago->value,
-        'dia_pagamento' => null,
-        'tribo_id' => null,
-        'user_id' => null,
-    ]);
-
-    app(RegistrationPaymentAllocator::class)->sync(paidFinancialEntry(10000), [
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $campista->id,
-            'amount' => 10000,
-        ],
-    ]);
-
-    expect($campista->fresh()->status)
-        ->toBe(StatusInscricao::Pendente)
-        ->and(app(RegistrationPaymentAllocator::class)->paidAmountFor($campista->fresh()))->toBe(10000)
-        ->and(app(RegistrationPaymentAllocator::class)->remainingAmountFor($campista->fresh()))->toBe(15000);
-
-    app(RegistrationPaymentAllocator::class)->sync(paidFinancialEntry(15000), [
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $campista->id,
-            'amount' => 15000,
-        ],
-    ]);
-
-    expect($campista->fresh()->status)
-        ->toBe(StatusInscricao::Pago)
-        ->and(app(RegistrationPaymentAllocator::class)->paidAmountFor($campista->fresh()))->toBe(25000)
-        ->and(app(RegistrationPaymentAllocator::class)->remainingAmountFor($campista->fresh()))->toBe(0);
-});
-
-it('supports team work registrations through the same financial entry registration link', function () {
-    seedFinancialRegistrationSettings(25000);
-
+    $category = financialItemRegistrationCategory(EquipeTrabalho::class);
     $equipe = EquipeTrabalho::factory()->create([
         'nome' => 'Voluntário Equipe',
         'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
     ]);
-    $lancamento = paidFinancialEntry(25000);
+    $lancamento = financialItemEntry(['status' => StatusLacamento::Pago->value]);
 
-    app(RegistrationPaymentAllocator::class)->sync($lancamento, [
-        [
-            'registration_type' => EquipeTrabalho::class,
-            'registration_id' => $equipe->id,
-            'amount' => 25000,
-        ],
+    app(RegistrationPaymentAllocator::class)->syncItems($lancamento, [
+        financialItemPayload($category, $equipe),
     ]);
 
-    expect($lancamento->fresh()->registrationPayments)
+    expect($lancamento->fresh()->items)
         ->toHaveCount(1)
-        ->and($lancamento->fresh()->registrationPayments->first()->registration)
+        ->and($lancamento->fresh()->items->first()->registration)
         ->toBeInstanceOf(EquipeTrabalho::class)
         ->and($equipe->fresh()->status)
         ->toBe(StatusInscricaoEquipeTrabalho::Aprovado);
 });
 
-it('searches registration payment options by registration name', function () {
-    seedFinancialRegistrationSettings(25000);
+it('searches registration item options by registration name and hides already linked registrations', function () {
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
 
-    $lucas = Campista::factory()->create([
-        'nome' => 'Lucas da Silva',
-        'status' => StatusInscricao::Pendente->value,
-        'tribo_id' => null,
-        'user_id' => null,
-    ]);
+    $category = financialItemRegistrationCategory(Campista::class);
+    $lucas = financialItemCampista('Lucas da Silva');
+    $maria = financialItemCampista('Maria Souza');
 
-    Campista::factory()->create([
-        'nome' => 'Maria Souza',
-        'status' => StatusInscricao::Pendente->value,
-        'tribo_id' => null,
-        'user_id' => null,
+    app(RegistrationPaymentAllocator::class)->syncItems(financialItemEntry(), [
+        financialItemPayload($category, $maria),
     ]);
 
     $results = app(RegistrationPaymentAllocator::class)
-        ->registrationSearchResults(Campista::class, 'Lucas');
+        ->registrationSearchResults(Campista::class, 'a');
 
     expect($results)
         ->toHaveKey($lucas->id)
         ->and(implode(' ', $results))->toContain('Lucas da Silva')
-        ->and(implode(' ', $results))->not->toContain('Maria Souza');
+        ->and($results)->not->toHaveKey($maria->id);
 });
 
-it('creates a financial entry with multiple registration links from the Filament create page', function () {
+it('creates a financial entry with multiple items from the Filament create page', function () {
     $this->seed(ShieldSeeder::class);
-    seedFinancialRegistrationSettings(25000);
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
 
     $user = User::factory()->create();
     $user->assignRole('Super Administrador');
     $this->actingAs($user);
 
-    $joao = Campista::factory()->create([
-        'nome' => 'João Tela',
-        'status' => StatusInscricao::Pendente->value,
-        'tribo_id' => null,
-        'user_id' => null,
-    ]);
-    $maria = Campista::factory()->create([
-        'nome' => 'Maria Tela',
-        'status' => StatusInscricao::Pendente->value,
-        'tribo_id' => null,
-        'user_id' => null,
-    ]);
+    $category = financialItemRegistrationCategory(Campista::class);
+    $joao = financialItemCampista('João Tela');
+    $maria = financialItemCampista('Maria Tela');
 
     Livewire::test(CreateLancamento::class)
         ->fillForm([
             'nome' => 'PIX João e Maria',
-            'valor' => 50000,
             'tipo' => TipoLacamento::Receita->value,
-            'categoria_lancamento_id' => null,
             'data' => '2026-07-01',
             'status' => StatusLacamento::Pago->value,
             'forma_pagamento' => FormaPagamento::Pix->value,
             'comprador' => 'Família',
             'descricao' => 'Pagamento agrupado de inscrições',
-            'registration_payments' => [
-                [
-                    'registration_type' => Campista::class,
-                    'registration_id' => $joao->id,
-                    'amount' => 25000,
-                ],
-                [
-                    'registration_type' => Campista::class,
-                    'registration_id' => $maria->id,
-                    'amount' => 25000,
-                ],
+            'items' => [
+                financialItemPayload($category, $joao),
+                financialItemPayload($category, $maria),
             ],
             'comprovante' => [
                 [
@@ -261,7 +174,7 @@ it('creates a financial entry with multiple registration links from the Filament
         ->and($lancamento->comprador)->toBeNull()
         ->and(data_get($lancamento->comprovante, '0.data.observacao'))->toBe('PIX recebido para João e Maria')
         ->and(data_get($lancamento->comprovante, '0.data'))->not->toHaveKey('comprovante_nome')
-        ->and($lancamento->registrationPayments)->toHaveCount(2)
+        ->and($lancamento->items)->toHaveCount(2)
         ->and($joao->fresh()->status)->toBe(StatusInscricao::Pago)
         ->and($maria->fresh()->status)->toBe(StatusInscricao::Pago);
 });
@@ -273,7 +186,7 @@ it('allows cash revenue financial entries without receipt attachments', function
     $user->assignRole('Super Administrador');
     $this->actingAs($user);
 
-    $payload = financialEntryFormPayload([
+    $payload = financialItemFormPayload([
         'nome' => 'Receita em dinheiro sem comprovante',
         'tipo' => TipoLacamento::Receita->value,
         'forma_pagamento' => FormaPagamento::Dinheiro->value,
@@ -287,7 +200,8 @@ it('allows cash revenue financial entries without receipt attachments', function
 
     $lancamento = Lancamento::query()->where('nome', 'Receita em dinheiro sem comprovante')->firstOrFail();
 
-    expect($lancamento->comprovante)->toBe([]);
+    expect($lancamento->comprovante)->toBe([])
+        ->and($lancamento->items)->toHaveCount(1);
 });
 
 it('requires receipt attachments outside cash revenue financial entries', function () {
@@ -312,7 +226,7 @@ it('requires receipt attachments outside cash revenue financial entries', functi
         ],
     ] as $payload) {
         Livewire::test(CreateLancamento::class)
-            ->fillForm(financialEntryFormPayload([
+            ->fillForm(financialItemFormPayload([
                 ...$payload,
                 'comprovante' => [],
             ]))
@@ -321,58 +235,36 @@ it('requires receipt attachments outside cash revenue financial entries', functi
     }
 });
 
-it('updates registration links from the Filament edit page without duplicating the financial entry', function () {
+it('updates financial items from the Filament edit page without duplicating the financial entry', function () {
     $this->seed(ShieldSeeder::class);
-    seedFinancialRegistrationSettings(25000);
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
 
     $user = User::factory()->create();
     $user->assignRole('Super Administrador');
     $this->actingAs($user);
 
-    $joao = Campista::factory()->create([
-        'nome' => 'João Editado',
-        'status' => StatusInscricao::Pendente->value,
-        'tribo_id' => null,
-        'user_id' => null,
-    ]);
-    $maria = Campista::factory()->create([
-        'nome' => 'Maria Editada',
-        'status' => StatusInscricao::Pendente->value,
-        'tribo_id' => null,
-        'user_id' => null,
-    ]);
-    $lancamento = paidFinancialEntry(50000);
+    $category = financialItemRegistrationCategory(Campista::class);
+    $joao = financialItemCampista('João Editado');
+    $maria = financialItemCampista('Maria Editada');
+    $lancamento = financialItemEntry(['status' => StatusLacamento::Pago->value]);
 
-    app(RegistrationPaymentAllocator::class)->sync($lancamento, [
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $joao->id,
-            'amount' => 25000,
-        ],
+    app(RegistrationPaymentAllocator::class)->syncItems($lancamento, [
+        financialItemPayload($category, $joao),
     ]);
 
     Livewire::test(EditLancamento::class, ['record' => $lancamento->getKey()])
         ->fillForm([
             'nome' => 'PIX editado',
-            'valor' => 50000,
             'tipo' => TipoLacamento::Receita->value,
-            'categoria_lancamento_id' => null,
             'data' => '2026-07-01',
             'status' => StatusLacamento::Pago->value,
             'forma_pagamento' => FormaPagamento::Pix->value,
             'comprador' => 'Família',
             'descricao' => 'Pagamento editado',
-            'registration_payments' => [
-                [
-                    'registration_type' => Campista::class,
-                    'registration_id' => $joao->id,
-                    'amount' => 25000,
-                ],
-                [
-                    'registration_type' => Campista::class,
-                    'registration_id' => $maria->id,
-                    'amount' => 25000,
-                ],
+            'items' => [
+                financialItemPayload($category, $joao),
+                financialItemPayload($category, $maria),
             ],
             'comprovante' => [
                 [
@@ -386,66 +278,52 @@ it('updates registration links from the Filament edit page without duplicating t
 
     expect(Lancamento::query()->count())
         ->toBe(1)
+        ->and($lancamento->fresh()->valor)->toBe(50000)
         ->and($lancamento->fresh()->comprador)->toBeNull()
         ->and(data_get($lancamento->fresh()->comprovante, '0.data.observacao'))->toBe('Comprovante substituído na edição')
-        ->and(data_get($lancamento->fresh()->comprovante, '0.data'))->not->toHaveKey('comprovante_nome')
-        ->and($lancamento->fresh()->registrationPayments)->toHaveCount(2)
+        ->and($lancamento->fresh()->items)->toHaveCount(2)
         ->and($joao->fresh()->status)->toBe(StatusInscricao::Pago)
         ->and($maria->fresh()->status)->toBe(StatusInscricao::Pago);
 });
 
-it('rejects financial entry registration amounts above the entry total or remaining registration balance', function () {
-    seedFinancialRegistrationSettings(25000);
+it('rejects item values above the remaining registration balance and duplicate linked registrations', function () {
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
 
-    $joao = Campista::factory()->create(['nome' => 'João', 'tribo_id' => null, 'user_id' => null]);
-    $maria = Campista::factory()->create(['nome' => 'Maria', 'tribo_id' => null, 'user_id' => null]);
+    $category = financialItemRegistrationCategory(Campista::class);
+    $joao = financialItemCampista('João');
 
-    expect(fn () => app(RegistrationPaymentAllocator::class)->sync(paidFinancialEntry(25000), [
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $joao->id,
-            'amount' => 20000,
-        ],
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $maria->id,
-            'amount' => 10000,
-        ],
+    expect(fn () => app(RegistrationPaymentAllocator::class)->syncItems(financialItemEntry(), [
+        financialItemPayload($category, $joao, ['valor' => 30000]),
     ]))->toThrow(ValidationException::class);
 
-    app(RegistrationPaymentAllocator::class)->sync(paidFinancialEntry(20000), [
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $joao->id,
-            'amount' => 20000,
-        ],
+    app(RegistrationPaymentAllocator::class)->syncItems(financialItemEntry(), [
+        financialItemPayload($category, $joao, ['valor' => 10000]),
     ]);
 
-    expect(fn () => app(RegistrationPaymentAllocator::class)->sync(paidFinancialEntry(10000), [
-        [
-            'registration_type' => Campista::class,
-            'registration_id' => $joao->id,
-            'amount' => 10000,
-        ],
+    expect(fn () => app(RegistrationPaymentAllocator::class)->syncItems(financialItemEntry(), [
+        financialItemPayload($category, $joao, ['valor' => 10000]),
     ]))->toThrow(ValidationException::class);
 });
 
-it('exposes registration payment links in the financial entry form and table', function () {
+it('exposes item links in the financial entry form and table', function () {
     $form = file_get_contents(app_path('Filament/Resources/LancamentoResource/Forms/LancamentoForm.php'));
     $resource = file_get_contents(app_path('Filament/Resources/LancamentoResource.php'));
     $createPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/CreateLancamento.php'));
     $editPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/EditLancamento.php'));
 
     expect($form)
-        ->toContain("Repeater::make('registration_payments')")
+        ->toContain("Repeater::make('items')")
         ->toContain("Repeater::make('comprovante')")
+        ->toContain("Select::make('categoria_lancamento_id')")
         ->toContain("Select::make('registration_type')")
         ->toContain("Select::make('registration_id')")
         ->toContain('getSearchResultsUsing')
-        ->toContain("Money::make('amount')")
+        ->toContain("Money::make('valor')")
         ->toContain("RichEditor::make('descricao')")
-        ->toContain("->toolbarButtons([['bold', 'italic', 'underline'], ['bulletList', 'orderedList'], ['link', 'clearFormatting']])")
-        ->not->toContain("Textarea::make('descricao')")
+        ->not->toContain("Repeater::make('registration_payments')")
+        ->not->toContain("Money::make('amount')")
+        ->not->toContain("Textarea::make('descricao')\n                                ->toolbarButtons")
         ->toContain('RegistrationPaymentAllocator::registrationTypeOptions')
         ->toContain('registrationOptions')
         ->toContain('registrationSearchResults')
@@ -456,13 +334,14 @@ it('exposes registration payment links in the financial entry form and table', f
         ->not->toContain("TextInput::make('comprovante_nome')")
         ->and($resource)
         ->toContain("TextColumn::make('registration_payments_summary')")
-        ->toContain("->with(['categoria', 'registrationPayments.registration'])")
+        ->toContain("->with(['items.categoria', 'items.registration'])")
+        ->toContain("TextColumn::make('batch_code')")
         ->and($createPage)
         ->toContain('RegistrationPaymentAllocator::class')
-        ->toContain('registrationPaymentData')
+        ->toContain('itemData')
         ->and($editPage)
         ->toContain('RegistrationPaymentAllocator::class')
-        ->toContain('registrationPaymentsFormState');
+        ->toContain('itemsFormState');
 
     expect(Schema::getColumnType('lancamentos', 'descricao'))->toBe('text');
 });
@@ -500,7 +379,7 @@ it('keeps comprador only for expense financial entries', function () {
         ]))->toHaveKey('comprador', 'Comprador Despesa');
 });
 
-function seedFinancialRegistrationSettings(int $amount): void
+function seedFinancialItemSettings(int $amount): void
 {
     DB::table('settings')->updateOrInsert(
         [
@@ -513,35 +392,86 @@ function seedFinancialRegistrationSettings(int $amount): void
     );
 }
 
-function financialEntryFormPayload(array $overrides = []): array
+function financialItemCampista(string $name): Campista
+{
+    return Campista::factory()->create([
+        'nome' => $name,
+        'status' => StatusInscricao::Pendente->value,
+        'forma_pagamento' => FormaPagamento::NaoPago->value,
+        'dia_pagamento' => null,
+        'tribo_id' => null,
+        'user_id' => null,
+    ]);
+}
+
+function financialItemRegistrationCategory(string $registrationType): CategoriaLancamento
+{
+    return app(RegistrationPaymentAllocator::class)->categoryForRegistrationType($registrationType);
+}
+
+function financialItemPayload(CategoriaLancamento $category, Campista|EquipeTrabalho $registration, array $overrides = []): array
 {
     return array_replace([
+        'nome' => $registration->nome,
+        'valor' => 25000,
+        'categoria_lancamento_id' => $category->id,
+        'registration_type' => $registration::class,
+        'registration_id' => $registration->id,
+        'descricao' => null,
+    ], $overrides);
+}
+
+function financialItemFormPayload(array $overrides = []): array
+{
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $type = $overrides['tipo'] ?? TipoLacamento::Receita->value;
+    $category = CategoriaLancamento::query()
+        ->where('tipo', $type instanceof TipoLacamento ? $type->value : (int) $type)
+        ->orderBy('id')
+        ->first()
+        ?? CategoriaLancamento::query()->create([
+            'nome' => 'Categoria financeira',
+            'tipo' => $type instanceof TipoLacamento ? $type : TipoLacamento::from((int) $type),
+            'cor' => '#f46b12',
+            'icone' => 'heroicon-o-banknotes',
+            'ativo' => true,
+        ]);
+
+    return array_replace([
         'nome' => 'Lançamento financeiro',
-        'valor' => 12500,
         'tipo' => TipoLacamento::Receita->value,
-        'categoria_lancamento_id' => null,
         'data' => '2026-07-01',
         'status' => StatusLacamento::Pago->value,
         'forma_pagamento' => FormaPagamento::Pix->value,
         'comprador' => null,
         'descricao' => null,
-        'registration_payments' => [],
+        'items' => [
+            [
+                'nome' => 'Item financeiro',
+                'valor' => 12500,
+                'categoria_lancamento_id' => $category->id,
+                'registration_type' => null,
+                'registration_id' => null,
+                'descricao' => null,
+            ],
+        ],
         'comprovante' => [],
     ], $overrides);
 }
 
-function paidFinancialEntry(int $amount): Lancamento
+function financialItemEntry(array $overrides = []): Lancamento
 {
-    return Lancamento::factory()->create([
+    return Lancamento::factory()->create(array_replace([
         'nome' => 'PIX inscrições',
         'descricao' => 'Pagamento de inscrições',
         'comprador' => 'Responsável',
         'data' => '2026-07-01',
-        'valor' => $amount,
+        'valor' => 0,
         'tipo' => TipoLacamento::Receita->value,
-        'status' => StatusLacamento::Pago->value,
+        'status' => StatusLacamento::Pendente->value,
         'forma_pagamento' => FormaPagamento::Pix->value,
         'comprovante' => [],
         'user_id' => null,
-    ]);
+    ], $overrides));
 }

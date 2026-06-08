@@ -2,26 +2,36 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class FinancialEntryRegistration extends Model
+class LancamentoItem extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'lancamento_id',
+        'nome',
+        'descricao',
+        'valor',
+        'categoria_lancamento_id',
         'registration_type',
         'registration_id',
-        'amount',
     ];
 
     protected $casts = [
-        'amount' => 'integer',
+        'valor' => 'integer',
     ];
 
     public function lancamento(): BelongsTo
     {
-        return $this->belongsTo(Lancamento::class, 'lancamento_id');
+        return $this->belongsTo(Lancamento::class);
+    }
+
+    public function categoria(): BelongsTo
+    {
+        return $this->belongsTo(CategoriaLancamento::class, 'categoria_lancamento_id');
     }
 
     public function registration(): MorphTo
