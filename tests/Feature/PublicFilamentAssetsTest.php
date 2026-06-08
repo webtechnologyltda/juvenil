@@ -70,7 +70,7 @@ it('uses the artwork orange as the Filament primary color', function () {
         ->not->toContain('colors.yellow');
 });
 
-it('uses toggle buttons and editable automatic square image uploads for campista registration photos', function () {
+it('uses toggle buttons and simple photo uploads for campista registration photos', function () {
     $campistaRegistrationForm = file_get_contents(app_path('Livewire/CampistaForm.php'));
     $forms = [
         $campistaRegistrationForm,
@@ -85,12 +85,6 @@ it('uses toggle buttons and editable automatic square image uploads for campista
             ->toContain("'image/png'")
             ->toContain("'image/webp'")
             ->toContain("->rules(['mimes:jpg,jpeg,png,webp'])")
-            ->toContain("->imageAspectRatio('1:1')")
-            ->toContain('->automaticallyCropImagesToAspectRatio()')
-            ->toContain("->automaticallyResizeImagesMode('cover')")
-            ->toContain("->automaticallyResizeImagesToWidth('500')")
-            ->toContain("->automaticallyResizeImagesToHeight('500')")
-            ->toContain('->automaticallyUpscaleImagesWhenResizing(false)')
             ->toContain("->panelAspectRatio('1:1')")
             ->not->toContain('->imageEditorAspectRatios')
             ->not->toContain('->imageEditorEmptyFillColor')
@@ -99,9 +93,25 @@ it('uses toggle buttons and editable automatic square image uploads for campista
     }
 
     expect($campistaRegistrationForm)
-        ->toContain('->imageEditor()')
-        ->toContain("->imageEditorAspectRatioOptions(['1:1'])")
-        ->toContain('->automaticallyOpenImageEditorForAspectRatio()');
+        ->not->toContain('->imageEditor()')
+        ->not->toContain('->imageEditorAspectRatioOptions')
+        ->not->toContain('->automaticallyOpenImageEditorForAspectRatio()')
+        ->not->toContain("->imageAspectRatio('1:1')")
+        ->not->toContain('->automaticallyCropImagesToAspectRatio()')
+        ->not->toContain("->automaticallyResizeImagesMode('cover')")
+        ->not->toContain("->automaticallyResizeImagesToWidth('500')")
+        ->not->toContain("->automaticallyResizeImagesToHeight('500')")
+        ->not->toContain('->automaticallyUpscaleImagesWhenResizing(false)');
+
+    foreach (array_slice($forms, 1) as $form) {
+        expect($form)
+            ->toContain("->imageAspectRatio('1:1')")
+            ->toContain('->automaticallyCropImagesToAspectRatio()')
+            ->toContain("->automaticallyResizeImagesMode('cover')")
+            ->toContain("->automaticallyResizeImagesToWidth('500')")
+            ->toContain("->automaticallyResizeImagesToHeight('500')")
+            ->toContain('->automaticallyUpscaleImagesWhenResizing(false)');
+    }
 
     foreach (array_slice($forms, 0, 2) as $form) {
         expect($form)
