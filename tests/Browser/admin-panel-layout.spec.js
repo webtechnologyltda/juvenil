@@ -337,6 +337,19 @@ test('authenticated Filament notifications render above the branded topbar', asy
     });
 });
 
+test('authenticated permission groups list includes the finance role', async ({ page }) => {
+    await signIn(page);
+
+    await page.goto(`${adminBaseUrl}/admin/roles`, { waitUntil: 'domcontentloaded' });
+    await waitForFilamentClient(page);
+
+    await expect(page.locator('h1')).toContainText(/Grupos de permissões/i);
+    await expect(page.getByRole('cell', { name: 'Financeiro', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Super Administrador', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Administrador', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Enfermaria', exact: true })).toBeVisible();
+});
+
 test('authenticated Filament sidebar flyouts stay above table surfaces when collapsed', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
