@@ -204,6 +204,31 @@ it('allows cash revenue financial entries without receipt attachments', function
         ->and($lancamento->items)->toHaveCount(1);
 });
 
+it('allows pending financial entries without receipt attachments', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    Livewire::test(CreateLancamento::class)
+        ->fillForm(financialItemFormPayload([
+            'nome' => 'PIX pendente sem comprovante',
+            'status' => StatusLacamento::Pendente->value,
+            'tipo' => TipoLacamento::Receita->value,
+            'forma_pagamento' => FormaPagamento::Pix->value,
+            'comprovante' => [],
+        ]))
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $lancamento = Lancamento::query()->where('nome', 'PIX pendente sem comprovante')->firstOrFail();
+
+    expect($lancamento->comprovante)
+        ->toBe([])
+        ->and($lancamento->status)->toBe(StatusLacamento::Pendente);
+});
+
 it('requires receipt attachments outside cash revenue financial entries', function () {
     $this->seed(ShieldSeeder::class);
 
@@ -344,6 +369,16 @@ it('exposes item links in the financial entry form and table', function () {
         ->toContain('itemsFormState');
 
     expect(Schema::getColumnType('lancamentos', 'descricao'))->toBe('text');
+});
+
+it('uses a spacious responsive layout for financial item fields', function () {
+    $form = file_get_contents(app_path('Filament/Resources/LancamentoResource/Forms/LancamentoForm.php'));
+
+    expect($form)
+        ->toContain("Repeater::make('items')")
+        ->toContain("->columns([\n                                    'default' => 1,\n                                    'md' => 2,\n                                    'xl' => 12,\n                                ])")
+        ->toContain("'xl' => 5")
+        ->toContain("'xl' => 9");
 });
 
 it('normalizes legacy receipt names into optional observations', function () {

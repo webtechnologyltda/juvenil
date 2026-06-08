@@ -11,6 +11,7 @@ use App\Models\Campista;
 use App\Models\EquipeTrabalho;
 use App\Settings\GeneralSettings;
 use App\Support\Financeiro\LancamentoBatchCreator;
+use App\Support\Financeiro\MoneyAmount;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -147,10 +148,11 @@ class BatchLancamentos extends Page
                             ->prefix(RawJs::make('R$'))
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set): void {
+                                $amount = MoneyAmount::toCents($get('default_value'));
                                 $items = collect($get('registration_items') ?? [])
                                     ->map(fn (array $item): array => [
                                         ...$item,
-                                        'valor' => $get('default_value'),
+                                        'valor' => $amount,
                                     ])
                                     ->all();
 
@@ -183,7 +185,7 @@ class BatchLancamentos extends Page
                                 $set('registration_items', $this->registrationItemState(
                                     $get('registration_type'),
                                     is_array($state) ? $state : [],
-                                    (int) ($get('default_value') ?? $this->defaultRegistrationAmount()),
+                                    $get('default_value') ?? $this->defaultRegistrationAmount(),
                                 ));
                             })
                             ->columnSpan([
@@ -295,10 +297,11 @@ class BatchLancamentos extends Page
                             ->prefix(RawJs::make('R$'))
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set): void {
+                                $amount = MoneyAmount::toCents($get('manual_default_value'));
                                 $items = collect($get('manual_items') ?? [])
                                     ->map(fn (array $item): array => [
                                         ...$item,
-                                        'valor' => $get('manual_default_value'),
+                                        'valor' => $amount,
                                     ])
                                     ->all();
 
@@ -433,11 +436,13 @@ class BatchLancamentos extends Page
      * @param  array<int, mixed>  $ids
      * @return array<int, array<string, mixed>>
      */
-    private function registrationItemState(?string $registrationType, array $ids, int $amount): array
+    private function registrationItemState(?string $registrationType, array $ids, mixed $amount): array
     {
         if (! is_string($registrationType) || ! array_key_exists($registrationType, RegistrationPaymentAllocator::registrationTypeOptions())) {
             return [];
         }
+
+        $amount = MoneyAmount::toCents($amount);
 
         /** @var class-string<Model> $registrationType */
         return collect($ids)

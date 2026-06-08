@@ -60,6 +60,22 @@ it('shows a visual warning when the configured camp amount is zero on batch regi
         ->assertSee('O campo de inscrições pode ficar sem opções enquanto o valor estiver zerado nas configurações.');
 });
 
+it('keeps registration item values in cents when propagating a masked default amount', function () {
+    $this->seed(ShieldSeeder::class);
+    seedLancamentoBatchSettings(35000);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $campista = lancamentoBatchCampista('Ana Souza 001');
+
+    Livewire::test(BatchLancamentos::class)
+        ->set('data.default_value', '350,00')
+        ->set('data.registration_ids', [$campista->id])
+        ->assertSet('data.registration_items.0.valor', 35000);
+});
+
 it('creates one pending launch per selected campista registration using the default inscription category', function () {
     Carbon::setTestNow('2026-06-08 09:00:00');
     seedLancamentoBatchSettings(35000);
@@ -94,6 +110,32 @@ it('creates one pending launch per selected campista registration using the defa
         ->and($maria->fresh()->status)->toBe(StatusInscricao::Pendente);
 
     Carbon::setTestNow();
+});
+
+it('stores Brazilian masked registration item amounts as cents when creating a batch', function () {
+    seedLancamentoBatchSettings(35000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $campista = lancamentoBatchCampista('Ana Souza 001');
+
+    app(LancamentoBatchCreator::class)->create([
+        'mode' => 'registrations',
+        'registration_type' => Campista::class,
+        'registration_ids' => [$campista->id],
+        'data' => '2026-07-01',
+        'registration_items' => [
+            [
+                'registration_id' => $campista->id,
+                'nome' => 'Ana Souza 001',
+                'valor' => '350,00',
+                'descricao' => null,
+            ],
+        ],
+    ]);
+
+    expect(Lancamento::query()->firstOrFail())
+        ->valor->toBe(35000)
+        ->items()->firstOrFail()->valor->toBe(35000);
 });
 
 it('creates team work contribution batches with the team contribution category', function () {
