@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Filament\Exports\CampistaExporter;
 use App\Filament\Resources\CampistaResource\CampistaForm;
@@ -15,10 +14,7 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\Exports\Models\Export;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -93,52 +89,6 @@ class CampistaResource extends Resource implements HasShieldPermissions
                 fn (Model $record): string => route('filament.admin.resources.campistas.view', ['record' => $record]),
             )
             ->actions([
-                Action::make('Pago')
-                    ->action(fn (Campista $record, array $data) => $record->update([
-
-                        $form_temp = $record->form_data,
-                        $form_temp['comprovante_nome'] = $data['comprovante_nome'],
-                        $form_temp['comprovante'] = $data['comprovante'],
-                        'status' => StatusInscricao::Pago->value,
-                        'dia_pagamento' => Carbon::now(),
-                        'forma_pagamento' => $data['forma_pagamento'],
-                        'observacoes' => $data['observacoes'],
-                        'form_data' => $form_temp,
-                    ]))
-                    ->visible(fn (Campista $record) => $record->status == StatusInscricao::Pendente && auth()->user()->can('update', $record))
-                    ->requiresConfirmation()
-                    ->fillForm(fn (Campista $record): array => [
-                        'observacoes' => $record->observacoes,
-                    ])
-                    ->form([
-                        Select::make('forma_pagamento')
-                            ->columnSpan(2)
-                            ->options(FormaPagamento::class),
-                        Textarea::make('observacoes')
-                            ->label('Observação')
-                            ->rows(5)
-                            ->columnSpan(2),
-                        TextInput::make('comprovante_nome')
-                            ->label('Nome Comprovante'),
-                        FileUpload::make('comprovante')
-                            ->placeholder('Tamanho max.: 2MB')
-                            ->hint('Tamanho máximo: 2MB')
-                            ->label('Documento')
-                            ->downloadable()
-                            ->openable()
-                            ->multiple()
-                            ->maxSize(2048)
-                            ->acceptedFileTypes(['application/pdf', 'image/*'])
-                            ->previewable(true)
-                            ->columnSpan(2),
-
-                    ])
-                    ->color('warning')
-                    ->iconButton()
-                    ->tooltip('Marcar como pago')
-                    ->icon('heroicon-s-credit-card')
-                    ->icon('heroicon-s-credit-card'),
-
                 Action::make('Presença')
                     ->action(fn (Campista $record) => $record->update([
                         'presenca' => true,

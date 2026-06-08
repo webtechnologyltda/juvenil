@@ -230,6 +230,12 @@ it('renders category tiles in launch tables and select options', function () {
     expect((string) IconBadge::tile($category, $category->nome))
         ->toContain('Transporte')
         ->toContain('background-color: #4f18ff')
+        ->toContain('width: 2rem')
+        ->toContain('height: 2rem')
+        ->toContain('width: 1rem')
+        ->toContain('height: 1rem')
+        ->not->toContain('width: 2.5rem')
+        ->not->toContain('height: 2.5rem')
         ->toContain('heroicon-o-shopping-cart');
 
     expect(file_get_contents(app_path('Filament/Resources/LancamentoResource.php')))

@@ -7,12 +7,13 @@ use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
 use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
+use App\Support\EnumOptionBadge;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
 use App\Support\IconBadge;
-use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -75,7 +76,7 @@ abstract class LancamentoForm
                                 ->required()
                                 ->format('Y-m-d')
                                 ->displayFormat('d/m/Y')
-                                ->default(Carbon::now()->format('Y-m-d'))
+                                ->default(fn (): string => now()->toDateString())
                                 ->columnSpan([
                                     'default' => 'full',
                                     'md' => 1,
@@ -84,7 +85,9 @@ abstract class LancamentoForm
 
                             Select::make('status')
                                 ->label('Status')
-                                ->options(StatusLacamento::class)
+                                ->options(fn (): array => EnumOptionBadge::options(StatusLacamento::class))
+                                ->allowHtml()
+                                ->enum(StatusLacamento::class)
                                 ->searchable()
                                 ->required()
                                 ->columnSpan([
@@ -95,7 +98,9 @@ abstract class LancamentoForm
 
                             Select::make('forma_pagamento')
                                 ->label('Forma de Pagamento')
-                                ->options(FormaPagamento::class)
+                                ->options(fn (): array => EnumOptionBadge::options(FormaPagamento::class))
+                                ->allowHtml()
+                                ->enum(FormaPagamento::class)
                                 ->searchable()
                                 ->required()
                                 ->columnSpan([
@@ -109,7 +114,13 @@ abstract class LancamentoForm
                                 ->options(TipoLacamento::class)
                                 ->inline()
                                 ->live()
-                                ->afterStateUpdated(fn (Set $set): mixed => $set('categoria_lancamento_id', null))
+                                ->afterStateUpdated(static function (Set $set, mixed $state): void {
+                                    $set('categoria_lancamento_id', null);
+
+                                    if (! self::isExpenseType($state)) {
+                                        $set('comprador', null);
+                                    }
+                                })
                                 ->required()
                                 ->columnSpan([
                                     'default' => 'full',
@@ -134,17 +145,19 @@ abstract class LancamentoForm
 
                             TextInput::make('comprador')
                                 ->label('Comprador')
-                                ->required()
+                                ->required(fn (Get $get): bool => self::isExpenseType($get('tipo')))
+                                ->visible(fn (Get $get): bool => self::isExpenseType($get('tipo')))
+                                ->dehydrated(fn (Get $get): bool => self::isExpenseType($get('tipo')))
+                                ->maxLength(255)
                                 ->columnSpan([
                                     'default' => 'full',
                                     'md' => 1,
                                     'xl' => 4,
                                 ]),
 
-                            Textarea::make('descricao')
+                            RichEditor::make('descricao')
                                 ->label('Descrição')
-                                ->rows(3)
-                                ->required()
+                                ->toolbarButtons([['bold', 'italic', 'underline'], ['bulletList', 'orderedList'], ['link', 'clearFormatting']])
                                 ->columnSpanFull(),
                         ]),
 
@@ -179,6 +192,13 @@ abstract class LancamentoForm
                                         ->options(fn (Get $get, ?Lancamento $record): array => app(RegistrationPaymentAllocator::class)
                                             ->registrationOptions(
                                                 $get('registration_type'),
+                                                $record?->id,
+                                                filled($get('registration_id')) ? (int) $get('registration_id') : null,
+                                            ))
+                                        ->getSearchResultsUsing(fn (Get $get, ?Lancamento $record, string $search): array => app(RegistrationPaymentAllocator::class)
+                                            ->registrationSearchResults(
+                                                $get('registration_type'),
+                                                $search,
                                                 $record?->id,
                                                 filled($get('registration_id')) ? (int) $get('registration_id') : null,
                                             ))
@@ -328,6 +348,15 @@ abstract class LancamentoForm
         return $items;
     }
 
+    public static function normalizeCompradorForType(array $data): array
+    {
+        if (! self::isExpenseType($data['tipo'] ?? null)) {
+            $data['comprador'] = null;
+        }
+
+        return $data;
+    }
+
     /**
      * @return array<int, array{url: array<int, string>, observacao: string|null}>
      */
@@ -398,6 +427,19 @@ abstract class LancamentoForm
         }
 
         return true;
+    }
+
+    private static function isExpenseType(mixed $type): bool
+    {
+        if ($type instanceof TipoLacamento) {
+            return $type === TipoLacamento::Despesa;
+        }
+
+        if (blank($type)) {
+            return false;
+        }
+
+        return (int) $type === TipoLacamento::Despesa->value;
     }
 
     private static function categoryOptions(mixed $type): array

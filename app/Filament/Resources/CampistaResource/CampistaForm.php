@@ -2,14 +2,12 @@
 
 namespace App\Filament\Resources\CampistaResource;
 
-use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
+use App\Models\Campista;
+use App\Models\FinancialEntryRegistration;
 use Carbon\Carbon;
 use Filament\Actions\Action as FormAction;
-use Filament\Forms\Components\Builder;
-use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -34,7 +32,6 @@ use JeffersonGoncalves\Filament\CepField\Forms\Components\CepInput;
 
 abstract class CampistaForm
 {
-
     public static function getFormCreate(): array
     {
         return [
@@ -80,7 +77,7 @@ abstract class CampistaForm
                 ->icon('fluentui-important-12')
                 ->columns(5)
                 ->schema([
-                    ...self::getFormInformacoesImportantes()
+                    ...self::getFormInformacoesImportantes(),
                 ]),
         ];
     }
@@ -135,9 +132,9 @@ abstract class CampistaForm
                         ->icon('fluentui-important-12')
                         ->columns(5)
                         ->schema([
-                            ...self::getFormInformacoesImportantes()
+                            ...self::getFormInformacoesImportantes(),
                         ]),
-                ])
+                ]),
         ];
     }
 
@@ -187,7 +184,7 @@ abstract class CampistaForm
                 ->icon('fluentui-important-12')
                 ->columns(5)
                 ->schema([
-                    ...self::getFormInformacoesImportantes()
+                    ...self::getFormInformacoesImportantes(),
                 ]),
         ];
     }
@@ -199,7 +196,7 @@ abstract class CampistaForm
             FileUpload::make('avatar_url')
                 ->hiddenLabel()
                 ->label('Foto de identificação')
-                ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
+                ->placeholder(fn () => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
                 ->alignCenter()
                 ->disk('public')
                 ->image()
@@ -242,8 +239,8 @@ abstract class CampistaForm
                     ->icon('heroicon-m-eye')
                     ->label('Visualizar foto')
                     ->requiresConfirmation()
-                    ->visible(fn(string $operation, array $data) => $operation !== 'create')
-                    ->url(fn(Model $record) => Storage::disk('public')->url($record->avatar_url), shouldOpenInNewTab: true),
+                    ->visible(fn (string $operation, array $data) => $operation !== 'create')
+                    ->url(fn (Model $record) => Storage::disk('public')->url($record->avatar_url), shouldOpenInNewTab: true),
             ])
                 ->alignCenter()
                 ->columnSpanFull(),
@@ -418,7 +415,7 @@ abstract class CampistaForm
                 ->relationship('tribo', 'cor')
                 ->searchable()
                 ->preload()
-                ->getOptionLabelFromRecordUsing(fn(Model $record) => $record->cor ?? 'Não há tribos cadastradas')
+                ->getOptionLabelFromRecordUsing(fn (Model $record) => $record->cor ?? 'Não há tribos cadastradas')
                 ->columnSpan([
                     'default' => 1,
                 ]),
@@ -443,7 +440,6 @@ abstract class CampistaForm
                 ->afterStateUpdated(function (Set $set, $state) {
                     $set('form_data.paroquia_visible_luzia', $state == 1);
                     $set('form_data.paroquia_visible_carmo', $state == 0);
-
 
                 }),
 
@@ -505,8 +501,8 @@ abstract class CampistaForm
 
             Textarea::make('form_data.remedio')
                 ->rows(3)
-                ->required(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.toma_remedio') == true)
-                ->visible(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.toma_remedio') == true)
+                ->required(fn (Get $get) => self::canViewSensitiveHealth() && $get('form_data.toma_remedio') == true)
+                ->visible(fn (Get $get) => self::canViewSensitiveHealth() && $get('form_data.toma_remedio') == true)
                 ->label('Por favor, descreva os medicamentos abaixo e os horários de administração caso se aplique')
                 ->columnSpanFull(),
 
@@ -528,8 +524,8 @@ abstract class CampistaForm
 
             Textarea::make('form_data.recomendacao')
                 ->label('Qual?')
-                ->required(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.tem_recomendacao') == true)
-                ->visible(fn(Get $get) => self::canViewSensitiveHealth() && $get('form_data.tem_recomendacao') == true)
+                ->required(fn (Get $get) => self::canViewSensitiveHealth() && $get('form_data.tem_recomendacao') == true)
+                ->visible(fn (Get $get) => self::canViewSensitiveHealth() && $get('form_data.tem_recomendacao') == true)
                 ->rows(3)
                 ->columnSpanFull(),
 
@@ -556,8 +552,8 @@ abstract class CampistaForm
                 ->label('Tamanho da camiseta:')
                 ->columnSpan(1)
                 ->required()
-                ->visible(fn(Get $get) => $get('form_data.tamanho_camiseta') == 'O')
-                ->requiredIf('tamanho_camiseta', fn(Get $get) => $get('form_data.tamanho_camiseta') == 'O')
+                ->visible(fn (Get $get) => $get('form_data.tamanho_camiseta') == 'O')
+                ->requiredIf('tamanho_camiseta', fn (Get $get) => $get('form_data.tamanho_camiseta') == 'O')
                 ->minLength(1)
                 ->maxLength(3),
 
@@ -580,8 +576,8 @@ abstract class CampistaForm
                 ->label('Qual?')
                 ->placeholder('Especifique o qual acampamento')
                 ->columnSpanFull()
-                ->requiredIf(fn(Get $get) => $get('form_data.ja_participou_retiro'), false)
-                ->visible(fn(Get $get) => $get('form_data.ja_participou_retiro') ?? false),
+                ->requiredIf(fn (Get $get) => $get('form_data.ja_participou_retiro'), false)
+                ->visible(fn (Get $get) => $get('form_data.ja_participou_retiro') ?? false),
 
             ToggleButtons::make('form_data.algum_parente')
                 ->label('Tem algum amigo/parente próximo que irá participar do acampamento ?')
@@ -602,8 +598,8 @@ abstract class CampistaForm
                 ->label('Especificar o nome')
                 ->placeholder('Especifique o qual acampamento')
                 ->columnSpanFull()
-                ->requiredIf(fn(Get $get) => $get('form_data.algum_parente'), false)
-                ->visible(fn(Get $get) => $get('form_data.algum_parente') ?? false),
+                ->requiredIf(fn (Get $get) => $get('form_data.algum_parente'), false)
+                ->visible(fn (Get $get) => $get('form_data.algum_parente') ?? false),
             ToggleButtons::make('form_data.declaro')
                 ->label('Declaro nunca ter participado de nenhuma edição do Acampamento Juvenil ?')
                 ->live()
@@ -654,7 +650,7 @@ abstract class CampistaForm
                         ])
                         ->columnSpan([
                             'default' => 1,
-                            'lg' => 2
+                            'lg' => 2,
                         ])
                         ->schema([
                             Select::make('status')
@@ -665,26 +661,7 @@ abstract class CampistaForm
                                 ->label('Status da Inscrição')
                                 ->live()
                                 ->preload()
-                                ->afterStateUpdated(fn(Set $set) => $set('dia_pagamento', Carbon::now()->format('Y-m-d')))
                                 ->options(StatusInscricao::class),
-
-
-
-                            Select::make('forma_pagamento')
-                                ->columnSpan([
-                                    'default' => 1,
-                                ])
-                                ->searchable()
-                                ->preload()
-                                ->visible(fn(Get $get) => $get('status') == StatusInscricao::Pago->value)
-                                ->required(fn(Get $get) => $get('status') == StatusInscricao::Pago->value)
-                                ->options(FormaPagamento::class),
-
-                            DatePicker::make('dia_pagamento')
-                                ->label('Data de Pagamento')
-                                ->columnSpan([
-                                    'default' => 1,
-                                ]),
 
                             ...self::getFormTribo(),
 
@@ -695,36 +672,81 @@ abstract class CampistaForm
                                 ->columnSpan([
                                     'default' => 1,
                                 ]),
-                            Hidden::make('space_forma_pagamento')
-                                ->columnSpan([
-                                    'default' => 1,
-                                ])
-                                ->hidden(fn(Get $get) => $get('status') == StatusInscricao::Pago->value),
                         ]),
 
-                    Section::make()
-                        ->label('Comprovantes')
-                        ->icon('heroicon-o-document-text')
-                        ->description('Anexe os comprovantes de pagamento.')
+                    Section::make('Pagamentos vinculados')
+                        ->icon('heroicon-o-banknotes')
+                        ->description('Dados gerados pelos lançamentos financeiros vinculados a esta inscrição.')
                         ->columnSpan(1)
                         ->schema([
-                            TextInput::make('form_data.comprovante_nome')
-                                ->label('Nome Comprovante'),
-                            FileUpload::make('form_data.comprovante')
-                                ->placeholder( 'Tamanho max.: 2MB')
-                                ->hint('Tamanho máximo: 2MB')
-                                ->label('Documento')
-                                ->downloadable()
-                                ->openable()
-                                ->multiple()
-                                ->maxSize(2048)
-                                ->acceptedFileTypes(['application/pdf', 'image/*'])
-                                ->previewable(true)
-                                ->columnSpan(2),
+                            Html::make(fn (?Campista $record): HtmlString => self::paymentSummaryHtml($record))
+                                ->columnSpanFull(),
                         ]),
 
-                ])
+                ]),
         ];
+    }
+
+    public static function paymentSummaryHtml(?Campista $record): HtmlString
+    {
+        if (! $record?->exists) {
+            return new HtmlString(self::paymentSummaryEmptyHtml('Salve a inscrição para vincular lançamentos financeiros.'));
+        }
+
+        $payments = $record->financialEntryRegistrations()
+            ->with('lancamento')
+            ->orderByDesc('id')
+            ->get();
+
+        if ($payments->isEmpty()) {
+            return new HtmlString(self::paymentSummaryEmptyHtml('Nenhum lançamento financeiro vinculado a esta inscrição.'));
+        }
+
+        $items = $payments
+            ->map(fn (FinancialEntryRegistration $payment): string => self::paymentSummaryItemHtml($payment))
+            ->implode('');
+
+        return new HtmlString('<div style="display:grid;gap:.75rem;">'.$items.'</div>');
+    }
+
+    private static function paymentSummaryEmptyHtml(string $message): string
+    {
+        return '<div style="border:1px solid rgba(157,219,239,.22);background:rgba(3,24,28,.42);padding:1rem;color:#d8f2fa;font-size:.95rem;">'
+            .e($message)
+            .'</div>';
+    }
+
+    private static function paymentSummaryItemHtml(FinancialEntryRegistration $payment): string
+    {
+        $lancamento = $payment->lancamento;
+        $status = $lancamento?->status?->getLabel() ?? 'Sem status';
+        $method = $lancamento?->forma_pagamento?->getLabel() ?? 'Sem forma';
+        $date = $lancamento?->data ? Carbon::parse($lancamento->data)->format('d/m/Y') : 'Sem data';
+        $name = $lancamento?->nome ?? 'Lançamento removido';
+
+        return '<article style="border:1px solid rgba(157,219,239,.24);background:rgba(4,31,35,.78);padding:1rem;">'
+            .'<p style="margin:0 0 .35rem;color:#9ddbef;font-size:.72rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase;">Lançamento financeiro</p>'
+            .'<strong style="display:block;color:#f4fbfd;font-size:1rem;line-height:1.25;">'.e($name).'</strong>'
+            .'<dl style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:.85rem 0 0;">'
+            .self::paymentSummaryFieldHtml('Valor aplicado', self::money((int) $payment->amount))
+            .self::paymentSummaryFieldHtml('Data', $date)
+            .self::paymentSummaryFieldHtml('Forma', $method)
+            .self::paymentSummaryFieldHtml('Status', $status)
+            .'</dl>'
+            .'</article>';
+    }
+
+    private static function paymentSummaryFieldHtml(string $label, string $value): string
+    {
+        return '<div>'
+            .'<dt style="color:rgba(216,242,250,.64);font-size:.68rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;">'.e($label).'</dt>'
+            .'<dd style="margin:.2rem 0 0;color:#f4fbfd;font-size:.9rem;font-weight:800;">'.e($value).'</dd>'
+            .'</div>';
+    }
+
+    private static function money(int $amount): string
+    {
+        return 'R$ '.number_format($amount / 100, 2, ',', '.');
     }
 
     public static function canViewSensitiveHealth(): bool

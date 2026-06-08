@@ -16,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 class RegistrationPaymentAllocator
 {
+    private const REGISTRATION_SEARCH_LIMIT = 50;
+
     /**
      * @return array<class-string<Model>, string>
      */
@@ -37,21 +39,30 @@ class RegistrationPaymentAllocator
         }
 
         /** @var class-string<Model> $registrationType */
-        return $registrationType::query()
-            ->orderBy('id')
-            ->get()
-            ->filter(function (Model $registration) use ($excludingLancamentoId, $currentRegistrationId): bool {
-                if ($this->registrationIsCancelled($registration)) {
-                    return false;
-                }
+        return $this->registrationOptionResults(
+            registrationType: $registrationType,
+            excludingLancamentoId: $excludingLancamentoId,
+            currentRegistrationId: $currentRegistrationId,
+        );
+    }
 
-                return $registration->getKey() === $currentRegistrationId
-                    || $this->remainingAmountFor($registration, $excludingLancamentoId) > 0;
-            })
-            ->mapWithKeys(fn (Model $registration): array => [
-                $registration->getKey() => $this->registrationOptionLabel($registration, $excludingLancamentoId),
-            ])
-            ->all();
+    /**
+     * @return array<int, string>
+     */
+    public function registrationSearchResults(?string $registrationType, ?string $search, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null): array
+    {
+        if (! $this->isSupportedRegistrationType($registrationType) || blank($search)) {
+            return [];
+        }
+
+        /** @var class-string<Model> $registrationType */
+        return $this->registrationOptionResults(
+            registrationType: $registrationType,
+            excludingLancamentoId: $excludingLancamentoId,
+            currentRegistrationId: $currentRegistrationId,
+            search: $search,
+            limit: self::REGISTRATION_SEARCH_LIMIT,
+        );
     }
 
     /**
@@ -275,6 +286,43 @@ class RegistrationPaymentAllocator
             $this->money($paid),
             $this->money($remaining),
         );
+    }
+
+    /**
+     * @param  class-string<Model>  $registrationType
+     * @return array<int, string>
+     */
+    private function registrationOptionResults(string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?string $search = null, ?int $limit = null): array
+    {
+        return $registrationType::query()
+            ->when(filled($search), fn ($query) => $query->where('nome', 'like', '%'.str_replace(['%', '_'], ['\\%', '\\_'], trim((string) $search)).'%'))
+            ->when(
+                filled($search),
+                fn ($query) => $query->orderBy('nome')->orderBy('id'),
+                fn ($query) => $query->orderBy('id'),
+            )
+            ->when($limit !== null, fn ($query) => $query->limit($limit * 4))
+            ->get()
+            ->filter(fn (Model $registration): bool => $this->registrationCanReceivePayment(
+                registration: $registration,
+                excludingLancamentoId: $excludingLancamentoId,
+                currentRegistrationId: $currentRegistrationId,
+            ))
+            ->take($limit ?? PHP_INT_MAX)
+            ->mapWithKeys(fn (Model $registration): array => [
+                $registration->getKey() => $this->registrationOptionLabel($registration, $excludingLancamentoId),
+            ])
+            ->all();
+    }
+
+    private function registrationCanReceivePayment(Model $registration, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null): bool
+    {
+        if ($this->registrationIsCancelled($registration)) {
+            return false;
+        }
+
+        return $registration->getKey() === $currentRegistrationId
+            || $this->remainingAmountFor($registration, $excludingLancamentoId) > 0;
     }
 
     private function registrationName(Model $registration): string

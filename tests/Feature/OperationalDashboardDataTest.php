@@ -76,7 +76,58 @@ it('applies status tribe parish community and presence filters to operational me
         'cancelled' => 1,
     ])
         ->and($data->tribes())->toBe(['Azul' => 1])
-        ->and($data->communities())->toBe(['Paroquia 0 / Comunidade 2' => 1]);
+        ->and($data->communities())->toBe([
+            'São Domingos e N. Sra. do Carmo / São Paulo' => 1,
+        ]);
+});
+
+it('filters operational metrics by multiple selected communities for fixed parishes', function () {
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value], ['paroquia' => 0, 'comunidade' => 1]);
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value], ['paroquia' => 0, 'comunidade' => 2]);
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value], ['paroquia' => 0, 'comunidade' => 4]);
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value], ['paroquia' => 1, 'comunidade' => 1]);
+
+    $data = app(OperationalDashboardData::class)->forFilters([
+        'paroquia' => '0',
+        'comunidade' => ['1', '4'],
+    ]);
+
+    expect($data->pipeline())->toMatchArray([
+        'valid' => 2,
+        'paid' => 2,
+    ])
+        ->and($data->communities())->toHaveKey('São Domingos e N. Sra. do Carmo / Nossa Senhora das Graças', 1)
+        ->and($data->communities())->toHaveKey('São Domingos e N. Sra. do Carmo / Imaculado Coração de Maria', 1)
+        ->and($data->communities())->not->toHaveKey('São Domingos e N. Sra. do Carmo / São Paulo')
+        ->and($data->communities())->not->toHaveKey('Santa Luzia / Santa Teresinha');
+});
+
+it('filters operational metrics by community text when another parish is selected', function () {
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value], [
+        'paroquia' => 2,
+        'comunidade' => 'Comunidade São Pedro - Navegantes',
+    ]);
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value], [
+        'paroquia' => 2,
+        'comunidade' => 'Capela Santa Rita',
+    ]);
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value], [
+        'paroquia' => 0,
+        'comunidade' => 2,
+    ]);
+
+    $data = app(OperationalDashboardData::class)->forFilters([
+        'paroquia' => '2',
+        'comunidade_texto' => 'Pedro',
+    ]);
+
+    expect($data->pipeline())->toMatchArray([
+        'valid' => 1,
+        'paid' => 1,
+    ])
+        ->and($data->communities())->toBe([
+            'Outra paróquia / Comunidade São Pedro - Navegantes' => 1,
+        ]);
 });
 
 it('builds tribe shirt community age and sex distributions with incomplete form data tolerance', function () {
@@ -113,7 +164,8 @@ it('builds tribe shirt community age and sex distributions with incomplete form 
         ->and($data->shirts())->toHaveKey('Outros: XGG', 1)
         ->and($data->shirts())->toHaveKey('M', 1)
         ->and($data->shirts())->toHaveKey('Sem tamanho', 1)
-        ->and($data->communities())->toHaveKey('Paroquia 0 / Comunidade 4', 1)
+        ->and($data->communities())->toHaveKey('São Domingos e N. Sra. do Carmo / Imaculado Coração de Maria', 1)
+        ->and($data->communities())->toHaveKey('Santa Luzia / Nossa Senhora Aparecida', 1)
         ->and($data->communities())->toHaveKey('Sem comunidade', 1)
         ->and($data->ages())->toHaveKey('Ate 29', 1)
         ->and($data->ages())->toHaveKey('40-44', 1)

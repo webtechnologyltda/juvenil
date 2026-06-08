@@ -13,14 +13,57 @@ use App\Models\EquipeTrabalho;
 use App\Models\FinancialEntryRegistration;
 use App\Models\Lancamento;
 use App\Models\User;
+use App\Support\EnumOptionBadge;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
+use Carbon\Carbon;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
+
+it('defaults financial entry date to the application current date', function () {
+    Carbon::setTestNow(Carbon::parse('2026-06-08 09:30:00', config('app.timezone')));
+
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+
+    $this->actingAs($user);
+
+    Livewire::test(CreateLancamento::class)
+        ->assertFormSet([
+            'data' => '2026-06-08',
+        ]);
+
+    Carbon::setTestNow();
+});
+
+it('renders financial status and payment select options with enum icons and colors', function () {
+    if (! class_exists(EnumOptionBadge::class)) {
+        $this->fail('Financial enum select options must be rendered by EnumOptionBadge.');
+    }
+
+    expect((string) EnumOptionBadge::option(StatusLacamento::Pago))
+        ->toContain('Pago')
+        ->toContain('polaris-payment-icon')
+        ->toContain('data-enum-color="success"')
+        ->and((string) EnumOptionBadge::option(FormaPagamento::Pix))
+        ->toContain('Pix')
+        ->toContain('fab-pix')
+        ->toContain('data-enum-color="teal"');
+
+    expect(file_get_contents(app_path('Filament/Resources/LancamentoResource/Forms/LancamentoForm.php')))
+        ->toContain('use App\Support\EnumOptionBadge;')
+        ->toContain('EnumOptionBadge::options(StatusLacamento::class)')
+        ->toContain('EnumOptionBadge::options(FormaPagamento::class)')
+        ->toContain('->enum(StatusLacamento::class)')
+        ->toContain('->enum(FormaPagamento::class)');
+});
 
 it('links one paid financial entry to multiple campista registrations and marks them paid', function () {
     seedFinancialRegistrationSettings(25000);
@@ -131,6 +174,32 @@ it('supports team work registrations through the same financial entry registrati
         ->toBe(StatusInscricaoEquipeTrabalho::Aprovado);
 });
 
+it('searches registration payment options by registration name', function () {
+    seedFinancialRegistrationSettings(25000);
+
+    $lucas = Campista::factory()->create([
+        'nome' => 'Lucas da Silva',
+        'status' => StatusInscricao::Pendente->value,
+        'tribo_id' => null,
+        'user_id' => null,
+    ]);
+
+    Campista::factory()->create([
+        'nome' => 'Maria Souza',
+        'status' => StatusInscricao::Pendente->value,
+        'tribo_id' => null,
+        'user_id' => null,
+    ]);
+
+    $results = app(RegistrationPaymentAllocator::class)
+        ->registrationSearchResults(Campista::class, 'Lucas');
+
+    expect($results)
+        ->toHaveKey($lucas->id)
+        ->and(implode(' ', $results))->toContain('Lucas da Silva')
+        ->and(implode(' ', $results))->not->toContain('Maria Souza');
+});
+
 it('creates a financial entry with multiple registration links from the Filament create page', function () {
     $this->seed(ShieldSeeder::class);
     seedFinancialRegistrationSettings(25000);
@@ -189,6 +258,7 @@ it('creates a financial entry with multiple registration links from the Filament
 
     expect($lancamento->valor)
         ->toBe(50000)
+        ->and($lancamento->comprador)->toBeNull()
         ->and(data_get($lancamento->comprovante, '0.data.observacao'))->toBe('PIX recebido para João e Maria')
         ->and(data_get($lancamento->comprovante, '0.data'))->not->toHaveKey('comprovante_nome')
         ->and($lancamento->registrationPayments)->toHaveCount(2)
@@ -261,6 +331,7 @@ it('updates registration links from the Filament edit page without duplicating t
 
     expect(Lancamento::query()->count())
         ->toBe(1)
+        ->and($lancamento->fresh()->comprador)->toBeNull()
         ->and(data_get($lancamento->fresh()->comprovante, '0.data.observacao'))->toBe('Comprovante substituído na edição')
         ->and(data_get($lancamento->fresh()->comprovante, '0.data'))->not->toHaveKey('comprovante_nome')
         ->and($lancamento->fresh()->registrationPayments)->toHaveCount(2)
@@ -315,9 +386,14 @@ it('exposes registration payment links in the financial entry form and table', f
         ->toContain("Repeater::make('comprovante')")
         ->toContain("Select::make('registration_type')")
         ->toContain("Select::make('registration_id')")
+        ->toContain('getSearchResultsUsing')
         ->toContain("Money::make('amount')")
+        ->toContain("RichEditor::make('descricao')")
+        ->toContain("->toolbarButtons([['bold', 'italic', 'underline'], ['bulletList', 'orderedList'], ['link', 'clearFormatting']])")
+        ->not->toContain("Textarea::make('descricao')")
         ->toContain('RegistrationPaymentAllocator::registrationTypeOptions')
         ->toContain('registrationOptions')
+        ->toContain('registrationSearchResults')
         ->toContain("Textarea::make('observacao')")
         ->not->toContain("Builder::make('comprovante')")
         ->not->toContain('use Filament\Forms\Components\Builder;')
@@ -332,6 +408,8 @@ it('exposes registration payment links in the financial entry form and table', f
         ->and($editPage)
         ->toContain('RegistrationPaymentAllocator::class')
         ->toContain('registrationPaymentsFormState');
+
+    expect(Schema::getColumnType('lancamentos', 'descricao'))->toBe('text');
 });
 
 it('normalizes legacy receipt names into optional observations', function () {
@@ -349,6 +427,22 @@ it('normalizes legacy receipt names into optional observations', function () {
         ->toBe('PIX antigo')
         ->and(data_get($normalized, '0.data.url'))->toBe(['comprovantes/pix-antigo.pdf'])
         ->and(data_get($normalized, '0.data'))->not->toHaveKey('comprovante_nome');
+});
+
+it('keeps comprador only for expense financial entries', function () {
+    expect(LancamentoForm::normalizeCompradorForType([
+        'tipo' => TipoLacamento::Receita->value,
+        'comprador' => 'Família Receita',
+    ]))
+        ->toHaveKey('comprador', null)
+        ->and(LancamentoForm::normalizeCompradorForType([
+            'tipo' => TipoLacamento::Doacao,
+            'comprador' => 'Família Doação',
+        ]))->toHaveKey('comprador', null)
+        ->and(LancamentoForm::normalizeCompradorForType([
+            'tipo' => TipoLacamento::Despesa->value,
+            'comprador' => 'Comprador Despesa',
+        ]))->toHaveKey('comprador', 'Comprador Despesa');
 });
 
 function seedFinancialRegistrationSettings(int $amount): void

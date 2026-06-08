@@ -20,6 +20,16 @@ class CommunityDistributionChart extends ApexChartWidget
 
     protected function getOptions(): array
     {
-        return $this->barOptions($this->operationalData()->communities(), 'Campistas', ['#0891b2']);
+        $options = $this->barOptions($this->operationalData()->communities(), 'Campistas', ['#0891b2']);
+
+        $options['chart']['height'] = 380;
+        $options['yaxis']['labels'] = [
+            'maxWidth' => 280,
+            'style' => [
+                'fontSize' => '11px',
+            ],
+        ];
+
+        return $options;
     }
 }

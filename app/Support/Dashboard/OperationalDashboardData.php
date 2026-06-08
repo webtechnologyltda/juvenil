@@ -4,6 +4,7 @@ namespace App\Support\Dashboard;
 
 use App\Enums\StatusInscricao;
 use App\Models\Campista;
+use App\Support\Campistas\ParishCommunityLabels;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -42,14 +43,26 @@ class OperationalDashboardData
     {
         $tribeIds = OperationalDashboardFilters::tribeIds($filters);
         $paroquia = OperationalDashboardFilters::formFilter($filters, 'paroquia');
-        $comunidade = OperationalDashboardFilters::formFilter($filters, 'comunidade');
+        $isOtherParish = $paroquia === 2;
+        $communityValues = $isOtherParish ? [] : OperationalDashboardFilters::communityValues($filters);
+        $communityText = $isOtherParish ? OperationalDashboardFilters::communityText($filters) : null;
         $presenca = OperationalDashboardFilters::presence($filters);
 
         return Campista::query()
             ->when($tribeIds !== [], fn (Builder $query): Builder => $query->whereIn('tribo_id', $tribeIds))
             ->when($paroquia !== null, fn (Builder $query): Builder => $query->where('form_data->paroquia', $paroquia))
-            ->when($comunidade !== null, fn (Builder $query): Builder => $query->where('form_data->comunidade', $comunidade))
+            ->when($communityValues !== [], fn (Builder $query): Builder => $this->whereFormDataValueIn($query, 'form_data->comunidade', $communityValues))
+            ->when($communityText !== null, fn (Builder $query): Builder => $query->where('form_data->comunidade', 'like', '%'.$communityText.'%'))
             ->when($presenca !== null, fn (Builder $query): Builder => $query->where('presenca', $presenca));
+    }
+
+    private function whereFormDataValueIn(Builder $query, string $path, array $values): Builder
+    {
+        return $query->where(function (Builder $query) use ($path, $values): void {
+            foreach ($values as $value) {
+                $query->orWhere($path, $value);
+            }
+        });
     }
 }
 
@@ -237,7 +250,7 @@ class OperationalDashboardDataSet
             return 'Sem comunidade';
         }
 
-        return 'Paroquia '.$paroquia.' / Comunidade '.$comunidade;
+        return ParishCommunityLabels::combinedLabel($paroquia, $comunidade, short: true);
     }
 
     private function ageBucket(Campista $campista): string

@@ -15,10 +15,13 @@ use App\Filament\Widgets\Operational\SexDistributionChart;
 use App\Filament\Widgets\Operational\ShirtSizeChart;
 use App\Filament\Widgets\Operational\TribeDistributionChart;
 use App\Models\Tribo;
+use App\Support\Campistas\ParishCommunityLabels;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Pages\Dashboard as FilamentDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class Dashboard extends FilamentDashboard
@@ -35,26 +38,41 @@ class Dashboard extends FilamentDashboard
             ->components([
                 Select::make('status')
                     ->label('Status')
+                    ->native(false)
                     ->multiple()
                     ->options(StatusInscricao::class)
                     ->placeholder('Válidas'),
                 Select::make('tribo_id')
                     ->label('Tribo')
+                    ->native(false)
                     ->multiple()
                     ->searchable()
                     ->preload()
                     ->options(fn (): array => Tribo::query()->orderBy('cor')->pluck('cor', 'id')->all()),
                 Select::make('paroquia')
                     ->label('Paróquia')
-                    ->options([
-                        0 => 'São Domingos e Nossa Senhora do Carmo',
-                        1 => 'Santa Luzia',
-                        2 => 'Outra paróquia',
-                    ]),
-                TextInput::make('comunidade')
-                    ->label('Comunidade'),
+                    ->native(false)
+                    ->options(ParishCommunityLabels::parishOptions(short: true))
+                    ->live()
+                    ->afterStateUpdated(function (Set $set): void {
+                        $set('comunidade', []);
+                        $set('comunidade_texto', null);
+                    }),
+                Select::make('comunidade')
+                    ->label('Comunidade')
+                    ->native(false)
+                    ->multiple()
+                    ->searchable()
+                    ->options(fn (Get $get): array => ParishCommunityLabels::communityOptions($get('paroquia'), short: true))
+                    ->visible(fn (Get $get): bool => filled($get('paroquia')) && ! self::selectedParishIs($get, 2)),
+                TextInput::make('comunidade_texto')
+                    ->label('Comunidade')
+                    ->visible(fn (Get $get): bool => self::selectedParishIs($get, 2))
+                    ->placeholder('Digite parte do nome')
+                    ->live(debounce: 500),
                 Select::make('presenca')
                     ->label('Presença')
+                    ->native(false)
                     ->options([
                         0 => 'Aguardando check-in',
                         1 => 'Presente',
@@ -90,5 +108,14 @@ class Dashboard extends FilamentDashboard
             'default' => 1,
             'xl' => 2,
         ];
+    }
+
+    private static function selectedParishIs(Get $get, int $parish): bool
+    {
+        $selectedParish = $get('paroquia');
+
+        return $selectedParish !== null
+            && $selectedParish !== ''
+            && (int) $selectedParish === $parish;
     }
 }

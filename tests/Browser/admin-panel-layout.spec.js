@@ -233,6 +233,62 @@ test('authenticated Filament panel keeps branded layout clear of visual obstruct
     });
 });
 
+test('authenticated dashboard filters use Filament custom select controls', async ({ page }) => {
+    await signIn(page);
+
+    for (const path of ['/admin', '/admin/financeiro']) {
+        await page.goto(`${adminBaseUrl}${path}`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('[wire\\:partial="table-filters-form"] .fi-fo-field');
+
+        const filterControls = await page.evaluate(() => {
+            const filtersForm = document.querySelector('[wire\\:partial="table-filters-form"]');
+
+            return {
+                nativeSelectCount: filtersForm?.querySelectorAll('.fi-fo-select-wrp select').length ?? 0,
+                customSelectCount: filtersForm?.querySelectorAll('.fi-fo-select-wrp .fi-select-input-btn').length ?? 0,
+            };
+        });
+
+        expect(filterControls.nativeSelectCount).toBe(0);
+        expect(filterControls.customSelectCount).toBeGreaterThan(0);
+    }
+
+    await page.goto(`${adminBaseUrl}/admin`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[wire\\:partial="table-filters-form"] .fi-fo-field');
+
+    const filtersForm = page.locator('[wire\\:partial="table-filters-form"]');
+    const filterFields = filtersForm.locator('.fi-fo-field');
+    const parishField = filterFields.filter({ hasText: 'Paróquia' }).first();
+
+    await expect(filterFields.filter({ hasText: 'Comunidade' })).toHaveCount(0);
+
+    await parishField.locator('.fi-select-input-btn').click();
+    await parishField.getByRole('option', { name: 'Santa Luzia' }).click();
+
+    const communitySelectField = filterFields
+        .filter({ hasText: 'Comunidade' })
+        .filter({ has: page.locator('.fi-select-input-btn') })
+        .first();
+
+    await expect(communitySelectField).toBeVisible();
+    await communitySelectField.locator('.fi-select-input-btn').click();
+    await expect(communitySelectField.getByRole('option', { name: 'Santa Teresinha' })).toBeVisible();
+    await expect(communitySelectField.getByRole('option', { name: 'Nossa Senhora Aparecida' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await parishField.locator('.fi-select-input-btn').click();
+    await parishField.getByRole('option', { name: 'Outra paróquia' }).click();
+
+    const communityTextField = filterFields
+        .filter({ hasText: 'Comunidade' })
+        .filter({ has: page.locator('input[placeholder="Digite parte do nome"]') })
+        .first();
+
+    await expect(communityTextField).toBeVisible();
+    await expect(communityTextField.locator('.fi-select-input-btn')).toHaveCount(0);
+    await communityTextField.locator('input[placeholder="Digite parte do nome"]').fill('São Pedro');
+});
+
 test('authenticated Filament table column manager opens outside the table and applies columns live', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
