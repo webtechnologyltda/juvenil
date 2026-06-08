@@ -61,16 +61,20 @@ body:has(.fi-modal.fi-modal-open) :is([data-motion-card], .out, .filament-regist
     will-change: auto;
 }
 
+.fi-dropdown-panel {
+    z-index: 100;
+}
+
 .fi-ta {
     overflow: visible;
 }
 
 .fi-ta:has(.fi-dropdown-panel) {
-    z-index: 30;
+    z-index: 40;
 }
 
 .fi-ta .fi-dropdown-panel {
-    z-index: 80;
+    z-index: 100;
 }
 
 .fi-ta-col-manager-dropdown > .fi-dropdown-panel {

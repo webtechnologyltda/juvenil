@@ -11,14 +11,12 @@ use DateTimeInterface;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Pages\SettingsPage;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
 use Illuminate\Support\Carbon;
@@ -324,26 +322,6 @@ class GeneralSettingsPage extends SettingsPage
                             ])
                             ->columns(12)
                             ->icon('heroicon-o-document-text'),
-
-                        Section::make('Mensagem de Bloqueio')
-                            ->description('Conteúdo exibido quando as inscrições dos campistas não estiverem liberadas.')
-                            ->schema([
-                                RichEditor::make('liberacao_inscricoes_bloco')
-                                    ->label('Conteúdo bloco de inscrições dos campistas')
-                                    ->hint('O conteúdo do bloco de inscrições aparece quando o status das inscrições estiver
-                                        diferente de '.LiberacaoInscricoesStatusEnum::LIBERADO->getLabel())
-                                    ->hintIcon('heroicon-o-information-circle')
-                                    ->hintColor('warning')
-                                    ->columnSpanFull()
-                                    ->fileAttachmentsDirectory('settings')
-                                    ->fileAttachmentsMaxSize(1024)
-                                    ->required(fn (Get $get) => self::resolveCampistaStatus($get('liberacao_inscricoes_status')) !== LiberacaoInscricoesStatusEnum::LIBERADO),
-                            ])
-                            ->columnSpan([
-                                'default' => 'full',
-                            ])
-                            ->columns(12)
-                            ->icon('heroicon-o-megaphone'),
                     ]),
             ]);
     }

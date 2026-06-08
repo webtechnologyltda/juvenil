@@ -208,6 +208,11 @@
                     @else
                         <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">Inscrições abertas</p>
                     @endif
+                    @if($registrationAvailability->availableSlotsMessage())
+                        <p class="mt-2 text-sm font-semibold text-[#9ddbef]">
+                            {{ $registrationAvailability->availableSlotsMessage() }} · {{ $registrationAvailability->activeRegistrationsMessage() }}
+                        </p>
+                    @endif
                 </div>
 
                 @if($unavailableSexMessage)

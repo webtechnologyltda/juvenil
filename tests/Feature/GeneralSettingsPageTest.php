@@ -32,7 +32,9 @@ it('renders the general settings page with registration payment controls', funct
         ->assertSee('Limite de Campistas Homens')
         ->assertSee('Limite de Campistas Mulheres')
         ->assertSee('Início das Inscrições')
-        ->assertSee('Fim das Inscrições');
+        ->assertSee('Fim das Inscrições')
+        ->assertDontSee('Mensagem de Bloqueio')
+        ->assertDontSee('Conteúdo bloco de inscrições dos campistas');
 });
 
 it('renders the general settings page with configured registration dates', function () {
@@ -68,7 +70,6 @@ it('organizes the general settings form by operational responsibility', function
         "Section::make('Período de Inscrição')",
         "Section::make('Pagamento PIX')",
         "Section::make('Atendimento e Documentos')",
-        "Section::make('Mensagem de Bloqueio')",
     ];
 
     $sectionPositions = collect($expectedSections)
@@ -84,6 +85,16 @@ it('organizes the general settings form by operational responsibility', function
         ->toContain("'xl' => '4'")
         ->toContain("'lg' => '6'")
         ->toContain("'lg' => '3'");
+});
+
+it('does not expose the obsolete blocked registration message editor', function () {
+    $settingsPage = file_get_contents(app_path('Filament/Pages/GeneralSettingsPage.php'));
+
+    expect($settingsPage)
+        ->not->toContain("Section::make('Mensagem de Bloqueio')")
+        ->not->toContain("RichEditor::make('liberacao_inscricoes_bloco')")
+        ->not->toContain('Conteúdo bloco de inscrições dos campistas')
+        ->not->toContain('fileAttachmentsDirectory(\'settings\')');
 });
 
 it('configures the pix qr code upload as a square public image preview', function () {
@@ -188,7 +199,6 @@ it('saves registration status settings as scalar values', function () {
             ],
             'liberacao_inscricoes_status' => LiberacaoInscricoesStatusEnum::ENCERRADO->value,
             'liberacao_inscricoes_equipe_trabalho_status' => LiberacaoInscricoesEquipeTrabalhoStatusEnum::TRANCADO->value,
-            'liberacao_inscricoes_bloco' => 'Inscrições encerradas para campistas.',
         ])
         ->call('save')
         ->assertHasNoFormErrors();

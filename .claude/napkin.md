@@ -23,8 +23,8 @@
    Do instead: prefer repo-native commands discovered from Composer, npm, and docs.
 
 ## Domain Behavior Guardrails
-1. **[2026-06-07] Filament table dropdowns need visible table overflow**
-   Do instead: keep `.fi-ta` as `overflow: visible`, raise table dropdown panels, and use `Table::configureUsing(...->deferColumnManager(false))` so column toggles apply live.
+1. **[2026-06-07] Filament dropdowns need an explicit layer scale**
+   Do instead: keep `.fi-ta` as `overflow: visible`, keep content dropdowns below sidebar/topbar flyouts, and use `Table::configureUsing(...->deferColumnManager(false))` so column toggles apply live.
 2. **[2026-06-07] Filament overlays inside sections need active stacking**
    Do instead: when a DatePicker/Select/dropdown opens inside `.fi-section`, raise the active section and panel in `resources/css/filament/admin/theme.css`, then validate with Playwright `admin-panel-layout.spec.js`.
 3. **[2026-06-07] Filament fixed modals must not sit under transform containers**

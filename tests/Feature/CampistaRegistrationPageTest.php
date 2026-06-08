@@ -216,10 +216,8 @@ it('shows only the remaining registration time during the configured registratio
         ->assertSee('As inscrições encerram em 20/06/2026 19:00.')
         ->assertSee('2026-06-20T19:00:00', false)
         ->assertSee('data-registration-countdown', false)
-        ->assertDontSee('2 vagas disponíveis de 3')
-        ->assertDontSee('1 inscrição ativa')
-        ->assertDontSee('vagas disponíveis')
-        ->assertDontSee('inscrições ativas')
+        ->assertSee('2 vagas disponíveis de 3')
+        ->assertSee('1 inscrição ativa')
         ->assertSee('wire:submit.prevent="submitForm"', false)
         ->assertSee('Inscrever-se');
 
@@ -418,11 +416,27 @@ it('closes campista registration when all sex-specific vacancies are full', func
         ->assertDontSee('Inscrever-se');
 });
 
-it('closes campista registration when the total active registration limit is reached', function () {
+it('uses sex-specific configured vacancies instead of a stale legacy total limit', function () {
     seedGeneralRegistrationSettings([
         'qtd_max_vagas' => 1,
-        'qtd_max_vagas_masculino' => 10,
-        'qtd_max_vagas_feminino' => 10,
+        'qtd_max_vagas_masculino' => 2000,
+        'qtd_max_vagas_feminino' => 2000,
+    ]);
+
+    createCampistaRegistrationForSex('M', StatusInscricao::Pago);
+    createCampistaRegistrationForSex('F', StatusInscricao::Pendente);
+
+    Livewire::test(CampistaForm::class)
+        ->assertDontSee('As inscrições foram encerradas pelo número de vagas preenchidas.')
+        ->assertSee('3998 vagas disponíveis de 4000')
+        ->assertSee('Inscrever-se');
+});
+
+it('uses the legacy total limit only when no sex-specific vacancies are configured', function () {
+    seedGeneralRegistrationSettings([
+        'qtd_max_vagas' => 1,
+        'qtd_max_vagas_masculino' => null,
+        'qtd_max_vagas_feminino' => null,
     ]);
 
     createCampistaRegistrationForSex('M', StatusInscricao::Cancelado);

@@ -275,6 +275,62 @@ test('authenticated Filament table column manager opens outside the table and ap
     });
 });
 
+test('authenticated Filament sidebar flyouts stay above table surfaces when collapsed', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+    await page.goto('http://juvenil.test/admin/campistas');
+    await page.waitForSelector('.fi-ta-row');
+
+    const collapseButton = page.getByRole('button', { name: /recolher barra lateral/i }).first();
+
+    if (await collapseButton.isVisible().catch(() => false)) {
+        await collapseButton.click();
+    }
+
+    const settingsGroup = page.locator('.fi-sidebar .fi-sidebar-group').filter({ hasText: 'Configurações' }).last();
+
+    await settingsGroup.locator('.fi-sidebar-group-dropdown-trigger-btn').click();
+
+    const settingsFlyout = page.locator('.fi-sidebar .fi-dropdown-panel').filter({ hasText: 'Configurações Gerais' }).first();
+
+    await settingsFlyout.waitFor({ state: 'visible' });
+
+    const flyoutStacking = await settingsFlyout.evaluate((panel) => {
+        const sidebar = panel.closest('.fi-sidebar');
+        const panelRect = panel.getBoundingClientRect();
+        const probePoints = [
+            [panelRect.left + 40, panelRect.top + 20],
+            [panelRect.right - 8, panelRect.top + 20],
+            [panelRect.right - 8, panelRect.bottom - 10],
+        ].map(([x, y]) => {
+            const topElement = document.elementFromPoint(x, y);
+
+            return {
+                x,
+                y,
+                topElementClassName: String(topElement?.className ?? ''),
+                topElementInsidePanel: topElement ? panel.contains(topElement) : false,
+            };
+        });
+
+        return {
+            panelZIndex: getComputedStyle(panel).zIndex,
+            sidebarZIndex: sidebar ? getComputedStyle(sidebar).zIndex : null,
+            probePoints,
+        };
+    });
+
+    expect(Number.parseInt(flyoutStacking.sidebarZIndex, 10)).toBeGreaterThanOrEqual(90);
+    expect(Number.parseInt(flyoutStacking.panelZIndex, 10)).toBeGreaterThanOrEqual(100);
+    expect(flyoutStacking.probePoints.every((point) => point.topElementInsidePanel)).toBe(true);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-sidebar-flyout-stacking.png',
+        fullPage: false,
+    });
+});
+
 test('authenticated Filament form pages use compact headings and the available width', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
@@ -302,6 +358,8 @@ test('authenticated Filament form pages use compact headings and the available w
             await expect(page.getByText('Idade mínima')).toBeVisible();
             await expect(page.getByText('Idade máxima')).toBeVisible();
             await expect(page.getByText('Use 0 para liberar inscrições de qualquer idade nesse limite.').first()).toBeVisible();
+            await expect(page.getByText('Mensagem de Bloqueio')).toHaveCount(0);
+            await expect(page.getByText('Conteúdo bloco de inscrições dos campistas')).toHaveCount(0);
         }
     }
 

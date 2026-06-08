@@ -40,12 +40,14 @@ it('lets Filament table column dropdowns escape table clipping in shared styles'
     $css = file_get_contents(resource_path('css/app.css'));
 
     expect($css)
+        ->toContain('.fi-dropdown-panel {')
+        ->toContain('z-index: 100;')
         ->toContain('.fi-ta {')
         ->toContain('overflow: visible;')
         ->toContain('.fi-ta:has(.fi-dropdown-panel)')
-        ->toContain('z-index: 30;')
+        ->toContain('z-index: 40;')
         ->toContain('.fi-ta .fi-dropdown-panel')
-        ->toContain('z-index: 80;')
+        ->toContain('z-index: 100;')
         ->toContain('.fi-ta-col-manager-dropdown > .fi-dropdown-panel')
         ->toContain('max-height: min(34rem, calc(100dvh - 2rem));')
         ->toContain('overflow-y: auto;')

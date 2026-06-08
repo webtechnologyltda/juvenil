@@ -175,11 +175,17 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-main {
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar {
+    z-index: 200;
+    overflow: visible;
     border-right: 1px solid var(--juvenil-camp-line);
     background:
         linear-gradient(180deg, rgba(7, 61, 69, 0.98), rgba(3, 24, 28, 0.98)),
         var(--juvenil-camp-base);
     box-shadow: 22px 0 80px rgba(0, 0, 0, 0.24);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar .fi-dropdown-panel {
+    z-index: 210;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar-header {
@@ -201,12 +207,22 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-logo {
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-topbar {
+    z-index: 190;
     border-top: 3px solid var(--juvenil-camp-orange);
     border-bottom: 1px solid var(--juvenil-camp-line);
     background: rgba(3, 24, 28, 0.86);
     color: var(--juvenil-camp-text);
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(18px);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-topbar-ctn {
+    z-index: 190;
+    overflow: visible;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-topbar .fi-dropdown-panel {
+    z-index: 210;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-icon-btn, .fi-topbar .fi-icon-btn) {
@@ -463,21 +479,21 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section:has(.fi-fo-date-ti
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-date-time-picker-panel {
-    z-index: 70;
+    z-index: 100;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section:has(.fi-select-input-btn[aria-expanded='true']) {
     position: relative;
-    z-index: 60;
+    z-index: 70;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section .fi-fo-select:has(.fi-select-input-btn[aria-expanded='true']) {
     position: relative;
-    z-index: 65;
+    z-index: 80;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section .fi-fo-select .fi-dropdown-panel[role='listbox'] {
-    z-index: 70;
+    z-index: 100;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-input-wrp:focus-within {
@@ -516,11 +532,11 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta {
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta:has(.fi-dropdown-panel) {
-    z-index: 30;
+    z-index: 40;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta .fi-dropdown-panel {
-    z-index: 80;
+    z-index: 100;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-col-manager-dropdown > .fi-dropdown-panel {
