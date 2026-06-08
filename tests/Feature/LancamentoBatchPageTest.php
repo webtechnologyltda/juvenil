@@ -60,7 +60,7 @@ it('shows a visual warning when the configured camp amount is zero on batch regi
         ->assertSee('O campo de inscrições pode ficar sem opções enquanto o valor estiver zerado nas configurações.');
 });
 
-it('keeps registration item values in cents when propagating a masked default amount', function () {
+it('keeps registration item values mask-ready when propagating a default amount', function () {
     $this->seed(ShieldSeeder::class);
     seedLancamentoBatchSettings(35000);
 
@@ -73,7 +73,7 @@ it('keeps registration item values in cents when propagating a masked default am
     Livewire::test(BatchLancamentos::class)
         ->set('data.default_value', '350,00')
         ->set('data.registration_ids', [$campista->id])
-        ->assertSet('data.registration_items.0.valor', 35000);
+        ->assertSet('data.registration_items.0.valor', '350,00');
 });
 
 it('creates one pending launch per selected campista registration using the default inscription category', function () {

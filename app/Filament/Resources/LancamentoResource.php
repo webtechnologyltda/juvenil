@@ -48,6 +48,7 @@ class LancamentoResource extends Resource
     {
         return $table
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['items.categoria', 'items.registration']))
+            ->recordUrl(fn (Lancamento $record): string => static::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('id')
                     ->label('Código')
@@ -137,7 +138,7 @@ class LancamentoResource extends Resource
                         ->all())
                     ->searchable(),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make()
                     ->iconButton()
                     ->tooltip('Editar'),
@@ -164,6 +165,7 @@ class LancamentoResource extends Resource
             'create' => Pages\CreateLancamento::route('/create'),
             'batch' => Pages\BatchLancamentos::route('/batch'),
             'edit' => Pages\EditLancamento::route('/{record}/edit'),
+            'view' => Pages\ViewLancamento::route('/{record}'),
         ];
     }
 

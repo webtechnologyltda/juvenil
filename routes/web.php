@@ -2,6 +2,7 @@
 
 use App\Settings\GeneralSettings;
 use App\Http\Controllers\Admin\PrintableReportController;
+use App\Http\Controllers\Admin\LancamentoReceiptController;
 use Illuminate\Support\Facades\Route;
 
 $campistaRegistrationPage = function () {
@@ -30,6 +31,13 @@ Route::middleware('auth')
     ->name('admin.reports.')
     ->group(function () {
         Route::get('/imprimir', PrintableReportController::class)->name('print');
+    });
+
+Route::middleware(['auth', 'signed'])
+    ->prefix('admin/lancamentos')
+    ->name('admin.lancamentos.')
+    ->group(function () {
+        Route::get('/{lancamento}/comprovante', LancamentoReceiptController::class)->name('comprovantes.show');
     });
 
 Route::redirect('/inscricao-equipe-trabalho', '/campista')->name('inscricao-equipe-trabalho');

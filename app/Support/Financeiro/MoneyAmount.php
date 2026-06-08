@@ -38,4 +38,9 @@ final class MoneyAmount
 
         return abs((int) preg_replace('/[^\d]/', '', $value));
     }
+
+    public static function formatForInput(mixed $value): string
+    {
+        return number_format(self::toCents($value) / 100, 2, ',', '.');
+    }
 }
