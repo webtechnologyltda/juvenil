@@ -116,7 +116,7 @@ it('builds tribe shirt community age and sex distributions with incomplete form 
         ->and($data->communities())->toHaveKey('Paroquia 0 / Comunidade 4', 1)
         ->and($data->communities())->toHaveKey('Sem comunidade', 1)
         ->and($data->ages())->toHaveKey('Ate 29', 1)
-        ->and($data->ages())->toHaveKey('40-49', 1)
+        ->and($data->ages())->toHaveKey('40-44', 1)
         ->and($data->ages())->toHaveKey('Sem data', 1)
         ->and($data->sexes())->toHaveKey('Masculino', 1)
         ->and($data->sexes())->toHaveKey('Feminino', 1)

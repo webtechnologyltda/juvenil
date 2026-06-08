@@ -15,21 +15,16 @@ class DemographicsChart extends ApexChartWidget
 
     protected function getHeading(): ?string
     {
-        return 'Demografia';
+        return 'Demografia por faixa etária';
     }
 
     protected function getSubheading(): ?string
     {
-        return 'Faixas etárias e sexo informado.';
+        return 'Faixas ordenadas por idade dos campistas.';
     }
 
     protected function getOptions(): array
     {
-        $data = [
-            ...$this->operationalData()->ages(),
-            ...$this->operationalData()->sexes(),
-        ];
-
-        return $this->barOptions($data, 'Campistas', ['#16a34a']);
+        return $this->barOptions($this->operationalData()->ages(), 'Campistas', ['#16a34a']);
     }
 }

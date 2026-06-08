@@ -24,6 +24,7 @@
         "filament/forms": "^5.0",
         "filament/spatie-laravel-settings-plugin": "^5.0",
         "jeffersongoncalves/filament-cep-field": "^3.0",
+        "jeffgreco13/filament-breezy": "^3.2",
         "larabug/larabug": "^3.7",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",

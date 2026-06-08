@@ -11,6 +11,12 @@
         $settings->telefone_atendente,
         2,
     );
+    $proofAttendant = \App\Support\AtendenteWhatsapp::firstForPurpose(
+        $attendanceContacts,
+        \App\Support\AtendenteWhatsapp::PURPOSE_COMPROVANTE,
+        $settings->telefone_atendente,
+        false,
+    );
     $specificAttendants = \App\Support\AtendenteWhatsapp::forPurpose(
         $attendanceContacts,
         \App\Support\AtendenteWhatsapp::PURPOSE_NECESSIDADE_ESPECIFICA,
@@ -111,6 +117,22 @@
                         <p class="inline-flex min-h-12 w-full items-center justify-center border border-[#f46b12]/35 px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12]">
                             Atendente não configurado
                         </p>
+                    @endif
+
+                    @if($proofAttendant)
+                        <div class="mt-3 border-t border-[#9ddbef]/20 pt-4">
+                            <p class="text-xs font-black uppercase tracking-[0.18em] text-[#9ddbef]">Envio de comprovante</p>
+                            <a
+                                target="_blank"
+                                href="{{ $proofAttendant['whatsapp_url'] }}"
+                                class="mt-3 inline-flex min-h-12 w-full items-center justify-center bg-[#f46b12] px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a]"
+                            >
+                                Enviar comprovante - {{ $proofAttendant['nome'] }}
+                            </a>
+                            @if(filled($proofAttendant['observacao']))
+                                <p class="mt-2 text-sm leading-6 text-[#d8f2fa]">{{ $proofAttendant['observacao'] }}</p>
+                            @endif
+                        </div>
                     @endif
 
                     @if($specificAttendants !== [])

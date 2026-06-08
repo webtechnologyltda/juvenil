@@ -297,6 +297,23 @@
             text-align: center;
         }
 
+        .report-sensitive-alert {
+            border: 1px solid rgba(244, 107, 18, .55);
+            background: rgba(244, 107, 18, .12);
+            color: var(--ink);
+            margin-bottom: 1rem;
+            padding: .85rem 1rem;
+        }
+
+        .report-sensitive-alert strong {
+            display: block;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            margin-bottom: .2rem;
+            text-transform: uppercase;
+        }
+
         @media print {
             @page {
                 margin: 11mm;
@@ -363,6 +380,13 @@
                 </div>
             @endforeach
         </section>
+
+        @if ($report['showSensitiveHealth'] ?? false)
+            <section class="report-sensitive-alert" aria-label="Aviso sobre dados médicos sensíveis">
+                <strong>Dados médicos sensíveis exibidos</strong>
+                Este relatório contém informações de saúde e deve ser tratado com cuidado, sem compartilhamento fora das pessoas responsáveis pelo cuidado e pela operação do acampamento.
+            </section>
+        @endif
 
         @switch($report['type']->value)
             @case('registration_fichas')

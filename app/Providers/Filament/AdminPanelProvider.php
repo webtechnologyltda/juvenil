@@ -21,6 +21,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 
@@ -99,6 +100,18 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentShieldPlugin::make(),
                 FilamentApexChartsPlugin::make(),
+                BreezyCore::make()
+                    ->myProfile(
+                        shouldRegisterUserMenu: true,
+                        userMenuLabel: 'Meu perfil',
+                        shouldRegisterNavigation: false,
+                        slug: 'meu-perfil',
+                    )
+                    ->enableTwoFactorAuthentication(force: false)
+                    ->enableBrowserSessions()
+                    ->enablePasskeys(
+                        relyingPartyIcon: '/img/logo.png',
+                    ),
                 EnvironmentIndicatorPlugin::make()
                     ->visible(fn () => auth()->user()?->hasRole('Super Administrador'))
                     ->color(fn () => match (app()->environment()) {

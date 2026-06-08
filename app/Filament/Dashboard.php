@@ -11,6 +11,7 @@ use App\Filament\Widgets\Operational\OperationalPipelineStats;
 use App\Filament\Widgets\Operational\RegistrationTrendChart;
 use App\Filament\Widgets\Operational\SensitiveHealthSummaryStats;
 use App\Filament\Widgets\Operational\SensitiveHealthTable;
+use App\Filament\Widgets\Operational\SexDistributionChart;
 use App\Filament\Widgets\Operational\ShirtSizeChart;
 use App\Filament\Widgets\Operational\TribeDistributionChart;
 use App\Models\Tribo;
@@ -77,6 +78,7 @@ class Dashboard extends FilamentDashboard
             ShirtSizeChart::class,
             CommunityDistributionChart::class,
             DemographicsChart::class,
+            SexDistributionChart::class,
             OperationalPendingTasksTable::class,
             SensitiveHealthTable::class,
         ];

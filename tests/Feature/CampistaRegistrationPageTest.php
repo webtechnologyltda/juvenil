@@ -284,11 +284,14 @@ it('renders configured attendance contacts by purpose on the campista page', fun
         ->assertSee('Atendimento para dúvidas')
         ->assertSee('Dúvidas - Janaína')
         ->assertSee('Dúvidas - Marcos')
+        ->assertSee('Envio de comprovante')
+        ->assertSee('Enviar comprovante - Financeiro')
         ->assertSee('Necessidades específicas')
         ->assertSee('Inclusão')
         ->assertSee('Acessibilidade, saúde e necessidades específicas.')
         ->assertSee('https://wa.me/5547911111111', false)
         ->assertSee('https://wa.me/5547922222222', false)
+        ->assertSee('https://wa.me/5547933333333', false)
         ->assertSee('https://wa.me/5547944444444', false)
         ->assertDontSee('Dúvidas - Financeiro');
 });
