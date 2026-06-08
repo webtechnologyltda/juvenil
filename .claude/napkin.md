@@ -47,11 +47,13 @@
    Do instead: initialize ScrollTrigger-dependent motion after the loader removes `body.is-loading`, use native anchor scrolling on touch layouts, and avoid scrub/parallax on mobile.
 
 ## User Directives
-1. **[2026-06-06] Public hero uses responsive image assets**
+1. **[2026-06-08] Public campista photo upload is upload-only**
+   Do instead: keep the public `CampistaForm` avatar field without image editor, forced crop, or automatic square resizing; preserve only upload, preview, storage, and image validation.
+2. **[2026-06-06] Public hero uses responsive image assets**
    Do instead: use `public/img/hero-mobile.png` as the mobile hero background and `public/img/hero-desktop.png` as the desktop hero background.
-2. **[2026-06-06] Public page includes the camp video as ambient media**
+3. **[2026-06-06] Public page includes the camp video as ambient media**
    Do instead: render `public/img/barraca.mp4` muted, autoplaying, looping, playsinline, and without player controls.
-3. **[2026-06-06] Public brand logo comes from `public/img/logo.png`**
+4. **[2026-06-06] Public brand logo comes from `public/img/logo.png`**
    Do instead: use the provided PNG for header, hero, footer, and favicons; do not replace it with generated SVG artwork.
-4. **[2026-06-06] Complete framework and security upgrades**
+5. **[2026-06-06] Complete framework and security upgrades**
    Do instead: update Laravel, Filament, Composer dependencies, and npm dependencies together, then validate with audits and tests.
