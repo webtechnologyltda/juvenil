@@ -6,14 +6,20 @@ use App\Enums\StatusInscricao;
 use App\Support\Reports\CampistaReportData;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Pages\Page;
 use Filament\Panel;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
+use Illuminate\Support\HtmlString;
 
 class ReportsPage extends Page
 {
@@ -42,6 +48,8 @@ class ReportsPage extends Page
         'tribo_id' => [],
         'presenca' => null,
         'search' => null,
+        'show_sensitive_health' => false,
+        'confirm_sensitive_health' => false,
     ];
 
     public static function getRoutePath(Panel $panel): string
@@ -138,6 +146,37 @@ class ReportsPage extends Page
                                         'default' => 'full',
                                         'xl' => 9,
                                     ]),
+
+                                Toggle::make('show_sensitive_health')
+                                    ->label('Exibir dados médicos')
+                                    ->helperText('Por padrão, dados médicos permanecem ocultos nos relatórios.')
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, bool $state): void {
+                                        if (! $state) {
+                                            $set('confirm_sensitive_health', false);
+                                        }
+                                    })
+                                    ->visible(fn (): bool => $this->canUseSensitiveHealthFilter())
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'xl' => 3,
+                                    ]),
+
+                                Html::make(new HtmlString(
+                                    '<div class="rounded-lg border border-primary-500/45 bg-primary-500/10 p-4 text-sm text-primary-100">
+                                        <strong class="block text-primary-300">Dados médicos sensíveis</strong>
+                                        <span>Ao exibir estes dados, trate as informações com cuidado. Elas não devem ser compartilhadas fora das pessoas responsáveis pelo cuidado e pela operação do acampamento.</span>
+                                    </div>'
+                                ))
+                                    ->visible(fn (Get $get): bool => $this->canUseSensitiveHealthFilter() && (bool) $get('show_sensitive_health'))
+                                    ->columnSpanFull(),
+
+                                Checkbox::make('confirm_sensitive_health')
+                                    ->label('Confirmo que desejo exibir dados médicos sensíveis neste relatório.')
+                                    ->helperText('A impressão só exibirá os dados médicos após esta confirmação.')
+                                    ->accepted()
+                                    ->visible(fn (Get $get): bool => $this->canUseSensitiveHealthFilter() && (bool) $get('show_sensitive_health'))
+                                    ->columnSpanFull(),
                             ]),
                     ])
                     ->footerActions([
@@ -147,7 +186,7 @@ class ReportsPage extends Page
                             ->color('primary')
                             ->url(fn (): string => route('admin.reports.print', $this->previewQuery()))
                             ->openUrlInNewTab()
-                            ->disabled(fn (): bool => blank($this->filters['type'] ?? null)),
+                            ->disabled(fn (): bool => blank($this->filters['type'] ?? null) || $this->missingSensitiveHealthConfirmation()),
                     ])
                     ->footerActionsAlignment(Alignment::End),
             ]);
@@ -171,8 +210,20 @@ class ReportsPage extends Page
     public function previewQuery(): array
     {
         return collect($this->filters)
-            ->filter(fn (mixed $value): bool => $value !== null && $value !== '' && $value !== [])
+            ->filter(fn (mixed $value): bool => $value !== null && $value !== '' && $value !== [] && $value !== false)
             ->all();
+    }
+
+    private function canUseSensitiveHealthFilter(): bool
+    {
+        return auth()->user()?->can('view_sensitive_health_campista') ?? false;
+    }
+
+    private function missingSensitiveHealthConfirmation(): bool
+    {
+        return $this->canUseSensitiveHealthFilter()
+            && (bool) ($this->filters['show_sensitive_health'] ?? false)
+            && ! (bool) ($this->filters['confirm_sensitive_health'] ?? false);
     }
 
     private function defaultReportType(): ?string

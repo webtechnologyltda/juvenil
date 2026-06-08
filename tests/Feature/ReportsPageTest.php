@@ -124,6 +124,25 @@ it('uses the reports page permission to expose standard operational reports', fu
         ->assertForbidden();
 });
 
+it('renders the sensitive health disclosure control only for authorized report users', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $administrator = reportUserWithRole('Administrador');
+    $infirmary = reportUserWithRole('Enfermaria');
+
+    $this->actingAs($administrator)
+        ->get(route('filament.admin.pages.reports-page'))
+        ->assertOk()
+        ->assertDontSee('Exibir dados médicos')
+        ->assertDontSee('Dados médicos sensíveis');
+
+    $this->actingAs($infirmary)
+        ->get(route('filament.admin.pages.reports-page'))
+        ->assertOk()
+        ->assertSee('Exibir dados médicos')
+        ->assertSee('Por padrão, dados médicos permanecem ocultos');
+});
+
 it('builds the report filters with native Filament form components', function () {
     $page = file_get_contents(app_path('Filament/Pages/ReportsPage.php'));
     $view = file_get_contents(resource_path('views/filament/pages/reports-page.blade.php'));
@@ -133,6 +152,9 @@ it('builds the report filters with native Filament form components', function ()
         ->toContain("Select::make('status')")
         ->toContain("Select::make('tribo_id')")
         ->toContain("Select::make('presenca')")
+        ->toContain("Toggle::make('show_sensitive_health')")
+        ->toContain("Checkbox::make('confirm_sensitive_health')")
+        ->toContain('Dados médicos sensíveis')
         ->toContain("TextInput::make('search')")
         ->toContain('->footerActions([')
         ->toContain('->openUrlInNewTab()')
@@ -200,6 +222,54 @@ it('blocks the medical report for administrators and exposes it only to the infi
         ->assertOk()
         ->assertSee('Lista médica da enfermaria')
         ->assertSee('Ana Maria Juvenil')
+        ->assertSee('Informação restrita')
+        ->assertDontSee('Dipirona a cada 8 horas')
+        ->assertDontSee('Evitar amendoim');
+
+    $this->actingAs($infirmary)
+        ->get(route('admin.reports.print', [
+            'type' => 'sensitive_health',
+            'show_sensitive_health' => 1,
+            'confirm_sensitive_health' => 1,
+        ]))
+        ->assertOk()
+        ->assertSee('Lista médica da enfermaria')
+        ->assertSee('Ana Maria Juvenil')
+        ->assertSee('Dipirona a cada 8 horas')
+        ->assertSee('Evitar amendoim');
+});
+
+it('requires the sensitive health toggle and confirmation before exposing medical data in any report', function () {
+    $this->seed(ShieldSeeder::class);
+
+    reportCampista();
+
+    $infirmary = reportUserWithRole('Enfermaria');
+
+    $this->actingAs($infirmary)
+        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
+        ->assertOk()
+        ->assertSee('Informação restrita')
+        ->assertDontSee('Dipirona a cada 8 horas')
+        ->assertDontSee('Evitar amendoim');
+
+    $this->actingAs($infirmary)
+        ->get(route('admin.reports.print', [
+            'type' => 'registration_fichas',
+            'show_sensitive_health' => 1,
+        ]))
+        ->assertOk()
+        ->assertSee('Informação restrita')
+        ->assertDontSee('Dipirona a cada 8 horas')
+        ->assertDontSee('Evitar amendoim');
+
+    $this->actingAs($infirmary)
+        ->get(route('admin.reports.print', [
+            'type' => 'registration_fichas',
+            'show_sensitive_health' => 1,
+            'confirm_sensitive_health' => 1,
+        ]))
+        ->assertOk()
         ->assertSee('Dipirona a cada 8 horas')
         ->assertSee('Evitar amendoim');
 });

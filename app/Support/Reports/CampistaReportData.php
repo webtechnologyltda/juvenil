@@ -36,7 +36,8 @@ class CampistaReportData
     public function payload(CampistaReportType $type, array $filters, User $user): array
     {
         $records = $this->records($filters);
-        $canViewSensitiveHealth = $user->can('view_sensitive_health_campista');
+        $canUseSensitiveHealth = $user->can('view_sensitive_health_campista');
+        $showSensitiveHealth = $this->canExposeSensitiveHealth($filters, $user);
 
         if ($type === CampistaReportType::SensitiveHealth) {
             $records = $records->filter(fn (Campista $campista): bool => $this->hasSensitiveHealthFlag($campista))->values();
@@ -48,15 +49,17 @@ class CampistaReportData
             'description' => $type->description(),
             'generatedAt' => now()->format('d/m/Y H:i'),
             'filters' => $this->filterSummary($filters),
+            'canUseSensitiveHealth' => $canUseSensitiveHealth,
+            'showSensitiveHealth' => $showSensitiveHealth,
             'recordsCount' => $records->count(),
             'fichas' => $type === CampistaReportType::RegistrationFichas
-                ? $records->map(fn (Campista $campista): array => $this->ficha($campista, $canViewSensitiveHealth))->all()
+                ? $records->map(fn (Campista $campista): array => $this->ficha($campista, $showSensitiveHealth))->all()
                 : [],
             'tribes' => $type === CampistaReportType::TribeQuadrant
                 ? $this->tribeGroups($records)
                 : [],
             'medicalRows' => $type === CampistaReportType::SensitiveHealth
-                ? $records->map(fn (Campista $campista): array => $this->medicalRow($campista))->all()
+                ? $records->map(fn (Campista $campista): array => $this->medicalRow($campista, $showSensitiveHealth))->all()
                 : [],
             'missionRows' => $type === CampistaReportType::MissionContacts
                 ? $records->map(fn (Campista $campista): array => $this->missionRow($campista))->all()
@@ -108,7 +111,7 @@ class CampistaReportData
             ->get();
     }
 
-    private function ficha(Campista $campista, bool $canViewSensitiveHealth): array
+    private function ficha(Campista $campista, bool $showSensitiveHealth): array
     {
         $formData = $campista->form_data ?? [];
         $status = $this->statusEnum($campista);
@@ -156,10 +159,10 @@ class CampistaReportData
                 [
                     'title' => 'Saúde e cuidados',
                     'fields' => [
-                        ['label' => 'Toma remédio?', 'value' => $this->booleanLabel($takesMedicine)],
-                        ['label' => 'Detalhes do remédio', 'value' => $this->sensitiveValue(data_get($formData, 'remedio'), $takesMedicine, $canViewSensitiveHealth)],
-                        ['label' => 'Tem recomendação?', 'value' => $this->booleanLabel($hasRecommendation)],
-                        ['label' => 'Recomendação de cuidado', 'value' => $this->sensitiveValue(data_get($formData, 'recomendacao'), $hasRecommendation, $canViewSensitiveHealth)],
+                        ['label' => 'Toma remédio?', 'value' => $this->sensitiveBooleanLabel($takesMedicine, $showSensitiveHealth)],
+                        ['label' => 'Detalhes do remédio', 'value' => $this->sensitiveValue(data_get($formData, 'remedio'), $takesMedicine, $showSensitiveHealth)],
+                        ['label' => 'Tem recomendação?', 'value' => $this->sensitiveBooleanLabel($hasRecommendation, $showSensitiveHealth)],
+                        ['label' => 'Recomendação de cuidado', 'value' => $this->sensitiveValue(data_get($formData, 'recomendacao'), $hasRecommendation, $showSensitiveHealth)],
                     ],
                 ],
                 [
@@ -199,7 +202,7 @@ class CampistaReportData
             ->all();
     }
 
-    private function medicalRow(Campista $campista): array
+    private function medicalRow(Campista $campista, bool $showSensitiveHealth): array
     {
         $formData = $campista->form_data ?? [];
 
@@ -207,8 +210,8 @@ class CampistaReportData
             'name' => $campista->nome,
             'tribe' => $campista->tribo?->cor ?? 'Sem tribo',
             'age' => $this->age(data_get($formData, 'data_nacimento')),
-            'medicine' => filled(data_get($formData, 'remedio')) ? data_get($formData, 'remedio') : 'Não detalhado',
-            'recommendation' => filled(data_get($formData, 'recomendacao')) ? data_get($formData, 'recomendacao') : 'Não detalhado',
+            'medicine' => $this->sensitiveValue(data_get($formData, 'remedio'), $this->truthy(data_get($formData, 'toma_remedio')), $showSensitiveHealth),
+            'recommendation' => $this->sensitiveValue(data_get($formData, 'recomendacao'), $this->truthy(data_get($formData, 'tem_recomendacao')), $showSensitiveHealth),
             'responsible' => $this->responsibleName($campista),
             'phone' => $this->responsiblePhone($campista),
         ];
@@ -258,6 +261,13 @@ class CampistaReportData
         }
 
         return (bool) (int) $filters['presenca'];
+    }
+
+    private function canExposeSensitiveHealth(array $filters, User $user): bool
+    {
+        return $user->can('view_sensitive_health_campista')
+            && $this->truthy($filters['show_sensitive_health'] ?? false)
+            && $this->truthy($filters['confirm_sensitive_health'] ?? false);
     }
 
     private function integerList(mixed $values): array
@@ -422,9 +432,17 @@ class CampistaReportData
         return filled($value) ? (string) $value : 'Não detalhado';
     }
 
-    private function booleanLabel(mixed $value): string
+    private function sensitiveBooleanLabel(bool $hasSensitiveInfo, bool $showSensitiveHealth): string
     {
-        return $this->truthy($value) ? 'Sim' : 'Não';
+        if (! $hasSensitiveInfo) {
+            return 'Não';
+        }
+
+        if (! $showSensitiveHealth) {
+            return 'Informação restrita';
+        }
+
+        return 'Sim';
     }
 
     private function truthy(mixed $value): bool

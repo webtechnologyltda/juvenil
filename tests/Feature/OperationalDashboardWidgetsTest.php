@@ -10,6 +10,7 @@ use App\Filament\Widgets\Operational\OperationalPipelineStats;
 use App\Filament\Widgets\Operational\RegistrationTrendChart;
 use App\Filament\Widgets\Operational\SensitiveHealthSummaryStats;
 use App\Filament\Widgets\Operational\SensitiveHealthTable;
+use App\Filament\Widgets\Operational\SexDistributionChart;
 use App\Filament\Widgets\Operational\ShirtSizeChart;
 use App\Filament\Widgets\Operational\TribeDistributionChart;
 use App\Models\Campista;
@@ -18,6 +19,7 @@ use App\Models\User;
 use Database\Seeders\ShieldSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -49,6 +51,7 @@ it('registers the operational widgets as the admin dashboard surface', function 
         ShirtSizeChart::class,
         CommunityDistributionChart::class,
         DemographicsChart::class,
+        SexDistributionChart::class,
         OperationalPendingTasksTable::class,
         SensitiveHealthTable::class,
     ]);
@@ -138,6 +141,76 @@ it('renders tribe distribution as a pie chart', function () {
         ->and($options['series'])->toBe([2, 1]);
 });
 
+it('renders demographics only as ordered age ranges', function () {
+    Carbon::setTestNow('2026-06-07 12:00:00');
+
+    foreach ([
+        '20/07/1996',
+        '15/02/1992',
+        '10/03/1988',
+        '22/11/1979',
+        '04/04/1973',
+    ] as $date) {
+        Campista::factory()->create([
+            'status' => StatusInscricao::Pago->value,
+            'presenca' => false,
+            'tribo_id' => null,
+            'user_id' => null,
+            'form_data' => [
+                'data_nacimento' => $date,
+                'sexo' => 'M',
+            ],
+        ]);
+    }
+
+    $options = operationalDashboardChartOptions(DemographicsChart::class);
+
+    expect($options['xaxis']['categories'])->toBe([
+        'Ate 29',
+        '30-34',
+        '35-39',
+        '45-49',
+        '50-54',
+    ])
+        ->and($options['series'][0]['data'])->toBe([1, 1, 1, 1, 1])
+        ->and($options['xaxis']['categories'])->not->toContain('Masculino')
+        ->and($options['xaxis']['categories'])->not->toContain('Feminino');
+
+    Carbon::setTestNow();
+});
+
+it('renders sex distribution as a blue and pink pie chart with totals', function () {
+    Campista::factory()
+        ->count(2)
+        ->create([
+            'status' => StatusInscricao::Pago->value,
+            'presenca' => false,
+            'tribo_id' => null,
+            'user_id' => null,
+            'form_data' => [
+                'sexo' => 'M',
+            ],
+        ]);
+
+    Campista::factory()->create([
+        'status' => StatusInscricao::Pago->value,
+        'presenca' => false,
+        'tribo_id' => null,
+        'user_id' => null,
+        'form_data' => [
+            'sexo' => 'F',
+        ],
+    ]);
+
+    $options = operationalDashboardChartOptions(SexDistributionChart::class);
+
+    expect($options['chart']['type'])->toBe('pie')
+        ->and($options['labels'])->toBe(['Masculino', 'Feminino'])
+        ->and($options['series'])->toBe([2, 1])
+        ->and($options['colors'])->toBe(['#2563eb', '#ec4899'])
+        ->and(operationalDashboardChartExtraJs(SexDistributionChart::class))->toContain('options.w.config.series[options.seriesIndex]');
+});
+
 it('keeps every operational chart configured to render count values without decimals', function () {
     foreach ([
         OperationalFunnelChart::class,
@@ -169,6 +242,7 @@ it('formats operational chart labels and tooltips without decimal fractions', fu
         ShirtSizeChart::class,
         CommunityDistributionChart::class,
         DemographicsChart::class,
+        SexDistributionChart::class,
     ] as $chart) {
         expect(operationalDashboardChartExtraJs($chart))->toContain('toFixed(0)');
     }

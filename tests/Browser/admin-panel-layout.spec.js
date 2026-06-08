@@ -18,6 +18,10 @@ async function rememberAdminSession(page) {
     adminAuthCookies = await page.context().cookies(`${adminBaseUrl}/admin`);
 }
 
+async function waitForFilamentClient(page) {
+    await page.waitForFunction(() => Boolean(window.Alpine && window.Livewire), null, { timeout: 15000 });
+}
+
 async function signIn(page) {
     const panelBody = page.locator('body.fi-panel-admin:not(.juvenil-admin-auth-body)');
 
@@ -26,6 +30,8 @@ async function signIn(page) {
         await page.goto(`${adminBaseUrl}/admin`, { waitUntil: 'domcontentloaded' });
 
         if (await isAdminPanelVisible(page)) {
+            await waitForFilamentClient(page);
+
             return;
         }
     }
@@ -41,9 +47,10 @@ async function signIn(page) {
     await page.getByRole('textbox', { name: /senha/i }).fill('admin');
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
-        const loginButton = page.getByRole('button', { name: /login|entrar/i });
+        const loginButton = page.locator('button[type="submit"]').filter({ hasText: /login|entrar/i }).first();
 
         if (await isAdminPanelVisible(page)) {
+            await waitForFilamentClient(page);
             await rememberAdminSession(page);
 
             return;
@@ -60,6 +67,7 @@ async function signIn(page) {
     }
 
     await panelBody.waitFor({ state: 'visible', timeout: 15000 });
+    await waitForFilamentClient(page);
     await rememberAdminSession(page);
 }
 
@@ -271,6 +279,60 @@ test('authenticated Filament table column manager opens outside the table and ap
 
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-column-manager-dropdown.png',
+        fullPage: false,
+    });
+});
+
+test('authenticated Filament notifications render above the branded topbar', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+    await page.goto('http://juvenil.test/admin');
+    await page.waitForSelector('.fi-topbar');
+    await page.waitForFunction(() => typeof window.FilamentNotification === 'function');
+
+    await page.evaluate(() => {
+        new window.FilamentNotification()
+            .title('Notificação de teste')
+            .body('Validação de empilhamento visual.')
+            .success()
+            .persistent()
+            .send();
+    });
+
+    await page.waitForSelector('.fi-no-notification');
+
+    const notificationStacking = await page.evaluate(() => {
+        const topbar = document.querySelector('.fi-topbar');
+        const notifications = document.querySelector('.fi-no');
+        const notification = document.querySelector('.fi-no-notification');
+
+        if (! topbar || ! notifications || ! notification) {
+            return null;
+        }
+
+        const topbarRect = topbar.getBoundingClientRect();
+        const notificationRect = notification.getBoundingClientRect();
+        const probeX = Math.min(notificationRect.right - 16, window.innerWidth - 16);
+        const probeY = Math.max(notificationRect.top + 24, topbarRect.top + Math.min(36, topbarRect.height - 12));
+        const topElement = document.elementFromPoint(probeX, probeY);
+
+        return {
+            topbarZIndex: Number.parseInt(getComputedStyle(topbar).zIndex, 10),
+            notificationsZIndex: Number.parseInt(getComputedStyle(notifications).zIndex, 10),
+            notificationOverlapsTopbar: notificationRect.top < topbarRect.bottom,
+            topElementInsideNotification: notification.contains(topElement),
+            topElementClassName: String(topElement?.className ?? ''),
+        };
+    });
+
+    expect(notificationStacking).not.toBeNull();
+    expect(notificationStacking.notificationOverlapsTopbar).toBe(true);
+    expect(notificationStacking.notificationsZIndex).toBeGreaterThan(notificationStacking.topbarZIndex);
+    expect(notificationStacking.topElementInsideNotification).toBe(true);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-notification-topbar-stacking.png',
         fullPage: false,
     });
 });
@@ -756,9 +818,9 @@ test('authenticated Filament user menu opens downward without orange trigger hig
 
     await signIn(page);
 
-    const trigger = page.locator('.fi-user-menu-trigger').first();
+    const trigger = page.locator('.fi-user-menu .fi-dropdown-trigger').first();
 
-    await trigger.click();
+    await trigger.dispatchEvent('mousedown', { button: 0 });
     await page.waitForSelector('.fi-dropdown-panel:visible');
 
     const menuGeometry = await page.evaluate(() => {
@@ -791,6 +853,38 @@ test('authenticated Filament user menu opens downward without orange trigger hig
         path: 'storage/app/screenshots/playwright-admin-user-menu-downward.png',
         fullPage: false,
     });
+});
+
+test('authenticated Filament user menu opens Breezy profile page', async ({ page }) => {
+    await signIn(page);
+
+    await page.locator('.fi-user-menu .fi-dropdown-trigger').first().dispatchEvent('mousedown', { button: 0 });
+    await page.locator('.fi-dropdown-panel:visible').getByText('Meu perfil').click();
+
+    await expect(page).toHaveURL(/\/admin\/meu-perfil/);
+    await expect(page.locator('h1')).toContainText(/Meu perfil|Perfil/i);
+    await expect(page.getByText('Sessões de Navegador').first()).toBeVisible();
+    await expect(page.getByText('Chaves de acesso').first()).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('filament-breezy::');
+
+    const profileLayout = await page.evaluate(() => {
+        const profilePage = document.querySelector('.fi-page[wire\\:name="Jeffgreco13\\\\FilamentBreezy\\\\Pages\\\\MyProfilePage"]');
+        const section = profilePage?.querySelector('.fi-section.fi-aside');
+        const header = section?.querySelector('.fi-section-header');
+        const content = section?.querySelector('.fi-section-content-ctn');
+        const headerStyle = header ? getComputedStyle(header) : null;
+        const contentStyle = content ? getComputedStyle(content) : null;
+
+        return {
+            headerBackground: headerStyle?.backgroundColor,
+            contentBackground: contentStyle?.backgroundColor,
+            contentRadius: contentStyle?.borderTopLeftRadius,
+        };
+    });
+
+    expect(profileLayout.headerBackground).toBe('rgba(0, 0, 0, 0)');
+    expect(profileLayout.contentBackground).toBe('rgba(3, 24, 28, 0.46)');
+    expect(profileLayout.contentRadius).toBe('0px');
 });
 
 test('authenticated Filament panel keeps mobile layout unobstructed', async ({ browser }) => {

@@ -17,6 +17,8 @@
    Do instead: check `public/hot` and the loaded script URLs before trusting production-build screenshots.
 5. **[2026-06-07] Authenticated Filament layout needs real-login browser checks**
    Do instead: use Playwright to log in, assert admin cookie consent is hidden, verify document/table overflow, and capture dashboard/list screenshots.
+6. **[2026-06-07] Filament dropdown tests need client readiness**
+   Do instead: wait for `window.Alpine && window.Livewire`, then interact with `.fi-dropdown-trigger` for mousedown-driven dropdowns.
 
 ## Shell & Command Reliability
 1. **[2026-06-06] No repo-specific shell rule yet**

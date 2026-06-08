@@ -105,21 +105,45 @@ class OperationalDashboardDataSet
 
     public function ages(): array
     {
-        return $this->records
+        $counts = $this->records
             ->groupBy(fn (Campista $campista): string => $this->ageBucket($campista))
             ->map->count()
+            ->all();
+
+        return collect([
+            'Ate 29',
+            '30-34',
+            '35-39',
+            '40-44',
+            '45-49',
+            '50-54',
+            '55-59',
+            '60+',
+            'Sem data',
+        ])
+            ->mapWithKeys(fn (string $bucket): array => [$bucket => $counts[$bucket] ?? 0])
+            ->filter(fn (int $count): bool => $count > 0)
             ->all();
     }
 
     public function sexes(): array
     {
-        return $this->records
+        $counts = $this->records
             ->groupBy(fn (Campista $campista): string => match ($this->formValue($campista, 'sexo')) {
                 'M' => 'Masculino',
                 'F' => 'Feminino',
                 default => 'Sem sexo',
             })
             ->map->count()
+            ->all();
+
+        return collect([
+            'Masculino',
+            'Feminino',
+            'Sem sexo',
+        ])
+            ->mapWithKeys(fn (string $sex): array => [$sex => $counts[$sex] ?? 0])
+            ->filter(fn (int $count): bool => $count > 0)
             ->all();
     }
 
@@ -238,9 +262,12 @@ class OperationalDashboardDataSet
 
         return match (true) {
             $age < 30 => 'Ate 29',
-            $age <= 39 => '30-39',
-            $age <= 49 => '40-49',
-            $age <= 59 => '50-59',
+            $age <= 34 => '30-34',
+            $age <= 39 => '35-39',
+            $age <= 44 => '40-44',
+            $age <= 49 => '45-49',
+            $age <= 54 => '50-54',
+            $age <= 59 => '55-59',
             default => '60+',
         };
     }

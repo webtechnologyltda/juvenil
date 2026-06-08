@@ -5,6 +5,7 @@
 @source '../../../../resources/views/vendor/filament';
 @source '../../../../resources/views/vendor/cookie-consent';
 @source '../../../../vendor/bezhansalleh/filament-shield/resources/views';
+@source '../../../../vendor/jeffgreco13/filament-breezy/resources/**/*';
 @source '../../../../vendor/tapp/filament-auditing/resources/views';
 
 @font-face {
@@ -225,6 +226,10 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-topbar .fi-dropdown-panel 
     z-index: 210;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-no {
+    z-index: 230;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-icon-btn, .fi-topbar .fi-icon-btn) {
     color: var(--juvenil-camp-muted);
 }
@@ -379,6 +384,46 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-header-heading
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-header-description, .fi-ta-description, .fi-wi-stats-overview-stat-description, .fi-modal-description) {
     color: var(--juvenil-camp-muted);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-page[wire\:name='Jeffgreco13\\FilamentBreezy\\Pages\\MyProfilePage'] .fi-section.fi-aside {
+    overflow: hidden;
+    gap: clamp(1rem, 2vw, 1.5rem);
+    background:
+        radial-gradient(circle at 8% 0%, rgba(157, 219, 239, 0.1), transparent 12rem),
+        linear-gradient(135deg, rgba(7, 61, 69, 0.74), rgba(3, 24, 28, 0.42)),
+        rgba(7, 61, 69, 0.62);
+    box-shadow:
+        inset 0 1px 0 rgba(244, 251, 253, 0.04),
+        0 18px 54px rgba(0, 0, 0, 0.16);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-page[wire\:name='Jeffgreco13\\FilamentBreezy\\Pages\\MyProfilePage'] .fi-section.fi-aside > .fi-section-header {
+    border: 0;
+    background: transparent;
+    padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-page[wire\:name='Jeffgreco13\\FilamentBreezy\\Pages\\MyProfilePage'] .fi-section.fi-aside > .fi-section-content-ctn {
+    margin: clamp(0.75rem, 1.4vw, 1.25rem);
+    margin-inline-start: 0;
+    border: 1px solid var(--juvenil-camp-line);
+    border-radius: 0;
+    background: rgba(3, 24, 28, 0.46);
+    box-shadow:
+        inset 0 1px 0 rgba(244, 251, 253, 0.035),
+        0 16px 42px rgba(0, 0, 0, 0.12);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-page[wire\:name='Jeffgreco13\\FilamentBreezy\\Pages\\MyProfilePage'] .fi-section.fi-aside > .fi-section-content-ctn > .fi-section-content {
+    padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+@media (max-width: 1023px) {
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-page[wire\:name='Jeffgreco13\\FilamentBreezy\\Pages\\MyProfilePage'] .fi-section.fi-aside > .fi-section-content-ctn {
+        margin-inline: clamp(0.75rem, 3vw, 1rem);
+        margin-block-start: 0;
+    }
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal {
