@@ -2,12 +2,16 @@
 
 namespace App\Support\Reports;
 
+use App\Models\User;
+
 enum CampistaReportType: string
 {
     case RegistrationFichas = 'registration_fichas';
     case TribeQuadrant = 'tribe_quadrant';
     case SensitiveHealth = 'sensitive_health';
     case MissionContacts = 'mission_contacts';
+
+    public const PAGE_PERMISSION = 'page_reports_page';
 
     public function label(): string
     {
@@ -52,5 +56,14 @@ enum CampistaReportType: string
     public function isSensitive(): bool
     {
         return $this === self::SensitiveHealth;
+    }
+
+    public function canBeAccessedBy(User $user): bool
+    {
+        if ($this->isSensitive()) {
+            return $user->can($this->permission());
+        }
+
+        return $user->can(self::PAGE_PERMISSION);
     }
 }
