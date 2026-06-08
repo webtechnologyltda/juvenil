@@ -6,6 +6,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Filament\Resources\CampistaResource;
 use App\Filament\Resources\CampistaResource\CampistaForm;
+use App\Support\Campistas\ParishCommunityLabels;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\View;
@@ -285,42 +286,12 @@ class ViewCampista extends ViewRecord
 
     private function parishLabel(mixed $parish): ?string
     {
-        return match ((string) $parish) {
-            '0' => 'Paróquia São Domingos e Nossa Senhora do Carmo',
-            '1' => 'Paróquia Santa Luzia',
-            '2' => 'Outra paróquia',
-            default => filled($parish) ? (string) $parish : null,
-        };
+        return ParishCommunityLabels::parishLabel($parish);
     }
 
     private function communityLabel(mixed $parish, mixed $community): ?string
     {
-        if (blank($community)) {
-            return null;
-        }
-
-        $communities = match ((string) $parish) {
-            '0' => [
-                'Comunidade Matriz de São Domingos e Nossa Senhora do Carmo',
-                'Comunidade Nossa Senhora das Graças',
-                'Comunidade São Paulo',
-                'Comunidade Nossa Senhora do Rosário',
-                'Comunidade Imaculado Coração de Maria',
-            ],
-            '1' => [
-                'Comunidade Santa Luzia - Machados',
-                'Comunidade Santa Teresinha',
-                'Comunidade São Francisco',
-                'Comunidade Sagrado Coração',
-                'Comunidade Nossa Senhora de Fátima',
-                'Comunidade Santo Agostinho',
-                'Comunidade São José',
-                'Comunidade Nossa Senhora Aparecida',
-            ],
-            default => [],
-        };
-
-        return $communities[(int) $community] ?? (string) $community;
+        return ParishCommunityLabels::communityLabel($parish, $community);
     }
 
     private function booleanLabel(mixed $value): string

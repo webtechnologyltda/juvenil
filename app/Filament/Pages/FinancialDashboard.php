@@ -46,16 +46,19 @@ class FinancialDashboard extends FilamentDashboard
                     ->native(false),
                 Select::make('status')
                     ->label('Status')
+                    ->native(false)
                     ->multiple()
                     ->options(StatusLacamento::class)
                     ->default([StatusLacamento::Pago->value])
                     ->placeholder('Pagos'),
                 Select::make('tipo')
                     ->label('Tipo de lançamento')
+                    ->native(false)
                     ->multiple()
                     ->options(TipoLacamento::class),
                 Select::make('categoria_lancamento_id')
                     ->label('Categoria')
+                    ->native(false)
                     ->multiple()
                     ->searchable()
                     ->preload()
@@ -65,6 +68,7 @@ class FinancialDashboard extends FilamentDashboard
                         ->all()),
                 Select::make('forma_pagamento')
                     ->label('Forma de pagamento')
+                    ->native(false)
                     ->multiple()
                     ->options(FormaPagamento::class),
             ]);

@@ -464,6 +464,27 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal:not(.fi-modal-slide-
     overscroll-behavior: contain;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal:not(.fi-modal-slide-over) > .fi-modal-window-ctn > .fi-modal-window:has(.fi-select-input-btn[aria-expanded='true']) > .fi-modal-content {
+    position: relative;
+    z-index: 3;
+    overflow: visible;
+    overflow-y: visible;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal-window:has(.fi-select-input-btn[aria-expanded='true']) > .fi-modal-footer {
+    position: relative;
+    z-index: 1;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal-window .fi-fo-select:has(.fi-select-input-btn[aria-expanded='true']) {
+    position: relative;
+    z-index: 4;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal-window .fi-fo-select .fi-dropdown-panel[role='listbox'] {
+    z-index: 5;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview-stat {
     overflow: hidden;
     position: relative;

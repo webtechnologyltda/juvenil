@@ -38,6 +38,7 @@ class EditLancamento extends EditRecord
         $this->registrationPaymentData = $data['registration_payments'] ?? [];
         unset($data['registration_payments']);
 
+        $data = LancamentoForm::normalizeCompradorForType($data);
         $data['valor'] = self::signedValue($data);
         $data['comprovante'] = LancamentoForm::normalizeComprovanteState($data['comprovante'] ?? null);
 

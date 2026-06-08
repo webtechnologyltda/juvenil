@@ -46,6 +46,49 @@ class OperationalDashboardFilters
             : $value;
     }
 
+    public static function communityValues(array $filters): array
+    {
+        if (! array_key_exists('comunidade', $filters) || $filters['comunidade'] === null || $filters['comunidade'] === '') {
+            return [];
+        }
+
+        $values = is_array($filters['comunidade'])
+            ? $filters['comunidade']
+            : [$filters['comunidade']];
+
+        return collect($values)
+            ->filter(fn (mixed $value): bool => $value !== null && $value !== '')
+            ->map(function (mixed $value): mixed {
+                if (is_string($value)) {
+                    $value = trim($value);
+                }
+
+                return is_numeric($value) && (string) (int) $value === (string) $value
+                    ? (int) $value
+                    : $value;
+            })
+            ->filter(fn (mixed $value): bool => $value !== null && $value !== '')
+            ->values()
+            ->all();
+    }
+
+    public static function communityText(array $filters): ?string
+    {
+        $value = $filters['comunidade_texto'] ?? null;
+
+        if ($value === null || $value === '') {
+            $value = self::legacyOtherParishCommunityText($filters);
+        }
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
+    }
+
     public static function presence(array $filters): ?bool
     {
         if (! array_key_exists('presenca', $filters) || $filters['presenca'] === null || $filters['presenca'] === '') {
@@ -64,5 +107,20 @@ class OperationalDashboardFilters
             ->map(fn (mixed $value): int => $value instanceof StatusInscricao ? $value->value : (int) $value)
             ->values()
             ->all();
+    }
+
+    private static function legacyOtherParishCommunityText(array $filters): ?string
+    {
+        if (self::formFilter($filters, 'paroquia') !== 2) {
+            return null;
+        }
+
+        $value = $filters['comunidade'] ?? null;
+
+        if (! is_string($value) || is_numeric($value)) {
+            return null;
+        }
+
+        return $value;
     }
 }

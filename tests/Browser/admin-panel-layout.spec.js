@@ -233,6 +233,62 @@ test('authenticated Filament panel keeps branded layout clear of visual obstruct
     });
 });
 
+test('authenticated dashboard filters use Filament custom select controls', async ({ page }) => {
+    await signIn(page);
+
+    for (const path of ['/admin', '/admin/financeiro']) {
+        await page.goto(`${adminBaseUrl}${path}`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('[wire\\:partial="table-filters-form"] .fi-fo-field');
+
+        const filterControls = await page.evaluate(() => {
+            const filtersForm = document.querySelector('[wire\\:partial="table-filters-form"]');
+
+            return {
+                nativeSelectCount: filtersForm?.querySelectorAll('.fi-fo-select-wrp select').length ?? 0,
+                customSelectCount: filtersForm?.querySelectorAll('.fi-fo-select-wrp .fi-select-input-btn').length ?? 0,
+            };
+        });
+
+        expect(filterControls.nativeSelectCount).toBe(0);
+        expect(filterControls.customSelectCount).toBeGreaterThan(0);
+    }
+
+    await page.goto(`${adminBaseUrl}/admin`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[wire\\:partial="table-filters-form"] .fi-fo-field');
+
+    const filtersForm = page.locator('[wire\\:partial="table-filters-form"]');
+    const filterFields = filtersForm.locator('.fi-fo-field');
+    const parishField = filterFields.filter({ hasText: 'Paróquia' }).first();
+
+    await expect(filterFields.filter({ hasText: 'Comunidade' })).toHaveCount(0);
+
+    await parishField.locator('.fi-select-input-btn').click();
+    await parishField.getByRole('option', { name: 'Santa Luzia' }).click();
+
+    const communitySelectField = filterFields
+        .filter({ hasText: 'Comunidade' })
+        .filter({ has: page.locator('.fi-select-input-btn') })
+        .first();
+
+    await expect(communitySelectField).toBeVisible();
+    await communitySelectField.locator('.fi-select-input-btn').click();
+    await expect(communitySelectField.getByRole('option', { name: 'Santa Teresinha' })).toBeVisible();
+    await expect(communitySelectField.getByRole('option', { name: 'Nossa Senhora Aparecida' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await parishField.locator('.fi-select-input-btn').click();
+    await parishField.getByRole('option', { name: 'Outra paróquia' }).click();
+
+    const communityTextField = filterFields
+        .filter({ hasText: 'Comunidade' })
+        .filter({ has: page.locator('input[placeholder="Digite parte do nome"]') })
+        .first();
+
+    await expect(communityTextField).toBeVisible();
+    await expect(communityTextField.locator('.fi-select-input-btn')).toHaveCount(0);
+    await communityTextField.locator('input[placeholder="Digite parte do nome"]').fill('São Pedro');
+});
+
 test('authenticated Filament table column manager opens outside the table and applies columns live', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
@@ -348,6 +404,51 @@ test('authenticated permission groups list includes the finance role', async ({ 
     await expect(page.getByRole('cell', { name: 'Super Administrador', exact: true })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Administrador', exact: true })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Enfermaria', exact: true })).toBeVisible();
+});
+
+test('authenticated user role attach modal select opens above the modal footer', async ({ page }) => {
+    await signIn(page);
+
+    const userId = firstRecordId('App\\Models\\User');
+
+    await page.goto(`${adminBaseUrl}/admin/users/${userId}/edit`, { waitUntil: 'domcontentloaded' });
+    await waitForFilamentClient(page);
+
+    await page.getByRole('button', { name: /vincular/i }).first().click();
+    await expect(page.getByRole('heading', { name: /vincular grupo de permissão/i })).toBeVisible();
+
+    const attachModal = page.locator('.fi-modal-window:visible').filter({ hasText: /Vincular Grupo De Permissão/i }).first();
+    const selectButton = attachModal.locator('.fi-select-input-btn').first();
+
+    await selectButton.click();
+    await expect(attachModal.locator('.fi-dropdown-panel[role="listbox"]:visible')).toBeVisible();
+
+    const modalLayering = await page.evaluate(() => {
+        const modal = [...document.querySelectorAll('.fi-modal-window')]
+            .find((element) => element.getBoundingClientRect().width > 0 && element.textContent?.includes('Vincular Grupo De Permissão'));
+        const panel = modal?.querySelector('.fi-dropdown-panel[role="listbox"]');
+        const footer = modal?.querySelector('.fi-modal-footer');
+
+        if (! modal || ! panel || ! footer) {
+            return null;
+        }
+
+        const panelRect = panel.getBoundingClientRect();
+        const footerRect = footer.getBoundingClientRect();
+        const probeX = Math.min(panelRect.left + 24, panelRect.right - 8);
+        const probeY = Math.max(footerRect.top + 10, panelRect.top + 10);
+        const topElement = document.elementFromPoint(probeX, probeY);
+
+        return {
+            panelOverlapsFooter: panelRect.bottom > footerRect.top,
+            footerCoversPanel: panelRect.bottom > footerRect.top && ! panel.contains(topElement),
+            topElementInsidePanel: panel.contains(topElement),
+            topElementClassName: String(topElement?.className ?? ''),
+        };
+    });
+
+    expect(modalLayering).not.toBeNull();
+    expect(modalLayering.footerCoversPanel).toBe(false);
 });
 
 test('authenticated Filament sidebar flyouts stay above table surfaces when collapsed', async ({ page }) => {

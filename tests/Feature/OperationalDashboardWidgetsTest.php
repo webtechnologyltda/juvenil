@@ -94,6 +94,17 @@ it('renders the admin dashboard with the operational surface', function () {
         ->assertOk();
 });
 
+it('uses adaptive parish community filters on the operational dashboard', function () {
+    $dashboard = file_get_contents(app_path('Filament/Dashboard.php'));
+
+    expect($dashboard)
+        ->toContain("Select::make('comunidade')")
+        ->toContain('->multiple()')
+        ->toContain("TextInput::make('comunidade_texto')")
+        ->toContain('ParishCommunityLabels::communityOptions')
+        ->toContain('selectedParishIs($get, 2)');
+});
+
 it('keeps registration trend chart y axis as whole-number counts', function () {
     Campista::factory()
         ->count(2)
@@ -139,6 +150,14 @@ it('renders tribe distribution as a pie chart', function () {
     expect($options['chart']['type'])->toBe('pie')
         ->and($options['labels'])->toBe(['Fuchsia', 'Crimson'])
         ->and($options['series'])->toBe([2, 1]);
+});
+
+it('gives parish community distribution enough label space', function () {
+    $options = operationalDashboardChartOptions(CommunityDistributionChart::class);
+
+    expect($options['chart']['height'])->toBe(380)
+        ->and($options['yaxis']['labels']['maxWidth'])->toBe(280)
+        ->and($options['yaxis']['labels']['style']['fontSize'])->toBe('11px');
 });
 
 it('renders demographics only as ordered age ranges', function () {
