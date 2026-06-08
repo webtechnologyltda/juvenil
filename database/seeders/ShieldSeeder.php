@@ -23,6 +23,13 @@ class ShieldSeeder extends Seeder
 
     public function run(): void
     {
+        static::syncRolesAndPermissions();
+
+        $this->command?->info('Shield Seeding Completed.');
+    }
+
+    public static function syncRolesAndPermissions(): void
+    {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = static::getPermissionNames();
@@ -32,7 +39,7 @@ class ShieldSeeder extends Seeder
         static::makeFinanceWithPermissions($permissions);
         static::makeInfirmaryWithPermissions($permissions);
 
-        $this->command->info('Shield Seeding Completed.');
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
     protected static function makeSuperAdminWithPermissions(array $permissions): void
