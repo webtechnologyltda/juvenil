@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\IconBadge;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -25,7 +26,8 @@ it('renders the category registration in the financial panel', function () {
         ->assertOk()
         ->assertSee('Categorias de Lançamento')
         ->assertSee('Nova categoria')
-        ->assertSee('Nenhuma categoria cadastrada');
+        ->assertSee('Inscrição')
+        ->assertSee('Contribuição Equipe de Trabalho');
 
     $this->actingAs($user)
         ->get(CategoriaLancamentoResource::getUrl('create'))
@@ -50,6 +52,97 @@ it('stores categories with type color icon and active flag', function () {
         ->cor->toBe('#f46b12')
         ->icone->toBe('heroicon-o-ticket')
         ->ativo->toBeTrue();
+});
+
+it('creates the protected system launch categories', function () {
+    if (! Schema::hasColumn('categorias_lancamento', 'system_key')) {
+        $this->fail('The launch categories table must have a system_key column.');
+    }
+
+    $inscricao = CategoriaLancamento::query()
+        ->where('system_key', 'inscricao')
+        ->first();
+
+    $equipe = CategoriaLancamento::query()
+        ->where('system_key', 'contribuicao_equipe_trabalho')
+        ->first();
+
+    expect($inscricao)
+        ->not->toBeNull()
+        ->nome->toBe('Inscrição')
+        ->tipo->toBe(TipoLacamento::Receita)
+        ->ativo->toBeTrue()
+        ->and($equipe)
+        ->not->toBeNull()
+        ->nome->toBe('Contribuição Equipe de Trabalho')
+        ->tipo->toBe(TipoLacamento::Receita)
+        ->ativo->toBeTrue();
+});
+
+it('only allows color and icon changes on system launch categories', function () {
+    if (! Schema::hasColumn('categorias_lancamento', 'system_key')) {
+        $this->fail('The launch categories table must have a system_key column.');
+    }
+
+    $category = CategoriaLancamento::query()
+        ->where('system_key', 'inscricao')
+        ->firstOrFail();
+
+    $category->fill([
+        'nome' => 'Outro nome',
+        'tipo' => TipoLacamento::Despesa,
+        'ativo' => false,
+        'cor' => '#123456',
+        'icone' => 'heroicon-o-fire',
+    ]);
+
+    $category->save();
+    $category->refresh();
+
+    expect($category)
+        ->nome->toBe('Inscrição')
+        ->tipo->toBe(TipoLacamento::Receita)
+        ->ativo->toBeTrue()
+        ->cor->toBe('#123456')
+        ->icone->toBe('heroicon-o-fire');
+});
+
+it('does not allow deleting system launch categories', function () {
+    if (! Schema::hasColumn('categorias_lancamento', 'system_key')) {
+        $this->fail('The launch categories table must have a system_key column.');
+    }
+
+    $systemCategory = CategoriaLancamento::query()
+        ->where('system_key', 'inscricao')
+        ->firstOrFail();
+
+    $regularCategory = CategoriaLancamento::factory()->create([
+        'nome' => 'Transporte',
+        'tipo' => TipoLacamento::Despesa,
+    ]);
+
+    expect($systemCategory->delete())->toBeFalse()
+        ->and(CategoriaLancamento::query()->whereKey($systemCategory->id)->exists())->toBeTrue()
+        ->and($regularCategory->delete())->toBeTrue()
+        ->and(CategoriaLancamento::query()->whereKey($regularCategory->id)->exists())->toBeFalse();
+});
+
+it('locks the system category identity in the Filament resource', function () {
+    $resource = file_get_contents(app_path('Filament/Resources/CategoriaLancamentoResource.php'));
+    $editPage = file_get_contents(app_path('Filament/Resources/CategoriaLancamentoResource/Pages/EditCategoriaLancamento.php'));
+    $policy = file_get_contents(app_path('Policies/CategoriaLancamentoPolicy.php'));
+
+    expect($resource)
+        ->toContain('isSystemDefault')
+        ->toContain("TextInput::make('nome')")
+        ->toContain("ToggleButtons::make('tipo')")
+        ->toContain("Toggle::make('ativo')")
+        ->toContain('checkIfRecordIsSelectableUsing')
+        ->and($editPage)
+        ->toContain('isSystemDefault')
+        ->toContain('DeleteAction::make()')
+        ->and($policy)
+        ->toContain('! $categoriaLancamento->isSystemDefault()');
 });
 
 it('uses the Acampay icon picker in the launch category form', function () {
@@ -98,9 +191,11 @@ it('shows the registered icon and color in the launch category list', function (
     $columnView = file_get_contents(resource_path('views/filament/tables/columns/colored-icon-column.blade.php'));
 
     expect($columnView)
-        ->toContain('h-14 w-14')
-        ->toContain('rounded-xl')
-        ->toContain('class="h-6 w-6"');
+        ->toContain('h-8 w-8')
+        ->toContain('rounded-lg')
+        ->toContain('class="h-[1.1rem] w-[1.1rem]"')
+        ->not->toContain('h-14 w-14')
+        ->not->toContain('class="h-6 w-6"');
 
     $category = new CategoriaLancamento([
         'icone' => 'heroicon-o-ticket',
@@ -126,8 +221,10 @@ it('renders category tiles in launch tables and select options', function () {
     expect((string) IconBadge::tileIcon($category, $category->nome))
         ->toContain('aria-label="Transporte"')
         ->toContain('background-color: #4f18ff')
-        ->toContain('width: 3.5rem')
-        ->toContain('height: 3.5rem')
+        ->toContain('width: 2rem')
+        ->toContain('height: 2rem')
+        ->toContain('width: 1.1rem')
+        ->toContain('height: 1.1rem')
         ->toContain('heroicon-o-shopping-cart');
 
     expect((string) IconBadge::tile($category, $category->nome))

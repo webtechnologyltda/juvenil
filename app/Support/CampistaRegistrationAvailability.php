@@ -74,6 +74,11 @@ class CampistaRegistrationAvailability
         return $this->startsAt()?->toIso8601String();
     }
 
+    public function endsAtIso(): ?string
+    {
+        return $this->endsAt()?->toIso8601String();
+    }
+
     public function startsAtDisplay(): ?string
     {
         return $this->startsAt()?->format('d/m/Y H:i');
@@ -97,18 +102,22 @@ class CampistaRegistrationAvailability
 
     public function totalCapacity(): ?int
     {
+        if ($this->hasSexSpecificLimits()) {
+            $maleLimit = $this->sexLimit('M');
+            $femaleLimit = $this->sexLimit('F');
+
+            if ($maleLimit === null || $femaleLimit === null) {
+                return null;
+            }
+
+            return $maleLimit + $femaleLimit;
+        }
+
         if (($totalLimit = $this->totalLimit()) !== null) {
             return $totalLimit;
         }
 
-        $maleLimit = $this->sexLimit('M');
-        $femaleLimit = $this->sexLimit('F');
-
-        if ($maleLimit === null || $femaleLimit === null) {
-            return null;
-        }
-
-        return $maleLimit + $femaleLimit;
+        return null;
     }
 
     public function remainingSlots(): ?int
@@ -206,6 +215,10 @@ class CampistaRegistrationAvailability
 
     public function totalLimitReached(): bool
     {
+        if ($this->hasSexSpecificLimits()) {
+            return false;
+        }
+
         $limit = $this->totalLimit();
 
         return $limit !== null && $this->activeCount() >= $limit;
@@ -289,6 +302,12 @@ class CampistaRegistrationAvailability
     private function totalLimit(): ?int
     {
         return $this->limit('qtd_max_vagas');
+    }
+
+    private function hasSexSpecificLimits(): bool
+    {
+        return $this->sexLimit('M') !== null
+            || $this->sexLimit('F') !== null;
     }
 
     private function limit(string $key): ?int

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
+use Filament\Tables\Table;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,5 +25,9 @@ class AppServiceProvider extends ServiceProvider
         FilamentColor::register([
             'primary' => Color::generatePalette('#f46b12'),
         ]);
+
+        Table::configureUsing(function (Table $table): void {
+            $table->deferColumnManager(false);
+        });
     }
 }

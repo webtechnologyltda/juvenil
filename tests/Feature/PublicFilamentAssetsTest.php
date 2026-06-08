@@ -17,6 +17,43 @@ it('loads the Filament component styles required by the public registration form
         ->toContain('../../vendor/filament/schemas/resources/css/index.css');
 });
 
+it('keeps Filament modals viewport scoped across public registration surfaces', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)
+        ->toContain('.fi-modal {')
+        ->toContain('position: fixed;')
+        ->toContain('inset: 0;')
+        ->toContain('z-index: 1200;')
+        ->toContain('.fi-modal > .fi-modal-close-overlay {')
+        ->toContain('background: rgba(3, 24, 28, 0.72);')
+        ->toContain('backdrop-filter: blur(6px);')
+        ->toContain('.fi-modal > .fi-modal-window-ctn {')
+        ->toContain('min-height: 100dvh;')
+        ->toContain('grid-template-rows: minmax(1rem, 1fr) auto minmax(1rem, 1fr);')
+        ->toContain('body:has(.fi-modal.fi-modal-open) :is([data-motion-card], .out, .filament-registration-shell, .fi-section, .fi-ta, .fi-wi-stats-overview-stat, .fi-in-entry-wrp) {')
+        ->toContain('transform: none !important;')
+        ->toContain('backdrop-filter: none;');
+});
+
+it('lets Filament table column dropdowns escape table clipping in shared styles', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)
+        ->toContain('.fi-dropdown-panel {')
+        ->toContain('z-index: 100;')
+        ->toContain('.fi-ta {')
+        ->toContain('overflow: visible;')
+        ->toContain('.fi-ta:has(.fi-dropdown-panel)')
+        ->toContain('z-index: 40;')
+        ->toContain('.fi-ta .fi-dropdown-panel')
+        ->toContain('z-index: 100;')
+        ->toContain('.fi-ta-col-manager-dropdown > .fi-dropdown-panel')
+        ->toContain('max-height: min(34rem, calc(100dvh - 2rem));')
+        ->toContain('overflow-y: auto;')
+        ->toContain('overscroll-behavior: contain;');
+});
+
 it('uses the artwork orange as the Filament primary color', function () {
     $css = file_get_contents(resource_path('css/app.css'));
     $tailwindConfig = file_get_contents(base_path('tailwind.config.js'));
@@ -33,9 +70,10 @@ it('uses the artwork orange as the Filament primary color', function () {
         ->not->toContain('colors.yellow');
 });
 
-it('uses toggle buttons and automatic square image uploads for registration photos', function () {
+it('uses toggle buttons and editable automatic square image uploads for campista registration photos', function () {
+    $campistaRegistrationForm = file_get_contents(app_path('Livewire/CampistaForm.php'));
     $forms = [
-        file_get_contents(app_path('Livewire/CampistaForm.php')),
+        $campistaRegistrationForm,
         file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaForm.php')),
         file_get_contents(app_path('Filament/Resources/EquipeTrabalhoResource/EquipeTrabalhoForm.php')),
     ];
@@ -54,15 +92,16 @@ it('uses toggle buttons and automatic square image uploads for registration phot
             ->toContain("->automaticallyResizeImagesToHeight('500')")
             ->toContain('->automaticallyUpscaleImagesWhenResizing(false)')
             ->toContain("->panelAspectRatio('1:1')")
-            ->not->toContain('->imageEditor()')
-            ->not->toContain('->automaticallyOpenImageEditorForAspectRatio()')
-            ->not->toContain('->imageEditorAspectRatioOptions')
             ->not->toContain('->imageEditorAspectRatios')
-            ->not->toContain('->imageEditorMode')
             ->not->toContain('->imageEditorEmptyFillColor')
             ->not->toContain('->imageCropAspectRatio')
             ->not->toContain('->orientImagesFromExif(false)');
     }
+
+    expect($campistaRegistrationForm)
+        ->toContain('->imageEditor()')
+        ->toContain("->imageEditorAspectRatioOptions(['1:1'])")
+        ->toContain('->automaticallyOpenImageEditorForAspectRatio()');
 
     foreach (array_slice($forms, 0, 2) as $form) {
         expect($form)

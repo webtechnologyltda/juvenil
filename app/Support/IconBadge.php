@@ -44,13 +44,13 @@ class IconBadge
         $glyphColor = self::isDarkBackground($background) ? '#ffffff' : '#0f172a';
 
         $svg = svg($icon, '', [
-            'style' => "color: {$glyphColor}; width: 1.5rem; height: 1.5rem;",
+            'style' => "color: {$glyphColor}; width: 1.1rem; height: 1.1rem;",
         ])->toHtml();
 
         return new HtmlString(
             '<span aria-label="'.e($label).'" title="'.e($label).'" data-icon="'.e($icon).'" '
             .'style="display: inline-flex; align-items: center; justify-content: center; '
-            .'width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; flex-shrink: 0; '
+            .'width: 2rem; height: 2rem; border-radius: 0.5rem; flex-shrink: 0; '
             ."background-color: {$background};\">"
             .$svg
             .'</span>'

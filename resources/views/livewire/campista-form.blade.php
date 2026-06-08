@@ -5,7 +5,12 @@
     $pixQrCodeUrl = filled($pixQrCode) ? \Illuminate\Support\Facades\Storage::disk('public')->url($pixQrCode) : null;
     $valorAcampamento = $this->settings['valor_acampamento'] ?? null;
     $hasValorAcampamento = $valorAcampamento !== null;
-    $attendantWhatsappUrl = \App\Support\AtendenteWhatsapp::url($this->settings['telefone_atendente'] ?? null);
+    $proofAttendant = \App\Support\AtendenteWhatsapp::firstForPurpose(
+        $this->settings['atendentes'] ?? [],
+        \App\Support\AtendenteWhatsapp::PURPOSE_COMPROVANTE,
+        $this->settings['telefone_atendente'] ?? null,
+    );
+    $proofAttendantWhatsappUrl = $proofAttendant['whatsapp_url'] ?? null;
     $termoResponsabilidadeUrl = \App\Support\ConfiguredStorageFile::publicUrl($this->settings['termo_responsabilidade'] ?? null);
     $registrationStatus = App\Enums\LiberacaoInscricoesStatusEnum::tryFrom($this->settings['liberacao_inscricoes_status']);
     $registrationAvailability = $this->availability;
@@ -16,10 +21,6 @@
     $registrationEndedByDate = $registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO
         && $registrationAvailability->registrationEnded();
     $registrationOpen = $registrationAvailability->registrationOpen();
-    $totalCapacity = $registrationAvailability->totalCapacity();
-    $remainingSlots = $registrationAvailability->remainingSlots();
-    $activeRegistrations = $registrationAvailability->activeRegistrations();
-    $activeRegistrationsLabel = $activeRegistrations === 1 ? '1 inscrição ativa' : $activeRegistrations.' inscrições ativas';
     $unavailableSexMessage = $registrationAvailability->unavailableSexMessage();
 @endphp
 
@@ -82,17 +83,17 @@
 
                     <div class="flex justify-evenly mx-6 mt-4 text-center">
                         <div class="justify-items-center">
-                            <p class="text-center mx-4 text-[#d8f2fa] text-sm xl:text-xl">Para finalizar sua inscrição, realize o pagamento e envie o comprovante para nosso atendente.</p>
+                            <p class="text-center mx-4 text-[#d8f2fa] text-sm xl:text-xl">Para finalizar sua inscrição, realize o pagamento e envie o comprovante para o atendente de comprovantes.</p>
                             <div class="mt-2 grid justify-items-center">
-                                @if($attendantWhatsappUrl)
+                                @if($proofAttendantWhatsappUrl)
                                     <a target="_blank"
-                                       href="{{ $attendantWhatsappUrl }}"
+                                       href="{{ $proofAttendantWhatsappUrl }}"
                                        class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center bg-[#f46b12] p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a] lg:w-[50%]">
-                                        <span class="relative text-center">Falar com atendente</span>
+                                        <span class="relative text-center">Enviar comprovante</span>
                                     </a>
                                 @else
                                     <p class="relative mb-8 mt-8 flex min-h-12 w-full items-center justify-center border border-[#f46b12]/35 p-2 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12] lg:w-[50%]">
-                                        Atendente não configurado
+                                        Atendente de comprovantes não configurado
                                     </p>
                                 @endif
                             </div>
@@ -166,11 +167,6 @@
                     <p class="mx-4 mt-4 text-center text-sm text-[#d8f2fa] xl:text-xl">
                         As inscrições foram encerradas pelo número de vagas preenchidas.
                     </p>
-                    @if($totalCapacity !== null)
-                        <p class="mt-3 text-sm font-black uppercase tracking-[0.12em] text-[#9ddbef]">
-                            {{ $activeRegistrationsLabel }} de {{ $totalCapacity }} vagas.
-                        </p>
-                    @endif
                     <div class="mt-10 flex justify-center">
                         <figure class="flex items-center justify-center rounded">
                             <img src="{{ asset('img/Campfire-bro.svg') }}" alt="" class="h-80 w-full rounded-2xl animate-spin-slow">
@@ -181,15 +177,41 @@
         @elseif($registrationOpen)
             <form wire:submit.prevent="submitForm" class="space-y-6">
                 <div class="border border-[#9ddbef]/25 bg-[#052f35] p-4 text-[#d8f2fa]" data-registration-slots>
-                    <p class="text-sm font-black uppercase tracking-[0.14em] text-[#f46b12]">Vagas do Acampamento Juvenil</p>
-                    @if($totalCapacity !== null)
-                        <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">
-                            {{ $remainingSlots }} {{ $remainingSlots === 1 ? 'vaga disponível' : 'vagas disponíveis' }} de {{ $totalCapacity }}
+                    <p class="text-sm font-black uppercase tracking-[0.14em] text-[#f46b12]">Inscrições abertas</p>
+                    @if($registrationAvailability->endsAtDisplay())
+                        <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">Falta para encerrar</p>
+                        <p class="mt-1 text-sm font-semibold text-[#9ddbef]">
+                            As inscrições encerram em {{ $registrationAvailability->endsAtDisplay() }}.
                         </p>
-                        <p class="mt-1 text-sm font-semibold text-[#9ddbef]">{{ $activeRegistrationsLabel }}</p>
+                        <div
+                            class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
+                            data-registration-countdown
+                            data-target="{{ $registrationAvailability->endsAtIso() }}"
+                        >
+                            <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
+                                <span class="block text-3xl font-black text-[#f46b12]" data-countdown-days>--</span>
+                                <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Dias</span>
+                            </div>
+                            <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
+                                <span class="block text-3xl font-black text-[#f46b12]" data-countdown-hours>--</span>
+                                <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Horas</span>
+                            </div>
+                            <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
+                                <span class="block text-3xl font-black text-[#f46b12]" data-countdown-minutes>--</span>
+                                <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Minutos</span>
+                            </div>
+                            <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
+                                <span class="block text-3xl font-black text-[#f46b12]" data-countdown-seconds>--</span>
+                                <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Segundos</span>
+                            </div>
+                        </div>
                     @else
                         <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">Inscrições abertas</p>
-                        <p class="mt-1 text-sm font-semibold text-[#9ddbef]">Sem limite total de vagas configurado.</p>
+                    @endif
+                    @if($registrationAvailability->availableSlotsMessage())
+                        <p class="mt-2 text-sm font-semibold text-[#9ddbef]">
+                            {{ $registrationAvailability->availableSlotsMessage() }} · {{ $registrationAvailability->activeRegistrationsMessage() }}
+                        </p>
                     @endif
                 </div>
 
@@ -208,9 +230,17 @@
             </form>
         @endif
     @elseif($registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::TRANCADO)
-        <section class="bg-transparent text-white min-h-screen flex flex-col justify-center items-center relative">
-            <div class="no-tailwind">
-                {!! $this->settings['liberacao_inscricoes_bloco'] !!}
+        <section class="relative flex min-h-[34rem] flex-col items-center justify-center bg-[#052f35] p-6 text-white sm:p-10">
+            <div class="mx-auto max-w-screen-md text-center lg:px-2">
+                <p class="mb-0 text-2xl font-black uppercase tracking-[0.16em] text-[#f46b12]">Inscrições trancadas</p>
+                <p class="mx-4 mt-4 text-center text-sm text-[#d8f2fa] xl:text-xl">
+                    As inscrições estão trancadas no momento.
+                </p>
+                @if(filled($this->settings['liberacao_inscricoes_bloco'] ?? null))
+                    <div class="no-tailwind mt-6 text-[#d8f2fa]">
+                        {!! $this->settings['liberacao_inscricoes_bloco'] !!}
+                    </div>
+                @endif
             </div>
         </section>
 
@@ -220,8 +250,13 @@
                 <div class="lg:mb-64">
                     <p class="mb-0 text-2xl font-black uppercase tracking-[0.16em] text-[#f46b12]">Inscrições encerradas</p>
                     <p class="mx-4 mt-4 text-center text-sm text-[#d8f2fa] xl:text-xl">
-                        As inscrições do Acampamento Juvenil não estão disponíveis no momento.
+                        As inscrições foram encerradas manualmente pela organização.
                     </p>
+                    @if(filled($this->settings['liberacao_inscricoes_bloco'] ?? null))
+                        <div class="no-tailwind mt-6 text-[#d8f2fa]">
+                            {!! $this->settings['liberacao_inscricoes_bloco'] !!}
+                        </div>
+                    @endif
                 </div>
 
                 <div class="flex justify-center">

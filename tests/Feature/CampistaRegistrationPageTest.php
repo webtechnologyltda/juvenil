@@ -161,7 +161,42 @@ it('closes campista registration after the configured end date', function () {
     Carbon::setTestNow();
 });
 
-it('shows available campista registration slots during the configured registration period', function () {
+it('shows a manual locked registration message when campista registration is blocked', function () {
+    seedGeneralRegistrationSettings([
+        'liberacao_inscricoes_status' => LiberacaoInscricoesStatusEnum::TRANCADO->value,
+        'liberacao_inscricoes_bloco' => null,
+    ]);
+
+    $this->withoutVite();
+
+    $this->get(route('campista'))
+        ->assertOk()
+        ->assertSee('Inscrições trancadas')
+        ->assertSee('As inscrições estão trancadas no momento.')
+        ->assertDontSee('wire:submit.prevent="submitForm"', false)
+        ->assertDontSee('Prepare-se para se inscrever')
+        ->assertDontSee('Limite de inscrições atingido');
+});
+
+it('shows a manual ended registration message when campista registration is closed by settings', function () {
+    seedGeneralRegistrationSettings([
+        'liberacao_inscricoes_status' => LiberacaoInscricoesStatusEnum::ENCERRADO->value,
+        'liberacao_inscricoes_bloco' => '<p>Inscrições encerradas pela coordenação.</p>',
+    ]);
+
+    $this->withoutVite();
+
+    $this->get(route('campista'))
+        ->assertOk()
+        ->assertSee('Inscrições encerradas')
+        ->assertSee('As inscrições foram encerradas manualmente pela organização.')
+        ->assertSee('Inscrições encerradas pela coordenação.')
+        ->assertDontSee('wire:submit.prevent="submitForm"', false)
+        ->assertDontSee('O período de inscrições encerrou')
+        ->assertDontSee('As inscrições foram encerradas pelo número de vagas preenchidas.');
+});
+
+it('shows only the remaining registration time during the configured registration period', function () {
     Carbon::setTestNow('2026-06-12 12:00:00');
 
     seedGeneralRegistrationSettings([
@@ -177,6 +212,10 @@ it('shows available campista registration slots during the configured registrati
 
     $this->get(route('campista'))
         ->assertOk()
+        ->assertSee('Falta para encerrar')
+        ->assertSee('As inscrições encerram em 20/06/2026 19:00.')
+        ->assertSee('2026-06-20T19:00:00', false)
+        ->assertSee('data-registration-countdown', false)
         ->assertSee('2 vagas disponíveis de 3')
         ->assertSee('1 inscrição ativa')
         ->assertSee('wire:submit.prevent="submitForm"', false)
@@ -207,6 +246,53 @@ it('renders the configured payment settings on the campista registration page', 
         ->assertSee('https://wa.me/5547999999999', false);
 });
 
+it('renders configured attendance contacts by purpose on the campista page', function () {
+    seedGeneralRegistrationSettings([
+        'telefone_atendente' => null,
+        'atendentes' => [
+            [
+                'nome' => 'Janaína',
+                'telefone' => '(47) 9 1111-1111',
+                'tipo' => 'duvidas',
+                'observacao' => null,
+            ],
+            [
+                'nome' => 'Marcos',
+                'telefone' => '(47) 9 2222-2222',
+                'tipo' => 'duvidas',
+                'observacao' => null,
+            ],
+            [
+                'nome' => 'Financeiro',
+                'telefone' => '(47) 9 3333-3333',
+                'tipo' => 'comprovante',
+                'observacao' => null,
+            ],
+            [
+                'nome' => 'Inclusão',
+                'telefone' => '(47) 9 4444-4444',
+                'tipo' => 'necessidade_especifica',
+                'observacao' => 'Acessibilidade, saúde e necessidades específicas.',
+            ],
+        ],
+    ]);
+
+    $this->withoutVite();
+
+    $this->get(route('campista'))
+        ->assertOk()
+        ->assertSee('Atendimento para dúvidas')
+        ->assertSee('Dúvidas - Janaína')
+        ->assertSee('Dúvidas - Marcos')
+        ->assertSee('Necessidades específicas')
+        ->assertSee('Inclusão')
+        ->assertSee('Acessibilidade, saúde e necessidades específicas.')
+        ->assertSee('https://wa.me/5547911111111', false)
+        ->assertSee('https://wa.me/5547922222222', false)
+        ->assertSee('https://wa.me/5547944444444', false)
+        ->assertDontSee('Dúvidas - Financeiro');
+});
+
 it('does not render legacy hard-coded payment data when payment settings are empty', function () {
     seedGeneralRegistrationSettings();
 
@@ -230,7 +316,7 @@ it('uses panel payment settings in the post-registration payment block', functio
         ->toContain("\$this->settings['valor_acampamento']")
         ->toContain("\$this->settings['termo_responsabilidade']")
         ->toContain('ConfiguredStorageFile::publicUrl')
-        ->toContain("AtendenteWhatsapp::url(\$this->settings['telefone_atendente'] ?? null)")
+        ->toContain('AtendenteWhatsapp::firstForPurpose')
         ->not->toContain("route('pdf.show'")
         ->not->toContain('00020126910014br.gov.bcb.pix')
         ->not->toContain("asset('img/qr_code_pix.png')")
@@ -245,17 +331,55 @@ it('uses the configured attendant phone in the post-registration WhatsApp button
 
     Livewire::test(CampistaForm::class)
         ->set('comprado', true)
-        ->assertSee('Falar com atendente')
+        ->assertSee('Enviar comprovante')
         ->assertSee('https://wa.me/5547988887777', false)
         ->assertSee('/storage/settings/termos/termo-pos-inscricao.pdf', false)
         ->assertSee('Termo de responsabilidade');
+});
+
+it('uses the configured proof attendant in the post-registration WhatsApp button', function () {
+    seedGeneralRegistrationSettings([
+        'telefone_atendente' => '+55 (47) 9 8888-7777',
+        'atendentes' => [
+            [
+                'nome' => 'Dúvidas',
+                'telefone' => '(47) 9 1111-1111',
+                'tipo' => 'duvidas',
+                'observacao' => null,
+            ],
+            [
+                'nome' => 'Comprovantes',
+                'telefone' => '(47) 9 3333-3333',
+                'tipo' => 'comprovante',
+                'observacao' => null,
+            ],
+        ],
+    ]);
+
+    Livewire::test(CampistaForm::class)
+        ->set('comprado', true)
+        ->assertSee('Enviar comprovante')
+        ->assertSee('https://wa.me/5547933333333', false)
+        ->assertDontSee('https://wa.me/5547988887777', false);
 });
 
 it('normalizes attendant WhatsApp numbers from settings', function () {
     expect(AtendenteWhatsapp::number('(47) 9 9999-9999'))->toBe('5547999999999')
         ->and(AtendenteWhatsapp::number('+55 (47) 9 9999-9999'))->toBe('5547999999999')
         ->and(AtendenteWhatsapp::number(null))->toBeNull()
-        ->and(AtendenteWhatsapp::url('(47) 9 9999-9999'))->toStartWith('https://wa.me/5547999999999?text=');
+        ->and(AtendenteWhatsapp::url('(47) 9 9999-9999'))->toStartWith('https://wa.me/5547999999999?text=')
+        ->and(AtendenteWhatsapp::forPurpose([
+            [
+                'nome' => 'Dúvidas',
+                'telefone' => '(47) 9 1111-1111',
+                'tipo' => 'duvidas',
+            ],
+            [
+                'nome' => 'Comprovantes',
+                'telefone' => '(47) 9 3333-3333',
+                'tipo' => 'comprovante',
+            ],
+        ], 'comprovante')[0]['whatsapp_url'])->toStartWith('https://wa.me/5547933333333?text=');
 });
 
 it('alerts and disables a sex option when its campista vacancies are full', function () {
@@ -292,11 +416,27 @@ it('closes campista registration when all sex-specific vacancies are full', func
         ->assertDontSee('Inscrever-se');
 });
 
-it('closes campista registration when the total active registration limit is reached', function () {
+it('uses sex-specific configured vacancies instead of a stale legacy total limit', function () {
     seedGeneralRegistrationSettings([
         'qtd_max_vagas' => 1,
-        'qtd_max_vagas_masculino' => 10,
-        'qtd_max_vagas_feminino' => 10,
+        'qtd_max_vagas_masculino' => 2000,
+        'qtd_max_vagas_feminino' => 2000,
+    ]);
+
+    createCampistaRegistrationForSex('M', StatusInscricao::Pago);
+    createCampistaRegistrationForSex('F', StatusInscricao::Pendente);
+
+    Livewire::test(CampistaForm::class)
+        ->assertDontSee('As inscrições foram encerradas pelo número de vagas preenchidas.')
+        ->assertSee('3998 vagas disponíveis de 4000')
+        ->assertSee('Inscrever-se');
+});
+
+it('uses the legacy total limit only when no sex-specific vacancies are configured', function () {
+    seedGeneralRegistrationSettings([
+        'qtd_max_vagas' => 1,
+        'qtd_max_vagas_masculino' => null,
+        'qtd_max_vagas_feminino' => null,
     ]);
 
     createCampistaRegistrationForSex('M', StatusInscricao::Cancelado);
@@ -364,6 +504,7 @@ function seedGeneralRegistrationSettings(array $overrides = []): void
         'pix_copia_cola' => null,
         'pix_qr_code' => null,
         'termo_responsabilidade' => null,
+        'atendentes' => [],
         'liberacao_inscricoes_status' => LiberacaoInscricoesStatusEnum::LIBERADO->value,
         'liberacao_inscricoes_equipe_trabalho_status' => LiberacaoInscricoesEquipeTrabalhoStatusEnum::LIBERADO->value,
         'liberacao_inscricoes_bloco' => null,

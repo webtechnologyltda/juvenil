@@ -26,11 +26,15 @@ it('renders the general settings page with registration payment controls', funct
         ->assertSee('PIX copia e cola')
         ->assertSee('Imagem do QR Code PIX')
         ->assertSee('Atendimento e Documentos')
+        ->assertSee('Atendentes')
+        ->assertSee('Adicionar atendente')
         ->assertSee('Documento do termo')
         ->assertSee('Limite de Campistas Homens')
         ->assertSee('Limite de Campistas Mulheres')
         ->assertSee('Início das Inscrições')
-        ->assertSee('Fim das Inscrições');
+        ->assertSee('Fim das Inscrições')
+        ->assertDontSee('Mensagem de Bloqueio')
+        ->assertDontSee('Conteúdo bloco de inscrições dos campistas');
 });
 
 it('renders the general settings page with configured registration dates', function () {
@@ -66,7 +70,6 @@ it('organizes the general settings form by operational responsibility', function
         "Section::make('Período de Inscrição')",
         "Section::make('Pagamento PIX')",
         "Section::make('Atendimento e Documentos')",
-        "Section::make('Mensagem de Bloqueio')",
     ];
 
     $sectionPositions = collect($expectedSections)
@@ -82,6 +85,16 @@ it('organizes the general settings form by operational responsibility', function
         ->toContain("'xl' => '4'")
         ->toContain("'lg' => '6'")
         ->toContain("'lg' => '3'");
+});
+
+it('does not expose the obsolete blocked registration message editor', function () {
+    $settingsPage = file_get_contents(app_path('Filament/Pages/GeneralSettingsPage.php'));
+
+    expect($settingsPage)
+        ->not->toContain("Section::make('Mensagem de Bloqueio')")
+        ->not->toContain("RichEditor::make('liberacao_inscricoes_bloco')")
+        ->not->toContain('Conteúdo bloco de inscrições dos campistas')
+        ->not->toContain('fileAttachmentsDirectory(\'settings\')');
 });
 
 it('configures the pix qr code upload as a square public image preview', function () {
@@ -103,6 +116,49 @@ it('configures the pix qr code upload as a square public image preview', functio
         ->toContain("->panelLayout('integrated')")
         ->toContain("->imagePreviewHeight('180')")
         ->toContain("'class' => 'juvenil-pix-qr-upload'");
+});
+
+it('configures multiple attendance contacts by purpose', function () {
+    $settingsPage = file_get_contents(app_path('Filament/Pages/GeneralSettingsPage.php'));
+    $attendanceRepeater = str($settingsPage)
+        ->between('Repeater::make(\'atendentes\')', 'FileUpload::make(\'termo_responsabilidade\')')
+        ->toString();
+
+    expect($settingsPage)->toContain('Repeater::make(\'atendentes\')');
+
+    expect($attendanceRepeater)
+        ->toContain('Select::make(\'tipo\')')
+        ->toContain("'duvidas' => 'Dúvidas'")
+        ->toContain("'comprovante' => 'Comprovante'")
+        ->toContain("'necessidade_especifica' => 'Necessidade específica'")
+        ->toContain('TextInput::make(\'nome\')')
+        ->toContain('PhoneNumber::make(\'telefone\')')
+        ->toContain('Textarea::make(\'observacao\')')
+        ->toContain('->columnSpanFull()')
+        ->not->toContain("'md' => 4")
+        ->not->toContain("'xl' => 6");
+
+    expect(substr_count($attendanceRepeater, '->columnSpanFull()'))->toBeGreaterThanOrEqual(4);
+});
+
+it('configures explicit manual registration status options', function () {
+    $settingsPage = file_get_contents(app_path('Filament/Pages/GeneralSettingsPage.php'));
+
+    expect(LiberacaoInscricoesStatusEnum::configurationOptions())
+        ->toBe([
+            LiberacaoInscricoesStatusEnum::LIBERADO->value => 'Liberar inscrições',
+            LiberacaoInscricoesStatusEnum::TRANCADO->value => 'Trancar inscrições',
+            LiberacaoInscricoesStatusEnum::ENCERRADO->value => 'Encerrar inscrições manualmente',
+        ])
+        ->and(LiberacaoInscricoesEquipeTrabalhoStatusEnum::configurationOptions())
+        ->toBe([
+            LiberacaoInscricoesEquipeTrabalhoStatusEnum::LIBERADO->value => 'Liberar inscrições',
+            LiberacaoInscricoesEquipeTrabalhoStatusEnum::TRANCADO->value => 'Trancar inscrições',
+            LiberacaoInscricoesEquipeTrabalhoStatusEnum::ENCERRADO->value => 'Encerrar inscrições manualmente',
+        ])
+        ->and($settingsPage)
+        ->toContain('->options(LiberacaoInscricoesStatusEnum::configurationOptions())')
+        ->toContain('->options(LiberacaoInscricoesEquipeTrabalhoStatusEnum::configurationOptions())');
 });
 
 it('saves registration status settings as scalar values', function () {
@@ -127,9 +183,22 @@ it('saves registration status settings as scalar values', function () {
             'pix_copia_cola' => null,
             'pix_qr_code' => null,
             'termo_responsabilidade' => ['settings/termos/termo-juvenil.pdf'],
+            'atendentes' => [
+                [
+                    'nome' => 'Janaína',
+                    'telefone' => '(47) 9 1111-1111',
+                    'tipo' => 'duvidas',
+                    'observacao' => null,
+                ],
+                [
+                    'nome' => 'Comprovantes',
+                    'telefone' => '(47) 9 3333-3333',
+                    'tipo' => 'comprovante',
+                    'observacao' => 'Envio dos comprovantes PIX.',
+                ],
+            ],
             'liberacao_inscricoes_status' => LiberacaoInscricoesStatusEnum::ENCERRADO->value,
             'liberacao_inscricoes_equipe_trabalho_status' => LiberacaoInscricoesEquipeTrabalhoStatusEnum::TRANCADO->value,
-            'liberacao_inscricoes_bloco' => 'Inscrições encerradas para campistas.',
         ])
         ->call('save')
         ->assertHasNoFormErrors();
@@ -152,5 +221,9 @@ it('saves registration status settings as scalar values', function () {
         ->and($settings->data_inicio_inscricoes->format('Y-m-d H:i:s'))->toBe('2026-06-10 19:00:00')
         ->and($settings->data_final_inscricoes)
         ->toBeInstanceOf(DateTimeInterface::class)
-        ->and($settings->data_final_inscricoes->format('Y-m-d H:i:s'))->toBe('2026-06-20 19:30:00');
+        ->and($settings->data_final_inscricoes->format('Y-m-d H:i:s'))->toBe('2026-06-20 19:30:00')
+        ->and($settings->atendentes)
+        ->toHaveCount(2)
+        ->and($settings->atendentes[1]['tipo'])
+        ->toBe('comprovante');
 });
