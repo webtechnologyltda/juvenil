@@ -45,6 +45,7 @@ it('renders the custom Filament login page for the admin panel', function () {
 it('configures the authenticated Filament panel with the Juvenil site theme', function () {
     $panel = Filament::getPanel('admin');
     $provider = file_get_contents(app_path('Providers/Filament/AdminPanelProvider.php'));
+    $appServiceProvider = file_get_contents(app_path('Providers/AppServiceProvider.php'));
     $adminCss = file_get_contents(resource_path('css/filament/admin/theme.css'));
     $settingsClass = file_get_contents(app_path('Settings/GeneralSettings.php'));
     $settingsPage = file_get_contents(app_path('Filament/Pages/GeneralSettingsPage.php'));
@@ -69,6 +70,10 @@ it('configures the authenticated Filament panel with the Juvenil site theme', fu
         ->and($provider)
         ->not->toContain('logo_simple.png')
         ->not->toContain('ThemeMode::Light')
+        ->and($appServiceProvider)
+        ->toContain('use Filament\Tables\Table;')
+        ->toContain('Table::configureUsing(function (Table $table): void {')
+        ->toContain('$table->deferColumnManager(false);')
         ->and($adminCss)
         ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body)')
         ->toContain('--juvenil-camp-orange: #f46b12;')
@@ -76,6 +81,12 @@ it('configures the authenticated Filament panel with the Juvenil site theme', fu
         ->toContain('.fi-sidebar')
         ->toContain('.fi-topbar')
         ->toContain('.fi-ta')
+        ->toContain('overflow: visible;')
+        ->toContain('.fi-ta:has(.fi-dropdown-panel)')
+        ->toContain('.fi-ta .fi-dropdown-panel')
+        ->toContain('.fi-ta-col-manager-dropdown > .fi-dropdown-panel')
+        ->toContain('max-height: min(34rem, calc(100dvh - 2rem));')
+        ->toContain('overscroll-behavior: contain;')
         ->toContain('.fi-ta-header-toolbar')
         ->toContain('.fi-ta-table thead')
         ->toContain('linear-gradient(180deg, rgba(4, 31, 35, 0.96), rgba(3, 24, 28, 0.94))')
@@ -127,6 +138,28 @@ it('renders selected table row highlight as one continuous row layer', function 
         ->toContain('.fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {')
         ->toContain('background: transparent;')
         ->not->toContain(".fi-ta-row:is(:hover, .fi-selected) > .fi-ta-cell {\n    background:\n        linear-gradient");
+});
+
+it('keeps authenticated Filament modals above the panel with blurred scrollable overlays', function () {
+    $adminCss = file_get_contents(resource_path('css/filament/admin/theme.css'));
+
+    expect($adminCss)
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal {')
+        ->toContain('position: fixed;')
+        ->toContain('inset: 0;')
+        ->toContain('z-index: 1200;')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body):has(.fi-modal.fi-modal-open) :is(.fi-section, .fi-ta, .fi-wi-stats-overview-stat, .fi-in-entry-wrp) {')
+        ->toContain('backdrop-filter: none;')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal > .fi-modal-close-overlay {')
+        ->toContain('background: rgba(3, 24, 28, 0.76);')
+        ->toContain('backdrop-filter: blur(6px);')
+        ->toContain('-webkit-backdrop-filter: blur(6px);')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal > .fi-modal-window-ctn {')
+        ->toContain('z-index: 1201;')
+        ->toContain('grid-template-rows: minmax(1rem, 1fr) auto minmax(1rem, 1fr);')
+        ->toContain('max-height: calc(100dvh - 2rem);')
+        ->toContain('overflow-y: auto;')
+        ->toContain('overscroll-behavior: contain;');
 });
 
 it('styles authenticated Filament buttons with the Juvenil action pattern', function () {

@@ -9,13 +9,13 @@
 @endphp
 
 <div
-    class="flex h-14 w-14 items-center justify-center rounded-xl"
+    class="flex h-8 w-8 items-center justify-center rounded-lg"
     style="background-color: {{ $background }};"
     title="{{ data_get($record, 'nome') ?? $iconName }}"
 >
     <x-dynamic-component
         :component="$iconName"
-        class="h-6 w-6"
+        class="h-[1.1rem] w-[1.1rem]"
         :style="'color: '.$iconColor"
     />
 </div>

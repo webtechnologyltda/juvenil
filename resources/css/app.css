@@ -18,6 +18,67 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+.fi-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+}
+
+.fi-modal > .fi-modal-close-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 24, 28, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.fi-modal > .fi-modal-window-ctn {
+    position: fixed;
+    inset: 0;
+    z-index: 1201;
+    min-height: 100dvh;
+    grid-template-rows: minmax(1rem, 1fr) auto minmax(1rem, 1fr);
+    padding: 1rem;
+}
+
+.fi-modal:not(.fi-modal-slide-over) > .fi-modal-window-ctn > .fi-modal-window {
+    display: flex;
+    max-height: calc(100dvh - 2rem);
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.fi-modal:not(.fi-modal-slide-over) > .fi-modal-window-ctn > .fi-modal-window > .fi-modal-content {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+body:has(.fi-modal.fi-modal-open) :is([data-motion-card], .out, .filament-registration-shell, .fi-section, .fi-ta, .fi-wi-stats-overview-stat, .fi-in-entry-wrp) {
+    transform: none !important;
+    filter: none;
+    backdrop-filter: none;
+    will-change: auto;
+}
+
+.fi-ta {
+    overflow: visible;
+}
+
+.fi-ta:has(.fi-dropdown-panel) {
+    z-index: 30;
+}
+
+.fi-ta .fi-dropdown-panel {
+    z-index: 80;
+}
+
+.fi-ta-col-manager-dropdown > .fi-dropdown-panel {
+    max-height: min(34rem, calc(100dvh - 2rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
 @font-face {
     font-family: barlow;
     src: url('../fonts/Barlow-Regular.ttf');

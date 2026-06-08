@@ -6,6 +6,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use OwenIt\Auditing\Contracts\Auditable;
 
 class Campista extends Model implements Auditable
@@ -38,5 +39,10 @@ class Campista extends Model implements Auditable
     public function tribo()
     {
         return $this->belongsTo(Tribo::class);
+    }
+
+    public function financialEntryRegistrations(): MorphMany
+    {
+        return $this->morphMany(FinancialEntryRegistration::class, 'registration');
     }
 }

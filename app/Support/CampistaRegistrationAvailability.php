@@ -74,6 +74,11 @@ class CampistaRegistrationAvailability
         return $this->startsAt()?->toIso8601String();
     }
 
+    public function endsAtIso(): ?string
+    {
+        return $this->endsAt()?->toIso8601String();
+    }
+
     public function startsAtDisplay(): ?string
     {
         return $this->startsAt()?->format('d/m/Y H:i');

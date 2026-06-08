@@ -4,7 +4,17 @@
     $pixQrCodeUrl = filled($pixQrCode) ? \Illuminate\Support\Facades\Storage::disk('public')->url($pixQrCode) : null;
     $valorAcampamento = $settings->valor_acampamento;
     $hasValorAcampamento = $valorAcampamento !== null;
-    $attendantWhatsappUrl = \App\Support\AtendenteWhatsapp::url($settings->telefone_atendente);
+    $attendanceContacts = is_array($settings->atendentes ?? null) ? $settings->atendentes : [];
+    $questionAttendants = \App\Support\AtendenteWhatsapp::forPurpose(
+        $attendanceContacts,
+        \App\Support\AtendenteWhatsapp::PURPOSE_DUVIDAS,
+        $settings->telefone_atendente,
+        2,
+    );
+    $specificAttendants = \App\Support\AtendenteWhatsapp::forPurpose(
+        $attendanceContacts,
+        \App\Support\AtendenteWhatsapp::PURPOSE_NECESSIDADE_ESPECIFICA,
+    );
     $termoResponsabilidadeUrl = \App\Support\ConfiguredStorageFile::publicUrl($settings->termo_responsabilidade);
 @endphp
 
@@ -86,19 +96,43 @@
                 </div>
 
                 <div class="mt-8 grid gap-3">
-                    @if($attendantWhatsappUrl)
-                        <a
-                            target="_blank"
-                            href="{{ $attendantWhatsappUrl }}"
-                            class="inline-flex min-h-12 w-full items-center justify-center bg-[#f46b12] px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a]"
-                        >
-                            Falar com atendente
-                        </a>
+                    @if($questionAttendants !== [])
+                        <p class="text-xs font-black uppercase tracking-[0.18em] text-[#9ddbef]">Atendimento para dúvidas</p>
+                        @foreach($questionAttendants as $attendant)
+                            <a
+                                target="_blank"
+                                href="{{ $attendant['whatsapp_url'] }}"
+                                class="inline-flex min-h-12 w-full items-center justify-center bg-[#f46b12] px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#052f35] transition-colors duration-300 hover:bg-[#ff8a2a]"
+                            >
+                                Dúvidas - {{ $attendant['nome'] }}
+                            </a>
+                        @endforeach
                     @else
                         <p class="inline-flex min-h-12 w-full items-center justify-center border border-[#f46b12]/35 px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12]">
                             Atendente não configurado
                         </p>
                     @endif
+
+                    @if($specificAttendants !== [])
+                        <div class="mt-3 border-t border-[#9ddbef]/20 pt-4">
+                            <p class="text-xs font-black uppercase tracking-[0.18em] text-[#9ddbef]">Necessidades específicas</p>
+                            <div class="mt-3 grid gap-3">
+                                @foreach($specificAttendants as $attendant)
+                                    <a
+                                        target="_blank"
+                                        href="{{ $attendant['whatsapp_url'] }}"
+                                        class="inline-flex min-h-12 w-full items-center justify-center border border-[#f46b12]/65 px-4 text-center text-sm font-black uppercase tracking-[0.12em] text-[#f46b12] transition-colors duration-300 hover:border-white hover:text-white"
+                                    >
+                                        {{ $attendant['nome'] }}
+                                    </a>
+                                    @if(filled($attendant['observacao']))
+                                        <p class="-mt-1 text-sm leading-6 text-[#d8f2fa]">{{ $attendant['observacao'] }}</p>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     @if($termoResponsabilidadeUrl)
                         <a
                             href="{{ $termoResponsabilidadeUrl }}"

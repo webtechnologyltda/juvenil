@@ -64,6 +64,8 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
                             ->label('Nome')
                             ->placeholder('Ex.: Inscrições')
                             ->required()
+                            ->disabled(fn (?CategoriaLancamento $record): bool => $record?->isSystemDefault() ?? false)
+                            ->dehydrated(fn (?CategoriaLancamento $record): bool => ! ($record?->isSystemDefault() ?? false))
                             ->maxLength(255),
 
                         ToggleButtons::make('tipo')
@@ -71,12 +73,16 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
                             ->options(TipoLacamento::class)
                             ->inline()
                             ->grouped()
+                            ->disabled(fn (?CategoriaLancamento $record): bool => $record?->isSystemDefault() ?? false)
+                            ->dehydrated(fn (?CategoriaLancamento $record): bool => ! ($record?->isSystemDefault() ?? false))
                             ->required()
                             ->default(TipoLacamento::Receita),
 
                         Toggle::make('ativo')
                             ->label('Categoria ativa')
                             ->helperText('Categorias inativas continuam no histórico, mas deixam de aparecer como opção principal.')
+                            ->disabled(fn (?CategoriaLancamento $record): bool => $record?->isSystemDefault() ?? false)
+                            ->dehydrated(fn (?CategoriaLancamento $record): bool => ! ($record?->isSystemDefault() ?? false))
                             ->default(true),
                     ]),
 
@@ -168,6 +174,9 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
                     DeleteBulkAction::make(),
                 ]),
             ])
+            ->checkIfRecordIsSelectableUsing(
+                fn (CategoriaLancamento $record): bool => ! $record->isSystemDefault(),
+            )
             ->emptyStateHeading('Nenhuma categoria cadastrada')
             ->emptyStateDescription('Crie categorias para classificar receitas, despesas e doações do acampamento.')
             ->emptyStateIcon('heroicon-o-tag');

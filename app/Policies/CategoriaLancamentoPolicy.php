@@ -34,7 +34,8 @@ class CategoriaLancamentoPolicy
 
     public function delete(AuthUser $authUser, CategoriaLancamento $categoriaLancamento): bool
     {
-        return $authUser->can('delete_categoria_lancamento');
+        return $authUser->can('delete_categoria_lancamento')
+            && ! $categoriaLancamento->isSystemDefault();
     }
 
     public function deleteAny(AuthUser $authUser): bool

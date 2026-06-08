@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 
 test.use({
@@ -6,13 +7,60 @@ test.use({
     viewport: { width: 1440, height: 920 },
 });
 
+const adminBaseUrl = 'http://juvenil.test';
+let adminAuthCookies = [];
+
+async function isAdminPanelVisible(page) {
+    return page.locator('body.fi-panel-admin:not(.juvenil-admin-auth-body)').isVisible().catch(() => false);
+}
+
+async function rememberAdminSession(page) {
+    adminAuthCookies = await page.context().cookies(`${adminBaseUrl}/admin`);
+}
+
 async function signIn(page) {
-    await page.goto('http://juvenil.test/admin/login');
+    const panelBody = page.locator('body.fi-panel-admin:not(.juvenil-admin-auth-body)');
+
+    if (adminAuthCookies.length > 0) {
+        await page.context().addCookies(adminAuthCookies);
+        await page.goto(`${adminBaseUrl}/admin`, { waitUntil: 'domcontentloaded' });
+
+        if (await isAdminPanelVisible(page)) {
+            return;
+        }
+    }
+
+    await page.goto(`${adminBaseUrl}/admin/login`, { waitUntil: 'domcontentloaded' });
+    const cookieButton = page.getByRole('button', { name: /aceitar cookies/i });
+
+    if (await cookieButton.isVisible().catch(() => false)) {
+        await cookieButton.click();
+    }
+
     await page.getByRole('textbox', { name: /e-mail/i }).fill('admin@admin.com');
     await page.getByRole('textbox', { name: /senha/i }).fill('admin');
-    await page.getByRole('button', { name: /login|entrar/i }).click();
-    await page.waitForURL('**/admin');
-    await page.waitForSelector('body.fi-panel-admin:not(.juvenil-admin-auth-body)');
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        const loginButton = page.getByRole('button', { name: /login|entrar/i });
+
+        if (await isAdminPanelVisible(page)) {
+            await rememberAdminSession(page);
+
+            return;
+        }
+
+        await expect(loginButton).toBeEnabled({ timeout: 5000 });
+        await loginButton.click({ timeout: 5000 }).catch(async (error) => {
+            if (! await isAdminPanelVisible(page)) {
+                throw error;
+            }
+        });
+
+        await panelBody.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    }
+
+    await panelBody.waitFor({ state: 'visible', timeout: 15000 });
+    await rememberAdminSession(page);
 }
 
 async function expectNoDocumentHorizontalOverflow(page) {
@@ -66,6 +114,20 @@ async function expectSectionsUsePageWidth(page) {
     });
 
     expect(widthUsage).toBeGreaterThanOrEqual(0.84);
+}
+
+function firstRecordId(modelClass) {
+    const output = execFileSync('php', [
+        'artisan',
+        'tinker',
+        '--execute',
+        `echo ${modelClass}::query()->orderBy('id')->value('id');`,
+    ], { encoding: 'utf8' }).trim();
+
+    const id = output.match(/\d+/)?.[0];
+    expect(id).toBeTruthy();
+
+    return id;
 }
 
 test('authenticated Filament panel keeps branded layout clear of visual obstructions', async ({ page }) => {
@@ -163,17 +225,71 @@ test('authenticated Filament panel keeps branded layout clear of visual obstruct
     });
 });
 
+test('authenticated Filament table column manager opens outside the table and applies columns live', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+    await page.goto('http://juvenil.test/admin/campistas');
+    await page.waitForSelector('.fi-ta-row');
+
+    await page.locator('.fi-ta-col-manager-dropdown .fi-dropdown-trigger').first().click();
+    await page.locator('.fi-ta-col-manager-dropdown > .fi-dropdown-panel').waitFor({ state: 'visible' });
+
+    const dropdownGeometry = await page.evaluate(() => {
+        const table = document.querySelector('.fi-ta');
+        const panel = document.querySelector('.fi-ta-col-manager-dropdown > .fi-dropdown-panel');
+        const tableRect = table.getBoundingClientRect();
+        const panelRect = panel.getBoundingClientRect();
+        const tableStyle = getComputedStyle(table);
+        const panelStyle = getComputedStyle(panel);
+
+        return {
+            panelHasRoomForScrollableContent: panelRect.height >= 320,
+            panelIsInsideViewport: panelRect.bottom <= window.innerHeight,
+            panelOverflowY: panelStyle.overflowY,
+            panelZIndex: Number.parseInt(panelStyle.zIndex, 10),
+            tableOverflow: tableStyle.overflow,
+        };
+    });
+
+    expect(dropdownGeometry.tableOverflow).toBe('visible');
+    expect(dropdownGeometry.panelHasRoomForScrollableContent).toBe(true);
+    expect(dropdownGeometry.panelIsInsideViewport).toBe(true);
+    expect(dropdownGeometry.panelOverflowY).toBe('auto');
+    expect(dropdownGeometry.panelZIndex).toBeGreaterThanOrEqual(80);
+
+    const ageHeader = page.locator('.fi-ta-table thead .fi-ta-header-cell').filter({ hasText: 'Idade' });
+    const ageToggle = page.locator('.fi-ta-col-manager-label').filter({ hasText: 'Idade' }).first();
+    const ageCheckbox = ageToggle.locator('input[type="checkbox"]').first();
+
+    if (! await ageCheckbox.isChecked()) {
+        await ageToggle.click();
+    }
+
+    await expect(ageHeader).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: /aplicar colunas/i })).toHaveCount(0);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-column-manager-dropdown.png',
+        fullPage: false,
+    });
+});
+
 test('authenticated Filament form pages use compact headings and the available width', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
     await signIn(page);
 
+    const lancamentoId = firstRecordId('App\\Models\\Lancamento');
+    const userId = firstRecordId('App\\Models\\User');
+    const campistaId = firstRecordId('App\\Models\\Campista');
+
     for (const path of [
-        '/admin/lancamentos/10/edit',
+        `/admin/lancamentos/${lancamentoId}/edit`,
         '/admin/categoria-lancamentos/create',
-        '/admin/users/1/edit',
+        `/admin/users/${userId}/edit`,
         '/admin/general-settings-page',
-        '/admin/campistas/10/edit',
+        `/admin/campistas/${campistaId}/edit`,
     ]) {
         await page.goto(`http://juvenil.test${path}`);
         await page.waitForSelector('h1');
@@ -189,9 +305,63 @@ test('authenticated Filament form pages use compact headings and the available w
         }
     }
 
-    await page.goto('http://juvenil.test/admin/lancamentos/10/edit');
+    await page.goto(`http://juvenil.test/admin/lancamentos/${lancamentoId}/edit`);
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-lancamento-edit-form-layout.png',
+        fullPage: false,
+    });
+});
+
+test('authenticated launch edit form uses a balanced operational workspace', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    const lancamentoId = firstRecordId('App\\Models\\Lancamento');
+
+    await page.goto(`http://juvenil.test/admin/lancamentos/${lancamentoId}/edit`);
+    await page.waitForSelector('.fi-page .fi-section');
+
+    const launchWorkspace = await page.evaluate(() => {
+        const pageElement = document.querySelector('.fi-page');
+        const sections = [...document.querySelectorAll('.fi-page .fi-section')]
+            .map((section) => ({
+                text: section.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+                rect: section.getBoundingClientRect(),
+            }))
+            .filter(({ rect }) => rect.width > 0 && rect.height > 0);
+
+        const byText = (text) => sections.find((section) => section.text.includes(text));
+        const pageRect = pageElement?.getBoundingClientRect();
+        const launch = byText('Lançamento');
+        const linkedRegistrations = byText('Inscrições vinculadas');
+        const receipts = byText('Comprovantes');
+
+        if (! pageRect || ! launch || ! linkedRegistrations || ! receipts) {
+            return null;
+        }
+
+        return {
+            pageWidth: pageRect.width,
+            launchWidthRatio: launch.rect.width / pageRect.width,
+            linkedRegistrationsWidthRatio: linkedRegistrations.rect.width / pageRect.width,
+            receiptsWidthRatio: receipts.rect.width / pageRect.width,
+            secondaryTopDelta: Math.abs(linkedRegistrations.rect.top - receipts.rect.top),
+            receiptsRightDelta: Math.abs(pageRect.right - receipts.rect.right),
+            linkedBeforeReceipts: linkedRegistrations.rect.right <= receipts.rect.left + 2,
+        };
+    });
+
+    expect(launchWorkspace).not.toBeNull();
+    expect(launchWorkspace.launchWidthRatio).toBeGreaterThanOrEqual(0.84);
+    expect(launchWorkspace.linkedRegistrationsWidthRatio).toBeGreaterThan(0.5);
+    expect(launchWorkspace.receiptsWidthRatio).toBeGreaterThan(0.24);
+    expect(launchWorkspace.secondaryTopDelta).toBeLessThanOrEqual(8);
+    expect(launchWorkspace.receiptsRightDelta).toBeLessThanOrEqual(2);
+    expect(launchWorkspace.linkedBeforeReceipts).toBe(true);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-lancamento-edit-workspace.png',
         fullPage: false,
     });
 });
@@ -236,6 +406,190 @@ test('general settings date picker opens above the following sections', async ({
 
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-general-settings-datepicker.png',
+        fullPage: false,
+    });
+});
+
+test('authenticated Filament select dropdowns open above sibling sections', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    const lancamentoId = firstRecordId('App\\Models\\Lancamento');
+
+    await page.goto(`http://juvenil.test/admin/lancamentos/${lancamentoId}/edit`);
+    await page.waitForSelector('.fi-page .fi-section');
+
+    const paymentField = page.locator('.fi-fo-field').filter({ hasText: 'Forma de Pagamento' });
+
+    await paymentField.locator('.fi-select-input-btn').click();
+    await expect(paymentField.locator('.fi-dropdown-panel[role="listbox"]')).toBeVisible();
+
+    const selectStacking = await paymentField.evaluate((field) => {
+        const section = field.closest('.fi-section');
+        const panel = field.querySelector('.fi-dropdown-panel[role="listbox"]');
+
+        if (! section || ! panel) {
+            return null;
+        }
+
+        const panelRect = panel.getBoundingClientRect();
+        const sectionRect = section.getBoundingClientRect();
+        const probePoints = [
+            panelRect.top + 24,
+            panelRect.top + panelRect.height / 2,
+            Math.min(panelRect.bottom - 12, window.innerHeight - 12),
+        ].map((probeY) => {
+            const probeX = panelRect.left + Math.min(120, panelRect.width / 2);
+            const topElement = document.elementFromPoint(probeX, probeY);
+
+            return {
+                probeY,
+                topElementTag: topElement?.tagName ?? null,
+                topElementClassName: String(topElement?.className ?? ''),
+                topElementInsidePanel: panel.contains(topElement),
+            };
+        });
+
+        return {
+            panelBottom: panelRect.bottom,
+            sectionBottom: sectionRect.bottom,
+            sectionPosition: getComputedStyle(section).position,
+            sectionZIndex: getComputedStyle(section).zIndex,
+            panelZIndex: getComputedStyle(panel).zIndex,
+            probePoints,
+        };
+    });
+
+    expect(selectStacking).not.toBeNull();
+    expect(selectStacking.sectionPosition).toBe('relative');
+    expect(Number.parseInt(selectStacking.sectionZIndex, 10)).toBeGreaterThanOrEqual(60);
+    expect(Number.parseInt(selectStacking.panelZIndex, 10)).toBeGreaterThanOrEqual(70);
+    expect(selectStacking.probePoints.every((point) => point.topElementInsidePanel)).toBe(true);
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-select-dropdown-stacking.png',
+        fullPage: false,
+    });
+});
+
+test('authenticated reports page uses native Filament filters in a balanced layout', async ({ page }) => {
+    await mkdir('storage/app/screenshots', { recursive: true });
+
+    await signIn(page);
+
+    await page.goto('http://juvenil.test/admin/relatorios');
+    await page.waitForSelector('.juvenil-report-page');
+    await page.waitForSelector('.juvenil-report-form .fi-section');
+
+    await expect(page.locator('h1')).toContainText('Relatórios dinâmicos');
+    await expect(page.getByRole('link', { name: /abrir prévia/i })).toBeVisible();
+    await expect(page.locator('.juvenil-report-form select')).toHaveCount(0);
+    await expectNoDocumentHorizontalOverflow(page);
+
+    const layoutState = await page.evaluate(() => {
+        const pageElement = document.querySelector('.fi-page');
+        const brief = document.querySelector('.juvenil-report-brief');
+        const cards = [...document.querySelectorAll('.juvenil-report-card')]
+            .map((card) => card.getBoundingClientRect())
+            .filter((rect) => rect.width > 0 && rect.height > 0);
+        const form = document.querySelector('.juvenil-report-form .fi-section');
+
+        if (! pageElement || ! brief || ! form || cards.length === 0) {
+            return null;
+        }
+
+        const pageRect = pageElement.getBoundingClientRect();
+        const briefRect = brief.getBoundingClientRect();
+        const formRect = form.getBoundingClientRect();
+        const firstCardTop = Math.min(...cards.map((rect) => rect.top));
+        const lastCardBottom = Math.max(...cards.map((rect) => rect.bottom));
+
+        return {
+            briefWidthRatio: briefRect.width / pageRect.width,
+            formWidthRatio: formRect.width / pageRect.width,
+            cardsAreBetweenBriefAndForm: firstCardTop > briefRect.bottom && lastCardBottom < formRect.top,
+            cardMinWidth: Math.min(...cards.map((rect) => rect.width)),
+        };
+    });
+
+    expect(layoutState).not.toBeNull();
+    expect(layoutState.briefWidthRatio).toBeGreaterThanOrEqual(0.84);
+    expect(layoutState.formWidthRatio).toBeGreaterThanOrEqual(0.84);
+    expect(layoutState.cardsAreBetweenBriefAndForm).toBe(true);
+    expect(layoutState.cardMinWidth).toBeGreaterThanOrEqual(220);
+
+    const reportTypeField = page.locator('.juvenil-report-form .fi-fo-field').filter({ hasText: 'Tipo de relatório' }).first();
+
+    await reportTypeField.locator('.fi-select-input-btn').click();
+    await expect(reportTypeField.locator('.fi-dropdown-panel[role="listbox"]')).toBeVisible();
+
+    const dropdownState = await reportTypeField.evaluate((field) => {
+        const section = field.closest('.fi-section');
+        const panel = field.querySelector('.fi-dropdown-panel[role="listbox"]');
+
+        if (! section || ! panel) {
+            return null;
+        }
+
+        const panelRect = panel.getBoundingClientRect();
+        const probeX = panelRect.left + Math.min(120, panelRect.width / 2);
+        const probeY = Math.min(panelRect.bottom - 12, window.innerHeight - 12);
+        const topElement = document.elementFromPoint(probeX, probeY);
+
+        return {
+            sectionPosition: getComputedStyle(section).position,
+            sectionZIndex: getComputedStyle(section).zIndex,
+            panelZIndex: getComputedStyle(panel).zIndex,
+            topElementInsidePanel: panel.contains(topElement),
+        };
+    });
+
+    expect(dropdownState).not.toBeNull();
+    expect(dropdownState.sectionPosition).toBe('relative');
+    expect(Number.parseInt(dropdownState.sectionZIndex, 10)).toBeGreaterThanOrEqual(60);
+    expect(Number.parseInt(dropdownState.panelZIndex, 10)).toBeGreaterThanOrEqual(70);
+    expect(dropdownState.topElementInsidePanel).toBe(true);
+
+    await page.keyboard.press('Escape');
+
+    const previewLink = page.getByRole('link', { name: /abrir prévia/i });
+    const reportTypeChecks = [
+        ['Fichas de inscrição', 'registration_fichas', 'Fichas de inscrição'],
+        ['Quadrante por tribo', 'tribe_quadrant', 'Quadrante das inscrições por tribo'],
+        ['Lista médica da enfermaria', 'sensitive_health', 'Lista médica da enfermaria'],
+        ['Contatos e endereços', 'mission_contacts', 'Contatos e endereços para missão'],
+    ];
+
+    for (const [optionLabel, expectedType, expectedTitle] of reportTypeChecks) {
+        await reportTypeField.locator('.fi-select-input-btn').click();
+        await page.getByRole('option', { name: optionLabel, exact: true }).click();
+
+        await page.waitForFunction((type) => (
+            [...document.querySelectorAll('a')]
+                .find((link) => link.textContent?.includes('Abrir prévia'))
+                ?.href
+                .includes(`type=${type}`)
+        ), expectedType);
+
+        const previewPagePromise = page.waitForEvent('popup');
+        await previewLink.click();
+
+        const previewPage = await previewPagePromise;
+        await previewPage.waitForLoadState('domcontentloaded');
+        await expect(previewPage.locator('h1')).toContainText(expectedTitle);
+        await expect(previewPage.getByAltText('Logo do acampamento')).toBeVisible();
+
+        const logoLoaded = await previewPage.getByAltText('Logo do acampamento').evaluate((image) => (
+            image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+        ));
+
+        expect(logoLoaded).toBe(true);
+        await previewPage.close();
+    }
+
+    await page.screenshot({
+        path: 'storage/app/screenshots/playwright-admin-reports-filters-layout.png',
         fullPage: false,
     });
 });
@@ -312,7 +666,9 @@ test('authenticated Campista view renders as a ficha before editing', async ({ p
 
     await signIn(page);
 
-    await page.goto('http://juvenil.test/admin/campistas/10');
+    const campistaId = firstRecordId('App\\Models\\Campista');
+
+    await page.goto(`http://juvenil.test/admin/campistas/${campistaId}`);
     await page.waitForSelector('.juvenil-registration-card');
 
     await expect(page.locator('h1')).toContainText('Ficha de inscrição');
@@ -333,7 +689,7 @@ test('authenticated Campista view renders as a ficha before editing', async ({ p
     });
 
     await page.locator('.juvenil-registration-header-edit').click();
-    await expect(page).toHaveURL(/\/admin\/campistas\/10\/edit/);
+    await expect(page).toHaveURL(new RegExp(`/admin/campistas/${campistaId}/edit`));
     await page.waitForSelector('.fi-page .fi-section');
 });
 

@@ -44,7 +44,7 @@ class LancamentoResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('categoria'))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['categoria', 'registrationPayments.registration']))
             ->columns([
                 TextColumn::make('id')
                     ->label('Código')
@@ -83,6 +83,13 @@ class LancamentoResource extends Resource
                     ->placeholder('Sem categoria')
                     ->alignCenter()
                     ->sortable(),
+
+                TextColumn::make('registration_payments_summary')
+                    ->label('Inscrições')
+                    ->formatStateUsing(fn (?string $state): string => nl2br(e($state ?? 'Sem inscrições vinculadas')))
+                    ->html()
+                    ->placeholder('Sem inscrições vinculadas')
+                    ->wrap(),
 
                 TextColumn::make('status')
                     ->badge()

@@ -365,6 +365,44 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-header-descrip
     color: var(--juvenil-camp-muted);
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body):has(.fi-modal.fi-modal-open) :is(.fi-section, .fi-ta, .fi-wi-stats-overview-stat, .fi-in-entry-wrp) {
+    backdrop-filter: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal > .fi-modal-close-overlay {
+    background: rgba(3, 24, 28, 0.76);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal > .fi-modal-window-ctn {
+    position: fixed;
+    inset: 0;
+    z-index: 1201;
+    min-height: 100dvh;
+    grid-template-rows: minmax(1rem, 1fr) auto minmax(1rem, 1fr);
+    padding: 1rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal:not(.fi-modal-slide-over) > .fi-modal-window-ctn > .fi-modal-window {
+    display: flex;
+    max-height: calc(100dvh - 2rem);
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal:not(.fi-modal-slide-over) > .fi-modal-window-ctn > .fi-modal-window > .fi-modal-content {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-wi-stats-overview-stat {
     overflow: hidden;
     position: relative;
@@ -428,6 +466,20 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-date-time-picker-panel 
     z-index: 70;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section:has(.fi-select-input-btn[aria-expanded='true']) {
+    position: relative;
+    z-index: 60;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section .fi-fo-select:has(.fi-select-input-btn[aria-expanded='true']) {
+    position: relative;
+    z-index: 65;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section .fi-fo-select .fi-dropdown-panel[role='listbox'] {
+    z-index: 70;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-input-wrp:focus-within {
     border-color: var(--juvenil-camp-orange);
     outline: 2px solid rgba(244, 107, 18, 0.2);
@@ -452,7 +504,7 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-fo-field-wrp-helper-te
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     border-color: rgba(157, 219, 239, 0.34);
     background:
         linear-gradient(180deg, rgba(4, 31, 35, 0.96), rgba(3, 24, 28, 0.94)),
@@ -461,6 +513,20 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta {
     box-shadow:
         inset 0 1px 0 rgba(244, 251, 253, 0.05),
         0 30px 90px rgba(0, 0, 0, 0.26);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta:has(.fi-dropdown-panel) {
+    z-index: 30;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta .fi-dropdown-panel {
+    z-index: 80;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-col-manager-dropdown > .fi-dropdown-panel {
+    max-height: min(34rem, calc(100dvh - 2rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta::before {
@@ -1006,6 +1072,147 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__em
     padding: 1rem;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-page {
+    display: grid;
+    gap: clamp(1rem, 1.6vw, 1.5rem);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-brief {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(157, 219, 239, 0.24);
+    background:
+        linear-gradient(90deg, rgba(4, 31, 35, 0.96), rgba(7, 61, 69, 0.74)),
+        var(--juvenil-camp-panel-deep);
+    padding: clamp(1.1rem, 2vw, 1.65rem);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-brief::after {
+    position: absolute;
+    inset: auto 0 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--juvenil-camp-orange), rgba(157, 219, 239, 0.72), transparent);
+    content: '';
+    pointer-events: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-brief__eyebrow,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-card span {
+    color: #9ddbef;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-brief h2 {
+    color: #f3fbff;
+    font-family: var(--display-font), var(--font-family), sans-serif;
+    font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+    line-height: 1;
+    margin: 0.3rem 0 0.65rem;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-brief p,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-card p {
+    color: rgba(216, 242, 250, 0.78);
+    margin: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-grid {
+    display: grid;
+    gap: clamp(0.85rem, 1.4vw, 1.15rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-card {
+    position: relative;
+    min-height: 9.25rem;
+    overflow: hidden;
+    border: 1px solid rgba(157, 219, 239, 0.2);
+    background:
+        linear-gradient(180deg, rgba(7, 61, 69, 0.62), rgba(4, 31, 35, 0.78)),
+        var(--juvenil-camp-panel-deep);
+    padding: 1rem;
+    transition:
+        border-color 180ms ease,
+        transform 180ms ease,
+        background 180ms ease;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-card:hover {
+    border-color: rgba(244, 107, 18, 0.48);
+    background:
+        linear-gradient(180deg, rgba(7, 61, 69, 0.76), rgba(4, 31, 35, 0.86)),
+        var(--juvenil-camp-panel-deep);
+    transform: translateY(-1px);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-card::after {
+    position: absolute;
+    inset: auto 0 0;
+    height: 2px;
+    background: rgba(157, 219, 239, 0.36);
+    content: '';
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-card--sensitive {
+    border-color: rgba(244, 107, 18, 0.5);
+    background:
+        linear-gradient(135deg, rgba(244, 107, 18, 0.17), rgba(4, 31, 35, 0.8)),
+        var(--juvenil-camp-panel-deep);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-card--sensitive::after {
+    background: var(--juvenil-camp-orange);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-card h3 {
+    color: #f3fbff;
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0.45rem 0 0.45rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-form {
+    position: relative;
+    z-index: 2;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-form .fi-section {
+    overflow: visible;
+    border-color: rgba(157, 219, 239, 0.28);
+    background:
+        linear-gradient(180deg, rgba(7, 61, 69, 0.84), rgba(4, 31, 35, 0.78)),
+        var(--juvenil-camp-panel-deep);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-form .fi-section-header {
+    background:
+        linear-gradient(90deg, rgba(3, 24, 28, 0.78), rgba(7, 61, 69, 0.44)),
+        rgba(3, 24, 28, 0.34);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-form .fi-section-content-ctn {
+    background: rgba(3, 24, 28, 0.16);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-form .fi-section-footer {
+    border-top: 1px solid rgba(157, 219, 239, 0.18);
+    background: rgba(3, 24, 28, 0.24);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-form .fi-fo-field-wrp-label {
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-form :is(.fi-input-wrp, .fi-select-input) {
+    min-height: 2.8rem;
+    background: rgba(3, 24, 28, 0.66);
+}
+
 @media (max-width: 1023px) {
     body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-sidebar {
         box-shadow: 24px 0 90px rgba(0, 0, 0, 0.4);
@@ -1041,6 +1248,10 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__em
 
     body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__fields,
     body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents {
+        grid-template-columns: 1fr;
+    }
+
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-grid {
         grid-template-columns: 1fr;
     }
 

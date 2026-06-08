@@ -10,6 +10,7 @@ use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use DateTimeInterface;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -60,7 +61,7 @@ class GeneralSettingsPage extends SettingsPage
                             ->schema([
                                 Select::make('liberacao_inscricoes_status')
                                     ->label('Status das Inscrições Campistas')
-                                    ->options(LiberacaoInscricoesStatusEnum::class)
+                                    ->options(LiberacaoInscricoesStatusEnum::configurationOptions())
                                     ->native(false)
                                     ->selectablePlaceholder(false)
                                     ->live()
@@ -81,7 +82,7 @@ class GeneralSettingsPage extends SettingsPage
                             ->schema([
                                 Select::make('liberacao_inscricoes_equipe_trabalho_status')
                                     ->label('Status das Inscrições Equipe de Trabalho')
-                                    ->options(LiberacaoInscricoesEquipeTrabalhoStatusEnum::class)
+                                    ->options(LiberacaoInscricoesEquipeTrabalhoStatusEnum::configurationOptions())
                                     ->native(false)
                                     ->selectablePlaceholder(false)
                                     ->live()
@@ -250,10 +251,50 @@ class GeneralSettingsPage extends SettingsPage
                             ->description('Canal de suporte e termo entregue ao campista.')
                             ->schema([
                                 PhoneNumber::make('telefone_atendente')
-                                    ->required()
-                                    ->columnSpan([
-                                        'default' => 'full',
-                                    ]),
+                                    ->hidden()
+                                    ->dehydrated(),
+
+                                Repeater::make('atendentes')
+                                    ->label('Atendentes')
+                                    ->helperText('Cadastre até dois contatos para dúvidas, um para comprovantes e outros para necessidades específicas.')
+                                    ->schema([
+                                        Select::make('tipo')
+                                            ->label('Finalidade')
+                                            ->options([
+                                                'duvidas' => 'Dúvidas',
+                                                'comprovante' => 'Comprovante',
+                                                'necessidade_especifica' => 'Necessidade específica',
+                                            ])
+                                            ->native(false)
+                                            ->required()
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('nome')
+                                            ->label('Nome')
+                                            ->required()
+                                            ->maxLength(80)
+                                            ->columnSpanFull(),
+
+                                        PhoneNumber::make('telefone')
+                                            ->label('Telefone')
+                                            ->required()
+                                            ->columnSpanFull(),
+
+                                        Textarea::make('observacao')
+                                            ->label('Observação')
+                                            ->rows(2)
+                                            ->maxLength(180)
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->columns(12)
+                                    ->defaultItems(0)
+                                    ->addActionLabel('Adicionar atendente')
+                                    ->reorderable(false)
+                                    ->collapsible()
+                                    ->itemLabel(fn (array $state): ?string => filled($state['nome'] ?? null)
+                                        ? sprintf('%s - %s', $state['nome'], $state['telefone'] ?? 'sem telefone')
+                                        : null)
+                                    ->columnSpanFull(),
 
                                 FileUpload::make('termo_responsabilidade')
                                     ->label('Documento do termo')
@@ -313,6 +354,11 @@ class GeneralSettingsPage extends SettingsPage
             $data[$field] = self::normalizeDateTimePickerState($data[$field] ?? null);
         }
 
+        $data['atendentes'] = self::normalizeAttendanceContactsForFill(
+            $data['atendentes'] ?? null,
+            $data['telefone_atendente'] ?? null,
+        );
+
         return $data;
     }
 
@@ -329,7 +375,59 @@ class GeneralSettingsPage extends SettingsPage
             $data[$field] = self::normalizeDateTimeSettingValue($data[$field] ?? null);
         }
 
+        $data['atendentes'] = self::normalizeAttendanceContacts($data['atendentes'] ?? null);
+
         return $data;
+    }
+
+    /**
+     * @return array<int, array<string, string|null>>
+     */
+    private static function normalizeAttendanceContactsForFill(mixed $contacts, mixed $legacyPhone): array
+    {
+        $contacts = self::normalizeAttendanceContacts($contacts);
+
+        if ($contacts !== [] || blank($legacyPhone)) {
+            return $contacts;
+        }
+
+        return [
+            [
+                'nome' => 'Atendente',
+                'telefone' => (string) $legacyPhone,
+                'tipo' => 'duvidas',
+                'observacao' => null,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, string|null>>
+     */
+    private static function normalizeAttendanceContacts(mixed $contacts): array
+    {
+        if (! is_array($contacts)) {
+            return [];
+        }
+
+        return collect($contacts)
+            ->map(function (mixed $contact): ?array {
+                if (! is_array($contact) || blank($contact['telefone'] ?? null)) {
+                    return null;
+                }
+
+                return [
+                    'nome' => filled($contact['nome'] ?? null) ? (string) $contact['nome'] : 'Atendente',
+                    'telefone' => (string) $contact['telefone'],
+                    'tipo' => in_array($contact['tipo'] ?? null, ['duvidas', 'comprovante', 'necessidade_especifica'], true)
+                        ? (string) $contact['tipo']
+                        : 'duvidas',
+                    'observacao' => filled($contact['observacao'] ?? null) ? (string) $contact['observacao'] : null,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private static function normalizeDateTimePickerState(mixed $state): ?string

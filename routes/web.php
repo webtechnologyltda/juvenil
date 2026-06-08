@@ -1,6 +1,7 @@
 <?php
 
 use App\Settings\GeneralSettings;
+use App\Http\Controllers\Admin\PrintableReportController;
 use Illuminate\Support\Facades\Route;
 
 $campistaRegistrationPage = function () {
@@ -23,5 +24,12 @@ Route::get('/termos-inscricao', function () {
 Route::get('/pdf/{filename}', function ($filename) {
     return response()->file(asset('pdf/' . $filename));
 })->name('pdf.show');
+
+Route::middleware('auth')
+    ->prefix('admin/relatorios')
+    ->name('admin.reports.')
+    ->group(function () {
+        Route::get('/imprimir', PrintableReportController::class)->name('print');
+    });
 
 Route::redirect('/inscricao-equipe-trabalho', '/campista')->name('inscricao-equipe-trabalho');

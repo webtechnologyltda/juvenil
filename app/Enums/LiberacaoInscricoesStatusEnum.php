@@ -6,11 +6,20 @@ use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasIcon;
 use Filament\Support\Contracts\HasLabel;
 
-enum LiberacaoInscricoesStatusEnum : int implements HasColor, HasLabel, HasIcon
+enum LiberacaoInscricoesStatusEnum: int implements HasColor, HasIcon, HasLabel
 {
     case LIBERADO = 0;
     case TRANCADO = 1;
     case ENCERRADO = 2;
+
+    public static function configurationOptions(): array
+    {
+        return [
+            self::LIBERADO->value => 'Liberar inscrições',
+            self::TRANCADO->value => 'Trancar inscrições',
+            self::ENCERRADO->value => 'Encerrar inscrições manualmente',
+        ];
+    }
 
     public function getColor(): string|array|null
     {

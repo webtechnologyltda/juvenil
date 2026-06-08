@@ -15,6 +15,11 @@ use Spatie\Permission\PermissionRegistrar;
 class ShieldSeeder extends Seeder
 {
     protected const SENSITIVE_HEALTH_PERMISSION = 'view_sensitive_health_campista';
+    protected const REPORTS_PAGE_PERMISSION = 'page_reports_page';
+    protected const REGISTRATION_FICHAS_REPORT_PERMISSION = 'print_registration_fichas_report';
+    protected const TRIBE_QUADRANT_REPORT_PERMISSION = 'print_tribe_quadrant_report';
+    protected const MISSION_CONTACTS_REPORT_PERMISSION = 'print_mission_contacts_report';
+    protected const SENSITIVE_HEALTH_REPORT_PERMISSION = 'print_sensitive_health_report';
 
     public function run(): void
     {
@@ -24,6 +29,7 @@ class ShieldSeeder extends Seeder
 
         static::makeSuperAdminWithPermissions($permissions);
         static::makeAdministratorWithPermissions($permissions);
+        static::makeFinanceWithPermissions($permissions);
         static::makeInfirmaryWithPermissions($permissions);
 
         $this->command->info('Shield Seeding Completed.');
@@ -48,6 +54,18 @@ class ShieldSeeder extends Seeder
 
         $role->syncPermissions(static::makePermissionModels(
             static::administratorPermissionNames($permissions),
+        ));
+    }
+
+    protected static function makeFinanceWithPermissions(array $permissions): void
+    {
+        $role = static::firstOrCreateRole(
+            RoleEnum::getRoleEnumDescription(RoleEnum::Financeiro),
+            RoleEnum::Financeiro->value,
+        );
+
+        $role->syncPermissions(static::makePermissionModels(
+            static::financePermissionNames($permissions),
         ));
     }
 
@@ -115,6 +133,22 @@ class ShieldSeeder extends Seeder
             ->reject(fn (string $permission): bool => $permission === self::SENSITIVE_HEALTH_PERMISSION
                 || str_contains($permission, 'financeiro')
                 || str_contains($permission, 'lancamento'))
+            ->merge(static::administratorReportPermissionNames())
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    protected static function financePermissionNames(array $permissions): array
+    {
+        return collect($permissions)
+            ->filter(fn (string $permission): bool => str_contains($permission, 'financial')
+                || str_contains($permission, 'financeiro')
+                || str_contains($permission, 'lancamento'))
+            ->reject(fn (string $permission): bool => $permission === self::SENSITIVE_HEALTH_PERMISSION
+                || str_contains($permission, 'operational')
+                || str_contains($permission, 'campista')
+                || str_contains($permission, 'tribo'))
             ->values()
             ->all();
     }
@@ -127,8 +161,23 @@ class ShieldSeeder extends Seeder
                 'view_campista',
                 self::SENSITIVE_HEALTH_PERMISSION,
             ], true))
+            ->merge([
+                self::REPORTS_PAGE_PERMISSION,
+                self::SENSITIVE_HEALTH_REPORT_PERMISSION,
+            ])
+            ->unique()
             ->values()
             ->all();
+    }
+
+    protected static function administratorReportPermissionNames(): array
+    {
+        return [
+            self::REPORTS_PAGE_PERMISSION,
+            self::REGISTRATION_FICHAS_REPORT_PERMISSION,
+            self::TRIBE_QUADRANT_REPORT_PERMISSION,
+            self::MISSION_CONTACTS_REPORT_PERMISSION,
+        ];
     }
 
     protected static function getPermissionNames(): array
@@ -173,8 +222,12 @@ class ShieldSeeder extends Seeder
             'audit_campista',
             'audit_tribo',
             'export_campista',
+            self::MISSION_CONTACTS_REPORT_PERMISSION,
+            self::REGISTRATION_FICHAS_REPORT_PERMISSION,
             'restoreAudit_campista',
             'restoreAudit_tribo',
+            self::SENSITIVE_HEALTH_REPORT_PERMISSION,
+            self::TRIBE_QUADRANT_REPORT_PERMISSION,
             'updateTribo_campista',
             self::SENSITIVE_HEALTH_PERMISSION,
         ];

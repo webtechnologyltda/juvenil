@@ -372,7 +372,7 @@ test('public Filament form uses the orange primary theme', async ({ page }) => {
     });
 });
 
-test('public Filament photo upload crops square images without opening the editor', async ({ page }) => {
+test('public Filament photo upload keeps the square preview and editor inside the viewport', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
     await page.goto('http://juvenil.test');
@@ -381,15 +381,22 @@ test('public Filament photo upload crops square images without opening the edito
     await page.waitForTimeout(2500);
 
     await page.locator('.filament-registration-shell input[type="file"]').first().setInputFiles('/home/lucas/code/juvenil/public/img/hero-desktop.png');
-    await page.waitForSelector('.filament-registration-shell .filepond--item', { state: 'visible' });
+    await page.waitForFunction(() => (
+        Boolean(document.querySelector('.filament-registration-shell .filepond--item'))
+            || Boolean(document.querySelector('.fi-fo-file-upload-editor'))
+    ));
     await page.waitForTimeout(1200);
 
     const uploadState = await page.evaluate(() => {
         const upload = document.querySelector('.filament-registration-shell .fi-fo-file-upload').getBoundingClientRect();
         const root = document.querySelector('.filament-registration-shell .filepond--root').getBoundingClientRect();
-        const item = document.querySelector('.filament-registration-shell .filepond--item').getBoundingClientRect();
+        const item = document.querySelector('.filament-registration-shell .filepond--item')?.getBoundingClientRect();
         const editor = document.querySelector('.fi-fo-file-upload-editor');
+        const editorRect = editor?.getBoundingClientRect();
         const cookieDialog = document.querySelector('.js-cookie-consent');
+        const editorVisible = editor && editorRect
+            ? getComputedStyle(editor).display !== 'none' && editorRect.width > 0 && editorRect.height > 0
+            : false;
 
         return {
             viewport: {
@@ -399,9 +406,15 @@ test('public Filament photo upload crops square images without opening the edito
             uploadInsideViewport: upload.left >= 0
                 && upload.right <= window.innerWidth,
             rootAspectDelta: Math.abs((root.width / root.height) - 1),
-            itemAspectDelta: Math.abs((item.width / item.height) - 1),
+            itemAspectDelta: item ? Math.abs((item.width / item.height) - 1) : null,
             editorExists: Boolean(editor),
-            editorVisible: editor ? getComputedStyle(editor).display !== 'none' : false,
+            editorVisible,
+            editorInsideViewport: ! editorVisible || (
+                editorRect.left >= 0
+                    && editorRect.right <= window.innerWidth
+                    && editorRect.top >= 0
+                    && editorRect.bottom <= window.innerHeight
+            ),
             cookieVisible: cookieDialog ? getComputedStyle(cookieDialog).display !== 'none' : false,
             rootWidth: root.width,
             viewportWidth: window.innerWidth,
@@ -411,9 +424,8 @@ test('public Filament photo upload crops square images without opening the edito
     expect(uploadState.uploadInsideViewport).toBe(true);
     expect(uploadState.rootWidth).toBeLessThanOrEqual(uploadState.viewportWidth);
     expect(uploadState.rootAspectDelta).toBeLessThan(0.08);
-    expect(uploadState.itemAspectDelta).toBeLessThan(0.08);
-    expect(uploadState.editorExists).toBe(false);
-    expect(uploadState.editorVisible).toBe(false);
+    expect(uploadState.itemAspectDelta ?? 0).toBeLessThan(0.08);
+    expect(uploadState.editorInsideViewport).toBe(true);
     expect(uploadState.cookieVisible).toBe(true);
 
     await page.screenshot({
