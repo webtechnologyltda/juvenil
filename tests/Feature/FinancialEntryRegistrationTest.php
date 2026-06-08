@@ -266,6 +266,61 @@ it('creates a financial entry with multiple registration links from the Filament
         ->and($maria->fresh()->status)->toBe(StatusInscricao::Pago);
 });
 
+it('allows cash revenue financial entries without receipt attachments', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $payload = financialEntryFormPayload([
+        'nome' => 'Receita em dinheiro sem comprovante',
+        'tipo' => TipoLacamento::Receita->value,
+        'forma_pagamento' => FormaPagamento::Dinheiro->value,
+    ]);
+    unset($payload['comprovante']);
+
+    Livewire::test(CreateLancamento::class)
+        ->fillForm($payload)
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $lancamento = Lancamento::query()->where('nome', 'Receita em dinheiro sem comprovante')->firstOrFail();
+
+    expect($lancamento->comprovante)->toBe([]);
+});
+
+it('requires receipt attachments outside cash revenue financial entries', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    foreach ([
+        'pix revenue' => [
+            'nome' => 'Receita pix sem comprovante',
+            'tipo' => TipoLacamento::Receita->value,
+            'forma_pagamento' => FormaPagamento::Pix->value,
+            'comprador' => null,
+        ],
+        'cash expense' => [
+            'nome' => 'Despesa dinheiro sem comprovante',
+            'tipo' => TipoLacamento::Despesa->value,
+            'forma_pagamento' => FormaPagamento::Dinheiro->value,
+            'comprador' => 'Mercado',
+        ],
+    ] as $payload) {
+        Livewire::test(CreateLancamento::class)
+            ->fillForm(financialEntryFormPayload([
+                ...$payload,
+                'comprovante' => [],
+            ]))
+            ->call('create')
+            ->assertHasFormErrors(['comprovante' => 'required']);
+    }
+});
+
 it('updates registration links from the Filament edit page without duplicating the financial entry', function () {
     $this->seed(ShieldSeeder::class);
     seedFinancialRegistrationSettings(25000);
@@ -456,6 +511,23 @@ function seedFinancialRegistrationSettings(int $amount): void
             'payload' => json_encode($amount),
         ],
     );
+}
+
+function financialEntryFormPayload(array $overrides = []): array
+{
+    return array_replace([
+        'nome' => 'Lançamento financeiro',
+        'valor' => 12500,
+        'tipo' => TipoLacamento::Receita->value,
+        'categoria_lancamento_id' => null,
+        'data' => '2026-07-01',
+        'status' => StatusLacamento::Pago->value,
+        'forma_pagamento' => FormaPagamento::Pix->value,
+        'comprador' => null,
+        'descricao' => null,
+        'registration_payments' => [],
+        'comprovante' => [],
+    ], $overrides);
 }
 
 function paidFinancialEntry(int $amount): Lancamento
