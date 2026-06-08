@@ -165,6 +165,28 @@ it('keeps authenticated Filament modals above the panel with blurred scrollable 
         ->toContain('overscroll-behavior: contain;');
 });
 
+it('keeps authenticated Filament footer actions separated from footer edges', function () {
+    $adminCss = file_get_contents(resource_path('css/filament/admin/theme.css'));
+
+    expect($adminCss)
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-footer, .fi-pagination, .fi-ta-selection-indicator, .fi-modal-footer) {')
+        ->toContain('padding-block-start: clamp(1rem, 1.5vw, 1.35rem);')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal.fi-modal-slide-over > .fi-modal-window-ctn {')
+        ->toContain('grid-template-rows: 1fr;')
+        ->toContain('padding: 0;')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal.fi-modal-slide-over > .fi-modal-window-ctn > .fi-modal-window {')
+        ->toContain('height: 100dvh;')
+        ->toContain('max-height: 100dvh;')
+        ->toContain('overflow: hidden;')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal.fi-modal-slide-over > .fi-modal-window-ctn > .fi-modal-window > .fi-modal-content {')
+        ->toContain('overflow-y: auto;')
+        ->toContain('overscroll-behavior: contain;')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal.fi-modal-slide-over .fi-modal-footer {')
+        ->toContain('padding-block-start: clamp(1.15rem, 1.8vw, 1.6rem);')
+        ->toContain('body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-footer, .fi-ta-selection-indicator, .fi-modal-footer) :is(.fi-ac, .fi-modal-footer-actions, .fi-ta-selection-indicator-actions-ctn) {')
+        ->toContain('gap: 0.75rem;');
+});
+
 it('styles authenticated Filament buttons with the Juvenil action pattern', function () {
     $adminCss = file_get_contents(resource_path('css/filament/admin/theme.css'));
 
