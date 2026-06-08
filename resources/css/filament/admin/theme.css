@@ -377,6 +377,38 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-header, .fi-ta
     background: rgba(3, 24, 28, 0.34);
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-footer, .fi-pagination, .fi-ta-selection-indicator, .fi-modal-footer) {
+    padding-block-start: clamp(1rem, 1.5vw, 1.35rem);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal.fi-modal-slide-over > .fi-modal-window-ctn {
+    grid-template-rows: 1fr;
+    padding: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal.fi-modal-slide-over > .fi-modal-window-ctn > .fi-modal-window {
+    grid-row: 1 / -1;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal.fi-modal-slide-over > .fi-modal-window-ctn > .fi-modal-window > .fi-modal-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-modal.fi-modal-slide-over .fi-modal-footer {
+    padding-block-start: clamp(1.15rem, 1.8vw, 1.6rem);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-footer, .fi-ta-selection-indicator, .fi-modal-footer) :is(.fi-ac, .fi-modal-footer-actions, .fi-ta-selection-indicator-actions-ctn) {
+    gap: 0.75rem;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section-header-heading, .fi-ta-heading, .fi-modal-heading, .fi-wi-stats-overview-stat-value) {
     color: var(--juvenil-camp-text);
     font-weight: 900;

@@ -5,13 +5,18 @@ namespace App\Filament\Resources\LancamentoResource\Forms;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
+use App\Filament\Resources\LancamentoResource\Tables\LancamentoItemCampistasTable;
+use App\Filament\Resources\LancamentoResource\Tables\LancamentoItemEquipeTrabalhoTable;
 use App\Models\CategoriaLancamento;
+use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Support\EnumOptionBadge;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
 use App\Support\IconBadge;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\ModalTableSelect;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -22,6 +27,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Support\Enums\Width;
 use Filament\Support\RawJs;
 use Leandrocfe\FilamentPtbrFormFields\Money;
 
@@ -195,23 +201,27 @@ abstract class LancamentoForm
                                             'xl' => 3,
                                         ]),
 
-                                    Select::make('registration_id')
+                                    ModalTableSelect::make('registration_id')
                                         ->label('Inscrição')
-                                        ->options(fn (Get $get, ?Lancamento $record): array => app(RegistrationPaymentAllocator::class)
-                                            ->registrationOptions(
-                                                $get('registration_type'),
-                                                $record?->id,
-                                                filled($get('registration_id')) ? (int) $get('registration_id') : null,
-                                            ))
-                                        ->getSearchResultsUsing(fn (Get $get, ?Lancamento $record, string $search): array => app(RegistrationPaymentAllocator::class)
-                                            ->registrationSearchResults(
-                                                $get('registration_type'),
-                                                $search,
-                                                $record?->id,
-                                                filled($get('registration_id')) ? (int) $get('registration_id') : null,
-                                            ))
-                                        ->searchable()
-                                        ->preload()
+                                        ->tableConfiguration(fn (Get $get): string => $get('registration_type') === EquipeTrabalho::class
+                                            ? LancamentoItemEquipeTrabalhoTable::class
+                                            : LancamentoItemCampistasTable::class)
+                                        ->tableArguments(fn (Get $get, ?Lancamento $record): array => [
+                                            'excluding_lancamento_id' => $record?->id,
+                                            'current_registration_id' => filled($get('registration_id')) ? (int) $get('registration_id') : null,
+                                        ])
+                                        ->getOptionLabelUsing(fn (Get $get, ?Lancamento $record, mixed $value): ?string => self::registrationOptionLabel(
+                                            $get('registration_type'),
+                                            $value,
+                                            $record?->id,
+                                        ))
+                                        ->selectAction(fn (Action $action): Action => $action
+                                            ->label('Selecionar inscrição')
+                                            ->modalHeading('Selecionar inscrição para o item')
+                                            ->modalSubmitActionLabel('Aplicar inscrição')
+                                            ->modalWidth(Width::SevenExtraLarge)
+                                            ->slideOver()
+                                            ->icon('heroicon-o-magnifying-glass'))
                                         ->live()
                                         ->afterStateUpdated(function (Set $set, Get $get, mixed $state): void {
                                             $name = self::registrationName($get('registration_type'), $state);
@@ -543,6 +553,23 @@ abstract class LancamentoForm
         $registration = $registrationType::query()->find($registrationId);
 
         return $registration?->getAttribute('nome');
+    }
+
+    private static function registrationOptionLabel(?string $registrationType, mixed $registrationId, ?int $excludingLancamentoId = null): ?string
+    {
+        if (blank($registrationType) || blank($registrationId)) {
+            return null;
+        }
+
+        $registrationId = (int) $registrationId;
+
+        if ($registrationId <= 0) {
+            return null;
+        }
+
+        return app(RegistrationPaymentAllocator::class)
+            ->registrationOptions($registrationType, $excludingLancamentoId, $registrationId)[$registrationId]
+            ?? self::registrationName($registrationType, $registrationId);
     }
 
     public static function categoryOptions(mixed $type): array
