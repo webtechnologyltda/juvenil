@@ -91,6 +91,39 @@ it('renders the reports launcher only for authorized operational users', functio
         ->assertForbidden();
 });
 
+it('uses the reports page permission to expose standard operational reports', function () {
+    $this->seed(ShieldSeeder::class);
+
+    reportCampista();
+
+    $role = Role::query()->create([
+        'name' => 'Apoio operacional sem permissoes individuais',
+        'guard_name' => 'web',
+    ]);
+    $role->givePermissionTo('page_reports_page');
+
+    $user = User::factory()->create();
+    $user->assignRole($role);
+
+    $this->actingAs($user)
+        ->get(route('filament.admin.pages.reports-page'))
+        ->assertOk()
+        ->assertSee('Fichas de inscrição')
+        ->assertSee('Quadrante por tribo')
+        ->assertSee('Contatos e endereços')
+        ->assertDontSee('Nenhum relatório disponível')
+        ->assertDontSee('Lista médica da enfermaria');
+
+    $this->actingAs($user)
+        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
+        ->assertOk()
+        ->assertSee('Fichas de inscrição');
+
+    $this->actingAs($user)
+        ->get(route('admin.reports.print', ['type' => 'sensitive_health']))
+        ->assertForbidden();
+});
+
 it('builds the report filters with native Filament form components', function () {
     $page = file_get_contents(app_path('Filament/Pages/ReportsPage.php'));
     $view = file_get_contents(resource_path('views/filament/pages/reports-page.blade.php'));

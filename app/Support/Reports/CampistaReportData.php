@@ -21,7 +21,7 @@ class CampistaReportData
     public function availableTypes(User $user): array
     {
         return collect(CampistaReportType::cases())
-            ->filter(fn (CampistaReportType $type): bool => $user->can($type->permission()))
+            ->filter(fn (CampistaReportType $type): bool => $type->canBeAccessedBy($user))
             ->map(fn (CampistaReportType $type): array => [
                 'value' => $type->value,
                 'label' => $type->label(),
@@ -402,7 +402,7 @@ class CampistaReportData
 
         if ($size === 'O') {
             return filled(data_get($formData, 'tamanho_camiseta_outro'))
-                ? 'Outro: ' . data_get($formData, 'tamanho_camiseta_outro')
+                ? 'Outro: '.data_get($formData, 'tamanho_camiseta_outro')
                 : 'Outro';
         }
 

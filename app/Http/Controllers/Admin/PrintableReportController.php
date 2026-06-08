@@ -15,7 +15,7 @@ class PrintableReportController
 
         $type = CampistaReportType::tryFrom((string) $request->query('type'));
         abort_unless($type instanceof CampistaReportType, 404);
-        abort_unless($user->can($type->permission()), 403);
+        abort_unless($type->canBeAccessedBy($user), 403);
 
         return view('admin.reports.print', [
             'report' => $reports->payload($type, $request->query(), $user),
