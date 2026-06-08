@@ -350,6 +350,51 @@ test('authenticated permission groups list includes the finance role', async ({ 
     await expect(page.getByRole('cell', { name: 'Enfermaria', exact: true })).toBeVisible();
 });
 
+test('authenticated user role attach modal select opens above the modal footer', async ({ page }) => {
+    await signIn(page);
+
+    const userId = firstRecordId('App\\Models\\User');
+
+    await page.goto(`${adminBaseUrl}/admin/users/${userId}/edit`, { waitUntil: 'domcontentloaded' });
+    await waitForFilamentClient(page);
+
+    await page.getByRole('button', { name: /vincular/i }).first().click();
+    await expect(page.getByRole('heading', { name: /vincular grupo de permissão/i })).toBeVisible();
+
+    const attachModal = page.locator('.fi-modal-window:visible').filter({ hasText: /Vincular Grupo De Permissão/i }).first();
+    const selectButton = attachModal.locator('.fi-select-input-btn').first();
+
+    await selectButton.click();
+    await expect(attachModal.locator('.fi-dropdown-panel[role="listbox"]:visible')).toBeVisible();
+
+    const modalLayering = await page.evaluate(() => {
+        const modal = [...document.querySelectorAll('.fi-modal-window')]
+            .find((element) => element.getBoundingClientRect().width > 0 && element.textContent?.includes('Vincular Grupo De Permissão'));
+        const panel = modal?.querySelector('.fi-dropdown-panel[role="listbox"]');
+        const footer = modal?.querySelector('.fi-modal-footer');
+
+        if (! modal || ! panel || ! footer) {
+            return null;
+        }
+
+        const panelRect = panel.getBoundingClientRect();
+        const footerRect = footer.getBoundingClientRect();
+        const probeX = Math.min(panelRect.left + 24, panelRect.right - 8);
+        const probeY = Math.max(footerRect.top + 10, panelRect.top + 10);
+        const topElement = document.elementFromPoint(probeX, probeY);
+
+        return {
+            panelOverlapsFooter: panelRect.bottom > footerRect.top,
+            footerCoversPanel: panelRect.bottom > footerRect.top && ! panel.contains(topElement),
+            topElementInsidePanel: panel.contains(topElement),
+            topElementClassName: String(topElement?.className ?? ''),
+        };
+    });
+
+    expect(modalLayering).not.toBeNull();
+    expect(modalLayering.footerCoversPanel).toBe(false);
+});
+
 test('authenticated Filament sidebar flyouts stay above table surfaces when collapsed', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
