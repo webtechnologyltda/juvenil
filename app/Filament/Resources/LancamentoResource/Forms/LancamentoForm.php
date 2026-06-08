@@ -151,7 +151,8 @@ abstract class LancamentoForm
                                         ->maxLength(255)
                                         ->columnSpan([
                                             'default' => 'full',
-                                            'lg' => 4,
+                                            'md' => 1,
+                                            'xl' => 5,
                                         ]),
 
                                     Money::make('valor')
@@ -161,7 +162,8 @@ abstract class LancamentoForm
                                         ->required()
                                         ->columnSpan([
                                             'default' => 'full',
-                                            'lg' => 2,
+                                            'md' => 1,
+                                            'xl' => 2,
                                         ]),
 
                                     Select::make('categoria_lancamento_id')
@@ -174,7 +176,8 @@ abstract class LancamentoForm
                                         ->disabled(fn (Get $get): bool => blank($get('../../tipo')))
                                         ->columnSpan([
                                             'default' => 'full',
-                                            'lg' => 3,
+                                            'md' => 1,
+                                            'xl' => 5,
                                         ]),
 
                                     Select::make('registration_type')
@@ -188,7 +191,8 @@ abstract class LancamentoForm
                                         ->placeholder('Sem vínculo')
                                         ->columnSpan([
                                             'default' => 'full',
-                                            'lg' => 3,
+                                            'md' => 1,
+                                            'xl' => 3,
                                         ]),
 
                                     Select::make('registration_id')
@@ -204,8 +208,8 @@ abstract class LancamentoForm
                                                 $get('registration_type'),
                                                 $search,
                                                 $record?->id,
-                                            filled($get('registration_id')) ? (int) $get('registration_id') : null,
-                                        ))
+                                                filled($get('registration_id')) ? (int) $get('registration_id') : null,
+                                            ))
                                         ->searchable()
                                         ->preload()
                                         ->live()
@@ -219,7 +223,8 @@ abstract class LancamentoForm
                                         ->disabled(fn (Get $get): bool => blank($get('registration_type')))
                                         ->columnSpan([
                                             'default' => 'full',
-                                            'lg' => 6,
+                                            'md' => 2,
+                                            'xl' => 9,
                                         ]),
 
                                     Textarea::make('descricao')
@@ -227,7 +232,11 @@ abstract class LancamentoForm
                                         ->rows(2)
                                         ->columnSpanFull(),
                                 ])
-                                ->columns(12)
+                                ->columns([
+                                    'default' => 1,
+                                    'md' => 2,
+                                    'xl' => 12,
+                                ])
                                 ->defaultItems(1)
                                 ->minItems(1)
                                 ->addActionLabel('Adicionar item')
@@ -245,8 +254,8 @@ abstract class LancamentoForm
                         ->schema([
                             Repeater::make('comprovante')
                                 ->label('Comprovantes')
-                                ->required(fn (Get $get): bool => self::requiresComprovante($get('tipo'), $get('forma_pagamento')))
-                                ->minItems(fn (Get $get): int => self::requiresComprovante($get('tipo'), $get('forma_pagamento')) ? 1 : 0)
+                                ->required(fn (Get $get): bool => self::requiresComprovante($get('status'), $get('tipo'), $get('forma_pagamento')))
+                                ->minItems(fn (Get $get): int => self::requiresComprovante($get('status'), $get('tipo'), $get('forma_pagamento')) ? 1 : 0)
                                 ->afterStateHydrated(static function (Repeater $component): void {
                                     $component->rawState(self::comprovanteRepeaterFormState($component->getRawState()));
                                     $component->hydrateItems();
@@ -258,7 +267,7 @@ abstract class LancamentoForm
                                         ->placeholder('Tamanho max.: 2MB')
                                         ->hint('Tamanho máximo: 2MB')
                                         ->label('Documento')
-                                        ->required(fn (Get $get): bool => self::requiresComprovante($get('../../tipo'), $get('../../forma_pagamento')))
+                                        ->required(fn (Get $get): bool => self::requiresComprovante($get('../../status'), $get('../../tipo'), $get('../../forma_pagamento')))
                                         ->downloadable()
                                         ->openable()
                                         ->multiple()
@@ -473,9 +482,26 @@ abstract class LancamentoForm
         return (int) $type === TipoLacamento::Despesa->value;
     }
 
-    private static function requiresComprovante(mixed $type, mixed $paymentMethod): bool
+    private static function requiresComprovante(mixed $status, mixed $type, mixed $paymentMethod): bool
     {
+        if (! self::isPaidStatus($status)) {
+            return false;
+        }
+
         return ! (self::isRevenueType($type) && self::isCashPayment($paymentMethod));
+    }
+
+    private static function isPaidStatus(mixed $status): bool
+    {
+        if ($status instanceof StatusLacamento) {
+            return $status === StatusLacamento::Pago;
+        }
+
+        if (blank($status)) {
+            return false;
+        }
+
+        return (int) $status === StatusLacamento::Pago->value;
     }
 
     private static function isRevenueType(mixed $type): bool

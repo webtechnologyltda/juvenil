@@ -21,8 +21,8 @@
    Do instead: wait for `window.Alpine && window.Livewire`, then interact with `.fi-dropdown-trigger` for mousedown-driven dropdowns.
 
 ## Shell & Command Reliability
-1. **[2026-06-06] No repo-specific shell rule yet**
-   Do instead: prefer repo-native commands discovered from Composer, npm, and docs.
+1. **[2026-06-08] SQLite test DB cannot handle parallel test commands**
+   Do instead: run `php artisan test` commands sequentially because `.env.testing` points to the shared `database/database.sqlite`; if locks corrupt schema state, back up and recreate that untracked file before rerunning.
 
 ## Domain Behavior Guardrails
 1. **[2026-06-07] Filament dropdowns need an explicit layer scale**

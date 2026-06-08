@@ -269,11 +269,7 @@ class LancamentoBatchCreator
 
     private function amount(mixed $value): int
     {
-        if (is_string($value)) {
-            $value = str_replace(['R$', '.', ',', ' '], ['', '', '.', ''], $value);
-        }
-
-        return abs((int) round(((float) $value)));
+        return MoneyAmount::toCents($value);
     }
 
     private function nullableText(mixed $value): ?string
