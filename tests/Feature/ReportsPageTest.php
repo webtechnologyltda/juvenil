@@ -552,10 +552,17 @@ it('requires the sensitive health toggle and confirmation before exposing medica
 
     $infirmary = reportUserWithRole('Enfermaria');
 
-    expect(reportHtml('registration_fichas', [], $infirmary))
+    $restrictedHtml = reportHtml('registration_fichas', [], $infirmary);
+
+    expect($restrictedHtml)
+        ->toContain('<span class="report-field__label">Toma remédio?</span>')
+        ->toContain('<span class="report-field__label">Tem recomendação?</span>')
         ->toContain('Informação restrita')
         ->not->toContain('Dipirona a cada 8 horas')
         ->not->toContain('Evitar amendoim');
+
+    expect(substr_count($restrictedHtml, '<strong class="report-field__value">Sim</strong>'))
+        ->toBeGreaterThanOrEqual(2);
 
     expect(reportHtml('registration_fichas', [
         'show_sensitive_health' => 1,
