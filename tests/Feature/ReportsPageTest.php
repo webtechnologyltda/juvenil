@@ -1,7 +1,12 @@
 <?php
 
+use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
+use App\Enums\StatusLacamento;
+use App\Enums\TipoLacamento;
 use App\Models\Campista;
+use App\Models\CategoriaLancamento;
+use App\Models\Lancamento;
 use App\Models\Tribo;
 use App\Models\User;
 use Database\Seeders\ShieldSeeder;
@@ -50,6 +55,35 @@ function reportUserWithRole(string $role): User
     $user->assignRole($role);
 
     return $user;
+}
+
+function reportCampistaLinkedPayment(Campista $campista): Lancamento
+{
+    $category = CategoriaLancamento::factory()->create([
+        'nome' => 'Inscrições relatório',
+        'tipo' => TipoLacamento::Receita,
+    ]);
+
+    $lancamento = Lancamento::factory()->create([
+        'nome' => 'Lançamento relatório inscrição',
+        'data' => '2026-06-08 10:00:00',
+        'valor' => 35000,
+        'tipo' => TipoLacamento::Receita,
+        'status' => StatusLacamento::Pago,
+        'forma_pagamento' => FormaPagamento::Pix,
+        'user_id' => null,
+    ]);
+
+    $lancamento->items()->create([
+        'nome' => 'Inscrição relatório',
+        'descricao' => 'Pagamento vinculado no relatório',
+        'valor' => 35000,
+        'categoria_lancamento_id' => $category->id,
+        'registration_type' => $campista::class,
+        'registration_id' => $campista->id,
+    ]);
+
+    return $lancamento;
 }
 
 it('seeds report permissions with least privilege by role', function () {
@@ -180,6 +214,56 @@ it('renders the campista photo in printable registration fichas', function () {
         ->assertOk()
         ->assertSee('Foto de Ana Maria Juvenil')
         ->assertSee('/storage/foto-formulario/ana.png', false);
+});
+
+it('applies ficha visual styling and linked payment badges to printable registration reports', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $tribe = Tribo::query()->create(['cor' => 'Rosa']);
+    $campista = reportCampista([
+        'tribo_id' => $tribe->id,
+        'forma_pagamento' => FormaPagamento::Pix,
+        'status' => StatusInscricao::Pago,
+    ]);
+    $lancamento = reportCampistaLinkedPayment($campista);
+    $superAdministrator = reportUserWithRole('Super Administrador');
+
+    $this->actingAs($superAdministrator)
+        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
+        ->assertOk()
+        ->assertSee('report-registration-summary', false)
+        ->assertSee('data-report-summary-icon="polaris-payment-icon"', false)
+        ->assertSee('data-report-summary-icon="fab-pix"', false)
+        ->assertSee('data-report-summary-icon="heroicon-o-flag"', false)
+        ->assertSee('--report-accent: #ec4899', false)
+        ->assertSee('<section class="report-card report-registration-payment-section">', false)
+        ->assertSee('Pagamentos vinculados')
+        ->assertSee('Lançamento relatório inscrição')
+        ->assertSee('R$ 350,00')
+        ->assertSee('08/06/2026')
+        ->assertSee('Visualizar lançamento')
+        ->assertSee(route('filament.admin.resources.lancamentos.view', ['record' => $lancamento]), false)
+        ->assertSee('data-report-payment-icon="fab-pix"', false)
+        ->assertSee('data-report-payment-color="teal"', false)
+        ->assertSee('data-report-payment-icon="polaris-payment-icon"', false)
+        ->assertSee('data-report-payment-color="success"', false)
+        ->assertDontSee('Comprovantes anexados');
+});
+
+it('hides linked payments on printable registration reports without financial view permissions', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $campista = reportCampista();
+    reportCampistaLinkedPayment($campista);
+    $administrator = reportUserWithRole('Administrador');
+
+    $this->actingAs($administrator)
+        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
+        ->assertOk()
+        ->assertSee('report-registration-summary', false)
+        ->assertDontSee('<section class="report-card report-registration-payment-section">', false)
+        ->assertDontSee('Pagamentos vinculados')
+        ->assertDontSee('Lançamento relatório inscrição');
 });
 
 it('renders the camp logo in every printable report header', function () {

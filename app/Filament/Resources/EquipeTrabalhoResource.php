@@ -72,6 +72,7 @@ class EquipeTrabalhoResource extends Resource
         return [
             'index' => Pages\ListEquipeTrabalhos::route('/'),
             'create' => Pages\CreateEquipeTrabalho::route('/create'),
+            'view' => Pages\ViewEquipeTrabalho::route('/{record}'),
             'edit' => Pages\EditEquipeTrabalho::route('/{record}/edit'),
         ];
     }

@@ -31,9 +31,22 @@
 
     <div class="juvenil-registration-card__summary" aria-label="Resumo da inscrição">
         @foreach ($ficha['summary'] as $summary)
-            <div class="juvenil-registration-card__summary-item juvenil-registration-card__summary-item--{{ $summary['tone'] }}">
-                <span>{{ $summary['label'] }}</span>
-                <strong>{{ $summary['value'] }}</strong>
+            <div
+                class="juvenil-registration-card__summary-item juvenil-registration-card__summary-item--{{ $summary['tone'] }}"
+                @if (filled($summary['icon'] ?? null)) data-summary-icon="{{ $summary['icon'] }}" @endif
+                @if (filled($summary['color'] ?? null)) data-summary-color="{{ $summary['color'] }}" @endif
+                @style([
+                    '--summary-accent: ' . ($summary['accent'] ?? '') => filled($summary['accent'] ?? null),
+                ])
+            >
+                <div class="juvenil-registration-card__summary-heading">
+                    <span class="juvenil-registration-card__summary-label">{{ $summary['label'] }}</span>
+                </div>
+
+                <strong>
+                    @svg($summary['icon'], 'juvenil-registration-card__summary-badge-icon', ['aria-hidden' => 'true'])
+                    {{ $summary['value'] }}
+                </strong>
             </div>
         @endforeach
     </div>
@@ -61,24 +74,80 @@
             </section>
         @endforeach
 
-        <section class="juvenil-registration-card__section juvenil-registration-card__section--documents">
-            <div class="juvenil-registration-card__section-header">
-                <span></span>
-                <h3>Comprovantes anexados</h3>
-            </div>
-
-            @if (count($ficha['documents']))
-                <div class="juvenil-registration-card__documents">
-                    @foreach ($ficha['documents'] as $document)
-                        <a href="{{ $document['url'] }}" target="_blank" rel="noopener noreferrer">
-                            <span>{{ $document['name'] }}</span>
-                            <small>Abrir documento</small>
-                        </a>
-                    @endforeach
+        @if ($ficha['can_view_payments'])
+            <section class="juvenil-registration-card__section juvenil-registration-card__section--payments">
+                <div class="juvenil-registration-card__section-header">
+                    <span></span>
+                    <h3>Pagamentos vinculados</h3>
                 </div>
-            @else
-                <p class="juvenil-registration-card__empty">Nenhum comprovante anexado.</p>
-            @endif
-        </section>
+
+                @if (count($ficha['payments']))
+                    <div class="juvenil-registration-card__payments">
+                        @foreach ($ficha['payments'] as $payment)
+                            <article class="juvenil-registration-card__payment">
+                                <div class="juvenil-registration-card__payment-header">
+                                    <div>
+                                        <p>Lançamento financeiro</p>
+                                        <strong>{{ $payment['name'] }}</strong>
+                                    </div>
+
+                                    @if ($payment['url'])
+                                        <a href="{{ $payment['url'] }}">
+                                            Visualizar lançamento
+                                        </a>
+                                    @endif
+                                </div>
+
+                                <dl class="juvenil-registration-card__payment-fields">
+                                    <div>
+                                        <dt>Valor aplicado</dt>
+                                        <dd>{{ $payment['amount'] }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Data</dt>
+                                        <dd>{{ $payment['date'] }}</dd>
+                                    </div>
+                                    <div
+                                        class="juvenil-registration-card__payment-field juvenil-registration-card__payment-field--with-icon"
+                                        data-payment-icon="{{ $payment['method']['icon'] }}"
+                                        data-payment-color="{{ $payment['method']['color'] }}"
+                                        @style([
+                                            '--payment-accent: ' . $payment['method']['accent'],
+                                        ])
+                                    >
+                                        <dt>Forma</dt>
+                                        <dd>
+                                            <span class="juvenil-registration-card__payment-field-icon">
+                                                @svg($payment['method']['icon'], 'juvenil-registration-card__payment-field-icon-svg', ['aria-hidden' => 'true'])
+                                            </span>
+                                            <span>{{ $payment['method']['label'] }}</span>
+                                        </dd>
+                                    </div>
+                                    <div
+                                        class="juvenil-registration-card__payment-field juvenil-registration-card__payment-field--with-icon"
+                                        data-payment-icon="{{ $payment['status']['icon'] }}"
+                                        data-payment-color="{{ $payment['status']['color'] }}"
+                                        @style([
+                                            '--payment-accent: ' . $payment['status']['accent'],
+                                        ])
+                                    >
+                                        <dt>Status</dt>
+                                        <dd>
+                                            <span class="juvenil-registration-card__payment-field-icon">
+                                                @svg($payment['status']['icon'], 'juvenil-registration-card__payment-field-icon-svg', ['aria-hidden' => 'true'])
+                                            </span>
+                                            <span>{{ $payment['status']['label'] }}</span>
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </article>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="juvenil-registration-card__empty">Nenhum lançamento financeiro vinculado a esta inscrição.</p>
+                @endif
+            </section>
+        @endif
+
     </div>
 </div>

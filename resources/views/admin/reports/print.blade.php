@@ -219,11 +219,142 @@
             background: var(--soft);
             color: var(--ink);
             display: inline-flex;
+            align-items: center;
+            gap: .28rem;
             font-size: .7rem;
             font-weight: 800;
             letter-spacing: .08em;
             padding: .35rem .5rem;
             text-transform: uppercase;
+        }
+
+        .report-badge__icon {
+            width: .78rem;
+            height: .78rem;
+            flex: 0 0 auto;
+        }
+
+        .report-badge--success {
+            border-color: rgba(34, 197, 94, .38);
+            background: rgba(34, 197, 94, .1);
+            color: #0f6b38;
+        }
+
+        .report-badge--warning {
+            border-color: rgba(234, 179, 8, .5);
+            background: rgba(234, 179, 8, .12);
+            color: #7a5200;
+        }
+
+        .report-badge--danger {
+            border-color: rgba(225, 29, 72, .35);
+            background: rgba(225, 29, 72, .08);
+            color: #9f1239;
+        }
+
+        .report-badge--tribe .report-badge__icon {
+            color: var(--report-accent);
+        }
+
+        .report-registration-ficha__top {
+            align-items: center;
+            border-bottom: 0;
+            margin-bottom: .75rem;
+            padding-bottom: 0;
+        }
+
+        .report-registration-ficha__identity h2 {
+            margin-top: .25rem;
+            line-height: 1.05;
+        }
+
+        .report-registration-ficha__meta {
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 700;
+            margin: .25rem 0 0;
+        }
+
+        .report-registration-ficha__meta span::before {
+            color: var(--line);
+            content: " / ";
+            font-weight: 400;
+        }
+
+        .report-registration-ficha__badges {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: .35rem;
+        }
+
+        .report-registration-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            border: 1px solid var(--line);
+            margin-bottom: .75rem;
+            background: #f9fcfc;
+        }
+
+        .report-registration-summary__item {
+            display: grid;
+            gap: .28rem;
+            min-width: 0;
+            border-top: 3px solid var(--report-accent);
+            border-right: 1px solid var(--line);
+            padding: .6rem .7rem;
+        }
+
+        .report-registration-summary__item:last-child {
+            border-right: 0;
+        }
+
+        .report-registration-summary__item span {
+            color: var(--muted);
+            font-size: .64rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .report-registration-summary__item strong {
+            display: inline-flex;
+            min-width: 0;
+            align-items: center;
+            gap: .35rem;
+            color: var(--ink);
+            font-size: .86rem;
+            line-height: 1.2;
+        }
+
+        .report-registration-summary__icon {
+            width: .95rem;
+            height: .95rem;
+            flex: 0 0 auto;
+            color: var(--report-accent);
+        }
+
+        .report-registration-ficha__sections {
+            align-items: start;
+        }
+
+        .report-registration-ficha .report-card {
+            page-break-inside: avoid;
+        }
+
+        .report-registration-ficha .report-card h3 {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+        }
+
+        .report-registration-ficha .report-card h3::before {
+            display: block;
+            width: .26rem;
+            height: 1.15rem;
+            background: linear-gradient(180deg, var(--accent), #9ddbef);
+            content: "";
+            flex: 0 0 auto;
         }
 
         .report-two-col,
@@ -270,6 +401,96 @@
             margin: .12rem 0 0;
             font-weight: 700;
             word-break: break-word;
+        }
+
+        .report-field--wide {
+            grid-column: 1 / -1;
+        }
+
+        .report-field--tone-warning dd {
+            color: #8a5a00;
+        }
+
+        .report-field--tone-success dd {
+            color: #0f6b38;
+        }
+
+        .report-registration-payment-section {
+            margin-top: .75rem;
+            page-break-inside: avoid;
+        }
+
+        .report-registration-payments {
+            display: grid;
+            gap: .6rem;
+        }
+
+        .report-registration-payment {
+            border: 1px solid var(--line);
+            background: #f9fcfc;
+            padding: .75rem;
+            page-break-inside: avoid;
+        }
+
+        .report-registration-payment header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .75rem;
+            margin-bottom: .6rem;
+        }
+
+        .report-registration-payment header span,
+        .report-registration-payment dt {
+            color: var(--muted);
+            font-size: .64rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .report-registration-payment header strong {
+            display: block;
+            margin-top: .12rem;
+            font-size: .9rem;
+        }
+
+        .report-registration-payment a {
+            border: 1px solid rgba(244, 107, 18, .42);
+            color: #9a3f00;
+            flex: 0 0 auto;
+            font-size: .64rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            padding: .32rem .45rem;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        .report-registration-payment dl {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .55rem;
+            margin: 0;
+        }
+
+        .report-registration-payment dd {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            margin: .1rem 0 0;
+            font-weight: 800;
+        }
+
+        .report-registration-payment__icon {
+            width: .92rem;
+            height: .92rem;
+            flex: 0 0 auto;
+            color: var(--report-accent);
+        }
+
+        .report-registration-payment-section__empty {
+            margin: 0;
         }
 
         .report-table {
@@ -338,10 +559,17 @@
             .report-section,
             .report-page,
             .report-card,
+            .report-registration-summary,
+            .report-registration-summary__item,
+            .report-registration-payment,
             .report-filter,
             .report-table th,
             .report-table td {
                 border-color: #b7c6c9;
+            }
+
+            .report-registration-payment a {
+                display: none;
             }
         }
     </style>

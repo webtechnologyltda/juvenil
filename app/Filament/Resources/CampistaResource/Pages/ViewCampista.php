@@ -6,7 +6,10 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Filament\Resources\CampistaResource;
 use App\Filament\Resources\CampistaResource\CampistaForm;
+use App\Filament\Resources\LancamentoResource;
+use App\Models\LancamentoItem;
 use App\Support\Campistas\ParishCommunityLabels;
+use Carbon\Carbon;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\View;
@@ -86,22 +89,34 @@ class ViewCampista extends ViewRecord
                 [
                     'label' => 'Status',
                     'value' => $status?->getLabel() ?? 'Sem status',
-                    'tone' => $this->statusTone($status),
+                    'tone' => $this->summaryColor($status?->getColor(), $this->statusTone($status)),
+                    'icon' => $status?->getIcon() ?? 'heroicon-o-question-mark-circle',
+                    'color' => $this->summaryColor($status?->getColor(), $this->statusTone($status)),
+                    'accent' => $this->summaryAccent($status?->getColor(), $this->statusTone($status)),
                 ],
                 [
                     'label' => 'Pagamento',
                     'value' => $payment?->getLabel() ?? 'Não informado',
-                    'tone' => $this->paymentTone($payment),
+                    'tone' => $this->summaryColor($payment?->getColor(), $this->paymentTone($payment)),
+                    'icon' => $payment?->getIcon() ?? 'heroicon-o-credit-card',
+                    'color' => $this->summaryColor($payment?->getColor(), $this->paymentTone($payment)),
+                    'accent' => $this->summaryAccent($payment?->getColor(), $this->paymentTone($payment)),
                 ],
                 [
                     'label' => 'Presença',
                     'value' => $record->presenca ? 'Confirmada' : 'Pendente',
                     'tone' => $record->presenca ? 'success' : 'warning',
+                    'icon' => $record->presenca ? 'heroicon-o-check-circle' : 'heroicon-o-clock',
+                    'color' => $record->presenca ? 'success' : 'warning',
+                    'accent' => $this->summaryAccent($record->presenca ? 'success' : 'warning'),
                 ],
                 [
                     'label' => 'Tribo',
                     'value' => $record->tribo?->cor ?? 'Sem tribo',
-                    'tone' => $record->tribo ? 'info' : 'neutral',
+                    'tone' => $record->tribo ? 'tribe' : 'neutral',
+                    'icon' => 'heroicon-o-flag',
+                    'color' => $record->tribo ? 'tribe' : 'neutral',
+                    'accent' => $this->tribeAccent($record->tribo?->cor) ?? $this->summaryAccent('neutral'),
                 ],
             ],
             'sections' => [
@@ -178,13 +193,75 @@ class ViewCampista extends ViewRecord
                         ['label' => 'Data de inscrição', 'value' => $record->created_at?->format('d/m/Y H:i')],
                         ['label' => 'Data de pagamento', 'value' => $record->dia_pagamento?->format('d/m/Y')],
                         ['label' => 'Forma de pagamento', 'value' => $payment?->getLabel()],
-                        ['label' => 'Comprovante', 'value' => data_get($formData, 'comprovante_nome')],
                         ['label' => 'Observações', 'value' => $record->observacoes, 'wide' => true],
                     ],
                 ],
             ],
-            'documents' => $this->documentLinks(data_get($formData, 'comprovante')),
+            'can_view_payments' => $this->canViewLinkedPayments(),
+            'payments' => $this->linkedPaymentsData(),
         ];
+    }
+
+    /**
+     * @return array<int, array{name: string, amount: string, date: string, method: array{label: string, icon: string, color: string, accent: string}, status: array{label: string, icon: string, color: string, accent: string}, url: ?string}>
+     */
+    private function linkedPaymentsData(): array
+    {
+        if (! $this->canViewLinkedPayments()) {
+            return [];
+        }
+
+        return $this->getRecord()
+            ->lancamentoItems()
+            ->with('lancamento')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (LancamentoItem $payment): array => $this->linkedPaymentData($payment))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{name: string, amount: string, date: string, method: array{label: string, icon: string, color: string, accent: string}, status: array{label: string, icon: string, color: string, accent: string}, url: ?string}
+     */
+    private function linkedPaymentData(LancamentoItem $payment): array
+    {
+        $lancamento = $payment->lancamento;
+        $method = $lancamento?->forma_pagamento;
+        $status = $lancamento?->status;
+
+        return [
+            'name' => $lancamento?->nome ?? 'Lançamento removido',
+            'amount' => $this->money((int) $payment->valor),
+            'date' => $lancamento?->data ? Carbon::parse($lancamento->data)->format('d/m/Y') : 'Sem data',
+            'method' => [
+                'label' => $method?->getLabel() ?? 'Sem forma',
+                'icon' => $method?->getIcon() ?? 'heroicon-o-credit-card',
+                'color' => $this->summaryColor($method?->getColor(), 'neutral'),
+                'accent' => $this->summaryAccent($method?->getColor(), 'neutral'),
+            ],
+            'status' => [
+                'label' => $status?->getLabel() ?? 'Sem status',
+                'icon' => $status?->getIcon() ?? 'heroicon-o-question-mark-circle',
+                'color' => $this->summaryColor($status?->getColor(), 'neutral'),
+                'accent' => $this->summaryAccent($status?->getColor(), 'neutral'),
+            ],
+            'url' => $lancamento ? LancamentoResource::getUrl('view', ['record' => $lancamento]) : null,
+        ];
+    }
+
+    private function canViewLinkedPayments(): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null
+            && $user->can('view_any_lancamento')
+            && $user->can('view_lancamento');
+    }
+
+    private function money(int $amount): string
+    {
+        return 'R$ '.number_format(abs($amount) / 100, 2, ',', '.');
     }
 
     private function statusEnum(): ?StatusInscricao
@@ -218,24 +295,6 @@ class ViewCampista extends ViewRecord
             : Storage::disk('public')->url($avatar);
     }
 
-    private function documentLinks(mixed $documents): array
-    {
-        if (blank($documents)) {
-            return [];
-        }
-
-        $documents = is_array($documents) ? $documents : [$documents];
-
-        return collect($documents)
-            ->filter()
-            ->map(fn (string $path): array => [
-                'name' => basename($path),
-                'url' => Str::startsWith($path, ['http://', 'https://', '/']) ? $path : Storage::url($path),
-            ])
-            ->values()
-            ->all();
-    }
-
     private function statusTone(?StatusInscricao $status): string
     {
         return match ($status) {
@@ -257,6 +316,58 @@ class ViewCampista extends ViewRecord
         };
     }
 
+    private function summaryColor(string|array|null $color, string $fallback = 'neutral'): string
+    {
+        if (is_array($color)) {
+            $color = collect($color)
+                ->filter(fn (mixed $value): bool => is_string($value) && filled($value))
+                ->first();
+        }
+
+        return is_string($color) && filled($color) ? $color : $fallback;
+    }
+
+    private function summaryAccent(string|array|null $color, string $fallback = 'neutral'): string
+    {
+        return match ($this->summaryColor($color, $fallback)) {
+            'success' => '#22c55e',
+            'warning' => '#facc15',
+            'danger' => '#fb7185',
+            'info' => '#9ddbef',
+            'teal' => '#2dd4bf',
+            'orange' => '#f46b12',
+            'violet' => '#a78bfa',
+            default => '#94a3b8',
+        };
+    }
+
+    private function tribeAccent(?string $color): ?string
+    {
+        if (blank($color)) {
+            return null;
+        }
+
+        $normalized = Str::lower(Str::ascii(trim($color)));
+
+        if (preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/', $normalized) === 1) {
+            return $normalized;
+        }
+
+        return match ($normalized) {
+            'azul' => '#2563eb',
+            'vermelha', 'vermelho' => '#dc2626',
+            'verde' => '#16a34a',
+            'amarela', 'amarelo' => '#eab308',
+            'roxa', 'roxo' => '#7c3aed',
+            'laranja' => '#f97316',
+            'rosa' => '#ec4899',
+            'branca', 'branco' => '#f8fafc',
+            'preta', 'preto' => '#111827',
+            'cinza' => '#64748b',
+            default => null,
+        };
+    }
+
     private function sexLabel(mixed $sex): ?string
     {
         return match ($sex) {
@@ -272,7 +383,7 @@ class ViewCampista extends ViewRecord
 
         if ($size === 'O') {
             return filled(data_get($formData, 'tamanho_camiseta_outro'))
-                ? 'Outro: ' . data_get($formData, 'tamanho_camiseta_outro')
+                ? 'Outro: '.data_get($formData, 'tamanho_camiseta_outro')
                 : 'Outro';
         }
 
@@ -281,7 +392,7 @@ class ViewCampista extends ViewRecord
 
     private function withSuffix(mixed $value, string $suffix): ?string
     {
-        return filled($value) ? trim((string) $value) . ' ' . $suffix : null;
+        return filled($value) ? trim((string) $value).' '.$suffix : null;
     }
 
     private function parishLabel(mixed $parish): ?string

@@ -148,7 +148,7 @@ class BatchLancamentos extends Page
                             ->prefix(RawJs::make('R$'))
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set): void {
-                                $amount = MoneyAmount::toCents($get('default_value'));
+                                $amount = MoneyAmount::formatForInput($get('default_value'));
                                 $items = collect($get('registration_items') ?? [])
                                     ->map(fn (array $item): array => [
                                         ...$item,
@@ -297,7 +297,7 @@ class BatchLancamentos extends Page
                             ->prefix(RawJs::make('R$'))
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set): void {
-                                $amount = MoneyAmount::toCents($get('manual_default_value'));
+                                $amount = MoneyAmount::formatForInput($get('manual_default_value'));
                                 $items = collect($get('manual_items') ?? [])
                                     ->map(fn (array $item): array => [
                                         ...$item,
@@ -442,7 +442,7 @@ class BatchLancamentos extends Page
             return [];
         }
 
-        $amount = MoneyAmount::toCents($amount);
+        $amount = MoneyAmount::formatForInput($amount);
 
         /** @var class-string<Model> $registrationType */
         return collect($ids)
