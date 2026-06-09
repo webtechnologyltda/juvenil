@@ -128,6 +128,7 @@ it('keeps registration trend chart y axis as whole-number counts', function () {
 it('renders tribe distribution as a pie chart using the tribe colors', function () {
     $blue = Tribo::query()->create(['cor' => 'Azul', 'cor_hex' => '#123abc']);
     $red = Tribo::query()->create(['cor' => 'Vermelha', 'cor_hex' => '#c32121']);
+    $white = Tribo::query()->create(['cor' => 'Branca', 'cor_hex' => '#f8fafc']);
 
     Campista::factory()
         ->count(2)
@@ -145,12 +146,23 @@ it('renders tribe distribution as a pie chart using the tribe colors', function 
         'user_id' => null,
     ]);
 
+    Campista::factory()->create([
+        'status' => StatusInscricao::Pago->value,
+        'presenca' => false,
+        'tribo_id' => $white->id,
+        'user_id' => null,
+    ]);
+
     $options = operationalDashboardChartOptions(TribeDistributionChart::class);
 
     expect($options['chart']['type'])->toBe('pie')
-        ->and($options['labels'])->toBe(['Azul', 'Vermelha'])
-        ->and($options['series'])->toBe([2, 1])
-        ->and($options['colors'])->toBe(['#123abc', '#c32121']);
+        ->and($options['labels'])->toBe(['Azul', 'Vermelha', 'Branca'])
+        ->and($options['series'])->toBe([2, 1, 1])
+        ->and($options['colors'])->toBe(['#123abc', '#c32121', '#f8fafc'])
+        ->and($options['dataLabels']['style']['colors'])->toBe(['#ffffff', '#ffffff', '#03181c'])
+        ->and(operationalDashboardChartExtraJs(TribeDistributionChart::class))->toContain("return luminance >= 0.45 ? '#03181c' : '#ffffff'")
+        ->and(operationalDashboardChartExtraJs(TribeDistributionChart::class))->toContain('tooltip: {')
+        ->and(operationalDashboardChartExtraJs(TribeDistributionChart::class))->toContain('custom: function');
 });
 
 it('gives parish community distribution enough label space', function () {
