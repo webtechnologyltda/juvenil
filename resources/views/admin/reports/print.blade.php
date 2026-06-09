@@ -393,52 +393,6 @@
             gap: .35rem;
         }
 
-        .report-registration-summary {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            border: 1px solid var(--line);
-            margin-bottom: .75rem;
-            background: #f9fcfc;
-        }
-
-        .report-registration-summary__item {
-            display: grid;
-            gap: .28rem;
-            min-width: 0;
-            border-top: 3px solid var(--report-accent);
-            border-right: 1px solid var(--line);
-            padding: .6rem .7rem;
-        }
-
-        .report-registration-summary__item:last-child {
-            border-right: 0;
-        }
-
-        .report-registration-summary__item span {
-            color: var(--muted);
-            font-size: .64rem;
-            font-weight: 900;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-        }
-
-        .report-registration-summary__item strong {
-            display: inline-flex;
-            min-width: 0;
-            align-items: center;
-            gap: .35rem;
-            color: var(--ink);
-            font-size: .86rem;
-            line-height: 1.2;
-        }
-
-        .report-registration-summary__icon {
-            width: .95rem;
-            height: .95rem;
-            flex: 0 0 auto;
-            color: var(--report-accent);
-        }
-
         .report-registration-ficha__sections {
             align-items: start;
         }
@@ -722,8 +676,6 @@
             .report-section,
             .report-page,
             .report-card,
-            .report-registration-summary,
-            .report-registration-summary__item,
             .report-registration-payment,
             .report-filter,
             .report-table th,

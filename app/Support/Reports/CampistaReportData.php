@@ -2,7 +2,6 @@
 
 namespace App\Support\Reports;
 
-use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Models\Campista;
 use App\Models\LancamentoItem;
@@ -117,8 +116,6 @@ class CampistaReportData
     private function ficha(Campista $campista, bool $showSensitiveHealth, bool $showPaymentData): array
     {
         $formData = $campista->form_data ?? [];
-        $status = $this->statusEnum($campista);
-        $payment = $this->paymentEnum($campista);
         $takesMedicine = $this->truthy(data_get($formData, 'toma_remedio'));
         $hasRecommendation = $this->truthy(data_get($formData, 'tem_recomendacao'));
 
@@ -127,50 +124,9 @@ class CampistaReportData
             'name' => $campista->nome,
             'avatar_url' => $this->avatarUrl($campista),
             'created_at' => $campista->created_at?->format('d/m/Y H:i'),
-            'status' => [
-                'label' => $status?->getLabel() ?? 'Sem status',
-                'tone' => $this->statusTone($status),
-                'icon' => $this->filledReportIcon($status?->getIcon() ?? 'heroicon-o-question-mark-circle'),
-                'color' => $this->summaryColor($status?->getColor(), $this->statusTone($status)),
-                'accent' => $this->summaryAccent($status?->getColor(), $this->statusTone($status)),
-            ],
             'tribe' => [
                 'label' => $campista->tribo?->cor ?? 'Sem tribo',
                 'accent' => $this->tribeAccent($campista->tribo?->cor) ?? $this->summaryAccent('neutral'),
-            ],
-            'summary' => [
-                [
-                    'label' => 'Status',
-                    'value' => $status?->getLabel() ?? 'Sem status',
-                    'tone' => $this->statusTone($status),
-                    'icon' => $this->filledReportIcon($status?->getIcon() ?? 'heroicon-o-question-mark-circle'),
-                    'color' => $this->summaryColor($status?->getColor(), $this->statusTone($status)),
-                    'accent' => $this->summaryAccent($status?->getColor(), $this->statusTone($status)),
-                ],
-                [
-                    'label' => 'Pagamento',
-                    'value' => $payment?->getLabel() ?? 'Não informado',
-                    'tone' => $this->paymentTone($payment),
-                    'icon' => $this->filledReportIcon($payment?->getIcon() ?? 'heroicon-o-credit-card'),
-                    'color' => $this->summaryColor($payment?->getColor(), $this->paymentTone($payment)),
-                    'accent' => $this->summaryAccent($payment?->getColor(), $this->paymentTone($payment)),
-                ],
-                [
-                    'label' => 'Presença',
-                    'value' => $campista->presenca ? 'Confirmada' : 'Pendente',
-                    'tone' => $campista->presenca ? 'success' : 'warning',
-                    'icon' => $campista->presenca ? 'heroicon-s-check-circle' : 'heroicon-s-clock',
-                    'color' => $campista->presenca ? 'success' : 'warning',
-                    'accent' => $this->summaryAccent($campista->presenca ? 'success' : 'warning'),
-                ],
-                [
-                    'label' => 'Tribo',
-                    'value' => $campista->tribo?->cor ?? 'Sem tribo',
-                    'tone' => $campista->tribo ? 'tribe' : 'neutral',
-                    'icon' => 'heroicon-s-flag',
-                    'color' => $campista->tribo ? 'tribe' : 'neutral',
-                    'accent' => $this->tribeAccent($campista->tribo?->cor) ?? $this->summaryAccent('neutral'),
-                ],
             ],
             'sections' => [
                 [
@@ -294,27 +250,6 @@ class CampistaReportData
         return Str::startsWith($icon, 'heroicon-o-')
             ? Str::replaceStart('heroicon-o-', 'heroicon-s-', $icon)
             : $icon;
-    }
-
-    private function statusTone(?StatusInscricao $status): string
-    {
-        return match ($status) {
-            StatusInscricao::Pago => 'success',
-            StatusInscricao::Cancelado => 'danger',
-            StatusInscricao::Pendente => 'warning',
-            default => 'neutral',
-        };
-    }
-
-    private function paymentTone(?FormaPagamento $payment): string
-    {
-        return match ($payment) {
-            FormaPagamento::Pix => 'info',
-            FormaPagamento::Dinheiro => 'success',
-            FormaPagamento::Cartao => 'warning',
-            FormaPagamento::NaoPago => 'danger',
-            default => 'neutral',
-        };
     }
 
     private function summaryColor(string|array|null $color, string $fallback = 'neutral'): string
@@ -583,15 +518,6 @@ class CampistaReportData
         return $campista->status instanceof StatusInscricao
             ? $campista->status
             : StatusInscricao::tryFrom((int) $campista->status);
-    }
-
-    private function paymentEnum(Campista $campista): ?FormaPagamento
-    {
-        if ($campista->forma_pagamento instanceof FormaPagamento) {
-            return $campista->forma_pagamento;
-        }
-
-        return blank($campista->forma_pagamento) ? null : FormaPagamento::tryFrom((int) $campista->forma_pagamento);
     }
 
     private function sexLabel(mixed $sex): ?string
