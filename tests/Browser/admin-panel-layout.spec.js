@@ -808,7 +808,22 @@ test('authenticated reports page uses native Filament filters with help and same
 
     await page.keyboard.press('Escape');
 
+    const previewAction = page.locator('[data-report-preview-link="true"]').first();
     const previewLink = page.getByRole('link', { name: /abrir prévia/i });
+    const sensitiveHealthToggle = page.getByRole('switch', { name: /exibir dados médicos/i });
+
+    await sensitiveHealthToggle.check({ force: true });
+    await expect(page.getByText('Dados médicos sensíveis', { exact: true })).toBeVisible();
+    await expect(previewAction).toHaveAttribute('aria-disabled', 'true');
+
+    await page.getByRole('checkbox', {
+        name: /confirmo que desejo exibir dados médicos sensíveis/i,
+    }).check({ force: true });
+
+    await expect(previewAction).not.toHaveAttribute('aria-disabled', 'true');
+    await expect(previewAction).toHaveAttribute('href', /show_sensitive_health=1/);
+    await expect(previewAction).toHaveAttribute('href', /confirm_sensitive_health=1/);
+
     const reportTypeChecks = [
         ['Fichas de inscrição', 'registration_fichas', 'Fichas de inscrição'],
         ['Quadrante por tribo', 'tribe_quadrant', 'Quadrante das inscrições por tribo'],
@@ -841,6 +856,8 @@ test('authenticated reports page uses native Filament filters with help and same
         await page.waitForURL(/\/admin\/relatorios\/imprimir/);
         expect(page.url()).toContain(`type=${expectedType}`);
         await expect(page.locator('.report-print-toolbar')).toBeVisible();
+        await expect(page.locator('.report-print-toolbar [data-report-action-icon]')).toHaveCount(3);
+        await expect(page.locator('.report-print-toolbar .report-print-action__icon')).toHaveCount(3);
         await expect(page.getByText(expectedTitle).first()).toBeVisible();
         await expect(page.getByRole('button', { name: /salvar pdf/i })).toBeVisible();
         await expect(page.getByRole('button', { name: /imprimir/i })).toBeVisible();

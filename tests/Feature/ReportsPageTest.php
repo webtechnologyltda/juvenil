@@ -116,7 +116,8 @@ function assertPrintableHtml(TestResponse $response): TestResponse
         ->and($response->getContent())->not->toStartWith('%PDF')
         ->and($response->getContent())->toContain('Prévia para impressão')
         ->toContain('data-report-print')
-        ->toContain('data-report-save-pdf');
+        ->toContain('data-report-save-pdf')
+        ->toContain('data-report-action-icon="heroicon-s-printer"');
 
     return $response;
 }
@@ -238,6 +239,7 @@ it('builds the report filters with native Filament form components', function ()
         ->toContain('Exibir dados de pagamento')
         ->toContain('Por padrão, dados de pagamento permanecem ocultos')
         ->toContain("Checkbox::make('confirm_sensitive_health')")
+        ->toContain("->accepted()\n                                    ->live()")
         ->toContain('Dados médicos sensíveis')
         ->toContain("TextInput::make('search')")
         ->toContain('->footerActions([')
@@ -290,6 +292,8 @@ it('renders the printable preview as HTML in the same tab', function () {
     ], $administrator);
 
     expect($html)
+        ->toContain('<title>Fichas de inscrição - '.e(config('app.name')).'</title>')
+        ->toContain('<link rel="icon" type="image/png" href="'.asset('img/logo.png').'">')
         ->toContain('<body class="report-print-document">')
         ->toContain('report-print-toolbar')
         ->toContain('report-print-panel')
@@ -300,6 +304,11 @@ it('renders the printable preview as HTML in the same tab', function () {
         ->toContain('Salvar PDF')
         ->toContain('Imprimir')
         ->toContain('Voltar para a central')
+        ->toContain('report-print-action__icon')
+        ->toContain('data-report-action-icon="heroicon-s-arrow-left"')
+        ->toContain('data-report-action-icon="heroicon-s-arrow-down-tray"')
+        ->toContain('data-report-action-icon="heroicon-s-printer"')
+        ->not->toContain('data-report-action-icon="heroicon-o-')
         ->toContain(e($returnUrl))
         ->toContain('Logo do acampamento')
         ->not->toContain('<dt>Central</dt>');
@@ -317,6 +326,8 @@ it('keeps printable previews on the HTML rendering path', function () {
         ->toContain('report-print-toolbar')
         ->toContain('report-print-document')
         ->toContain('data-report-save-pdf')
+        ->toContain('data-report-action-icon="heroicon-s-arrow-down-tray"')
+        ->toContain('data-report-action-icon="heroicon-s-printer"')
         ->toContain('window.print()')
         ->toContain('-webkit-print-color-adjust: exact;')
         ->toContain('print-color-adjust: exact;')
@@ -366,7 +377,9 @@ it('applies ficha visual styling and keeps linked payments hidden by default on 
         ->toContain('report-card--health')
         ->toContain('data-report-summary-icon="polaris-payment-icon"')
         ->toContain('data-report-summary-icon="fab-pix"')
-        ->toContain('data-report-summary-icon="heroicon-o-flag"')
+        ->toContain('data-report-summary-icon="heroicon-s-flag"')
+        ->toContain('data-report-summary-icon="heroicon-s-clock"')
+        ->not->toContain('data-report-summary-icon="heroicon-o-')
         ->toContain('--report-accent: #ec4899')
         ->not->toContain('report-card--control')
         ->not->toContain('Controle da inscrição')
@@ -387,6 +400,51 @@ it('applies ficha visual styling and keeps linked payments hidden by default on 
         ->toContain('.report-card--payments')
         ->toContain('grid-column: 1 / -1;')
         ->toContain('margin-top: 0;');
+});
+
+it('starts printable registration fichas after a report data cover page', function () {
+    $this->seed(ShieldSeeder::class);
+
+    reportCampista();
+
+    $administrator = reportUserWithRole('Administrador');
+
+    $html = reportHtml('registration_fichas', [], $administrator);
+    $printView = file_get_contents(resource_path('views/admin/reports/print.blade.php'));
+
+    expect($html)
+        ->toContain('aria-label="Dados do relatório"')
+        ->toContain('report-cover')
+        ->toContain('report-content--registration-fichas')
+        ->toContain('Dados do relatório')
+        ->toContain('Filtros aplicados')
+        ->and(strpos($html, 'report-cover'))
+        ->toBeLessThan(strpos($html, 'report-registration-ficha'))
+        ->and($printView)
+        ->toContain('.report-cover')
+        ->toContain('break-after: page;')
+        ->toContain('background: #fff7ed;')
+        ->toContain('color: #7a2e04;')
+        ->toContain('color: #9a3f00;');
+});
+
+it('marks the health section with a sensitive data badge only when medical data is exposed', function () {
+    $this->seed(ShieldSeeder::class);
+
+    reportCampista();
+
+    $infirmary = reportUserWithRole('Enfermaria');
+
+    expect(reportHtml('registration_fichas', [], $infirmary))
+        ->toContain('Saúde e cuidados')
+        ->not->toContain('Dados sensíveis');
+
+    expect(reportHtml('registration_fichas', [
+        'show_sensitive_health' => 1,
+        'confirm_sensitive_health' => 1,
+    ], $infirmary))
+        ->toContain('Saúde e cuidados')
+        ->toContain('<span class="report-sensitive-badge">Dados sensíveis</span>');
 });
 
 it('shows linked payment badges on printable registration reports only when the financial toggle is enabled', function () {

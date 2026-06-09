@@ -33,10 +33,10 @@
                 </span>
                 <span
                     class="report-badge report-badge--tribe"
-                    data-report-summary-icon="heroicon-o-flag"
+                    data-report-summary-icon="heroicon-s-flag"
                     style="--report-accent: {{ $ficha['tribe']['accent'] }};"
                 >
-                    @svg('heroicon-o-flag', 'report-badge__icon', ['aria-hidden' => 'true'])
+                    @svg('heroicon-s-flag', 'report-badge__icon', ['aria-hidden' => 'true'])
                     {{ $ficha['tribe']['label'] }}
                 </span>
             </div>
@@ -65,7 +65,12 @@
         ])>
             @foreach ($ficha['sections'] as $section)
                 <section class="report-card report-card--{{ $section['area'] }}">
-                    <h3>{{ $section['title'] }}</h3>
+                    <h3>
+                        <span>{{ $section['title'] }}</span>
+                        @if (($showSensitiveHealth ?? false) && ($section['area'] ?? null) === 'health')
+                            <span class="report-sensitive-badge">Dados sensíveis</span>
+                        @endif
+                    </h3>
                     @php
                         $fieldRows = [];
                         $pendingFields = [];
