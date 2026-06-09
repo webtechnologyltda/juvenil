@@ -206,6 +206,7 @@ class ReportsPage extends Page
                                     ->label('Confirmo que desejo exibir dados médicos sensíveis neste relatório.')
                                     ->helperText('A impressão só exibirá os dados médicos após esta confirmação.')
                                     ->accepted()
+                                    ->live()
                                     ->visible(fn (Get $get): bool => $this->canUseSensitiveHealthFilter() && (bool) $get('show_sensitive_health'))
                                     ->columnSpanFull(),
                             ]),

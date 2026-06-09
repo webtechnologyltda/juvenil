@@ -130,7 +130,7 @@ class CampistaReportData
             'status' => [
                 'label' => $status?->getLabel() ?? 'Sem status',
                 'tone' => $this->statusTone($status),
-                'icon' => $status?->getIcon() ?? 'heroicon-o-question-mark-circle',
+                'icon' => $this->filledReportIcon($status?->getIcon() ?? 'heroicon-o-question-mark-circle'),
                 'color' => $this->summaryColor($status?->getColor(), $this->statusTone($status)),
                 'accent' => $this->summaryAccent($status?->getColor(), $this->statusTone($status)),
             ],
@@ -143,7 +143,7 @@ class CampistaReportData
                     'label' => 'Status',
                     'value' => $status?->getLabel() ?? 'Sem status',
                     'tone' => $this->statusTone($status),
-                    'icon' => $status?->getIcon() ?? 'heroicon-o-question-mark-circle',
+                    'icon' => $this->filledReportIcon($status?->getIcon() ?? 'heroicon-o-question-mark-circle'),
                     'color' => $this->summaryColor($status?->getColor(), $this->statusTone($status)),
                     'accent' => $this->summaryAccent($status?->getColor(), $this->statusTone($status)),
                 ],
@@ -151,7 +151,7 @@ class CampistaReportData
                     'label' => 'Pagamento',
                     'value' => $payment?->getLabel() ?? 'Não informado',
                     'tone' => $this->paymentTone($payment),
-                    'icon' => $payment?->getIcon() ?? 'heroicon-o-credit-card',
+                    'icon' => $this->filledReportIcon($payment?->getIcon() ?? 'heroicon-o-credit-card'),
                     'color' => $this->summaryColor($payment?->getColor(), $this->paymentTone($payment)),
                     'accent' => $this->summaryAccent($payment?->getColor(), $this->paymentTone($payment)),
                 ],
@@ -159,7 +159,7 @@ class CampistaReportData
                     'label' => 'Presença',
                     'value' => $campista->presenca ? 'Confirmada' : 'Pendente',
                     'tone' => $campista->presenca ? 'success' : 'warning',
-                    'icon' => $campista->presenca ? 'heroicon-o-check-circle' : 'heroicon-o-clock',
+                    'icon' => $campista->presenca ? 'heroicon-s-check-circle' : 'heroicon-s-clock',
                     'color' => $campista->presenca ? 'success' : 'warning',
                     'accent' => $this->summaryAccent($campista->presenca ? 'success' : 'warning'),
                 ],
@@ -167,7 +167,7 @@ class CampistaReportData
                     'label' => 'Tribo',
                     'value' => $campista->tribo?->cor ?? 'Sem tribo',
                     'tone' => $campista->tribo ? 'tribe' : 'neutral',
-                    'icon' => 'heroicon-o-flag',
+                    'icon' => 'heroicon-s-flag',
                     'color' => $campista->tribo ? 'tribe' : 'neutral',
                     'accent' => $this->tribeAccent($campista->tribo?->cor) ?? $this->summaryAccent('neutral'),
                 ],
@@ -268,13 +268,13 @@ class CampistaReportData
             'date' => $lancamento?->data ? Carbon::parse($lancamento->data)->format('d/m/Y') : 'Sem data',
             'method' => [
                 'label' => $method?->getLabel() ?? 'Sem forma',
-                'icon' => $method?->getIcon() ?? 'heroicon-o-credit-card',
+                'icon' => $this->filledReportIcon($method?->getIcon() ?? 'heroicon-o-credit-card'),
                 'color' => $this->summaryColor($method?->getColor(), 'neutral'),
                 'accent' => $this->summaryAccent($method?->getColor(), 'neutral'),
             ],
             'status' => [
                 'label' => $status?->getLabel() ?? 'Sem status',
-                'icon' => $status?->getIcon() ?? 'heroicon-o-question-mark-circle',
+                'icon' => $this->filledReportIcon($status?->getIcon() ?? 'heroicon-o-question-mark-circle'),
                 'color' => $this->summaryColor($status?->getColor(), 'neutral'),
                 'accent' => $this->summaryAccent($status?->getColor(), 'neutral'),
             ],
@@ -285,6 +285,15 @@ class CampistaReportData
     private function money(int $amount): string
     {
         return 'R$ '.number_format(abs($amount) / 100, 2, ',', '.');
+    }
+
+    private function filledReportIcon(?string $icon): string
+    {
+        $icon = filled($icon) ? (string) $icon : 'heroicon-o-question-mark-circle';
+
+        return Str::startsWith($icon, 'heroicon-o-')
+            ? Str::replaceStart('heroicon-o-', 'heroicon-s-', $icon)
+            : $icon;
     }
 
     private function statusTone(?StatusInscricao $status): string

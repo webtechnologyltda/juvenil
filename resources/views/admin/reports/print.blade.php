@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $report['title'] }}</title>
+    <title>{{ $report['title'] }} - {{ config('app.name') }}</title>
+    <link rel="icon" type="image/png" href="{{ $logoSrc ?? asset('img/logo.png') }}">
     <style>
         :root {
             --ink: #082529;
@@ -85,6 +86,7 @@
             min-height: 2.75rem;
             align-items: center;
             justify-content: center;
+            gap: .45rem;
             border: 1px solid rgba(244, 107, 18, .72);
             background: var(--accent);
             color: var(--ink);
@@ -102,10 +104,20 @@
             color: var(--report-screen-text);
         }
 
+        .report-print-action__icon {
+            width: 1rem;
+            height: 1rem;
+            flex: 0 0 auto;
+        }
+
         .report-shell {
             max-width: 1180px;
             margin: 0 auto;
             padding: 1.5rem;
+        }
+
+        .report-content {
+            display: block;
         }
 
         .report-section,
@@ -216,11 +228,52 @@
         .report-page {
             margin-bottom: 1rem;
             padding: 1rem;
+            break-after: page;
             page-break-after: always;
         }
 
         .report-page:last-child {
+            break-after: auto;
             page-break-after: auto;
+        }
+
+        .report-cover {
+            display: grid;
+            align-content: start;
+            gap: 1rem;
+            break-after: page;
+            page-break-after: always;
+        }
+
+        .report-cover .report-heading,
+        .report-cover .report-filters,
+        .report-cover .report-sensitive-alert {
+            margin-bottom: 0;
+        }
+
+        .report-cover__intro {
+            border-left: .28rem solid var(--accent);
+            padding-left: .85rem;
+        }
+
+        .report-cover__intro span {
+            color: var(--muted);
+            display: block;
+            font-size: .68rem;
+            font-weight: 900;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .report-cover__intro h2 {
+            margin: .2rem 0 .3rem;
+            font-size: 1.15rem;
+        }
+
+        .report-cover__intro p {
+            color: var(--muted);
+            margin: 0;
+            max-width: 44rem;
         }
 
         .report-page__top {
@@ -416,6 +469,20 @@
             flex: 0 0 auto;
         }
 
+        .report-sensitive-badge {
+            border: 1px solid rgba(244, 107, 18, .42);
+            background: rgba(244, 107, 18, .1);
+            color: #9a3f00;
+            display: inline-flex;
+            align-items: center;
+            font-size: .58rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            line-height: 1;
+            padding: .25rem .38rem;
+            text-transform: uppercase;
+        }
+
         .report-two-col,
         .report-grid {
             display: grid;
@@ -609,14 +676,15 @@
 
         .report-sensitive-alert {
             border: 1px solid rgba(244, 107, 18, .55);
-            background: rgba(244, 107, 18, .12);
-            color: var(--report-screen-text);
+            background: #fff7ed;
+            color: #7a2e04;
             margin-bottom: 1rem;
             padding: .85rem 1rem;
         }
 
         .report-sensitive-alert strong {
             display: block;
+            color: #9a3f00;
             font-size: .72rem;
             font-weight: 800;
             letter-spacing: .08em;
@@ -644,6 +712,10 @@
             .report-shell {
                 max-width: none;
                 padding: 0;
+            }
+
+            .report-cover {
+                min-height: calc(297mm - 22mm);
             }
 
             .report-heading,
@@ -674,7 +746,10 @@
 
             .report-heading p,
             .report-heading dt,
-            .report-filter span {
+            .report-filter span,
+            .report-cover__intro,
+            .report-cover__intro span,
+            .report-cover__intro p {
                 color: var(--muted);
             }
 
@@ -692,62 +767,100 @@
             <span>{{ $report['recordsCount'] }} registros - gerado em {{ $report['generatedAt'] }}</span>
         </div>
         <div class="report-print-toolbar__actions">
-            <a class="report-print-action report-print-action--secondary" href="{{ $returnUrl }}">Voltar para a central</a>
-            <button type="button" data-report-save-pdf onclick="window.print()">Salvar PDF</button>
-            <button type="button" data-report-print onclick="window.print()">Imprimir</button>
+            <a class="report-print-action report-print-action--secondary" href="{{ $returnUrl }}" data-report-action-icon="heroicon-s-arrow-left">
+                @svg('heroicon-s-arrow-left', 'report-print-action__icon', ['aria-hidden' => 'true'])
+                <span>Voltar para a central</span>
+            </a>
+            <button class="report-print-action" type="button" data-report-save-pdf data-report-action-icon="heroicon-s-arrow-down-tray" onclick="window.print()">
+                @svg('heroicon-s-arrow-down-tray', 'report-print-action__icon', ['aria-hidden' => 'true'])
+                <span>Salvar PDF</span>
+            </button>
+            <button class="report-print-action" type="button" data-report-print data-report-action-icon="heroicon-s-printer" onclick="window.print()">
+                @svg('heroicon-s-printer', 'report-print-action__icon', ['aria-hidden' => 'true'])
+                <span>Imprimir</span>
+            </button>
         </div>
     </div>
 
-    <main class="report-shell">
-        <header class="report-heading report-print-panel">
-            <div class="report-heading__brand">
-                <img class="report-heading__logo" src="{{ $logoSrc ?? asset('img/logo.png') }}" alt="Logo do acampamento">
-                <div>
-                    <h1>{{ $report['title'] }}</h1>
-                    <p>{{ $report['description'] }}</p>
-                </div>
-            </div>
-            <dl>
-                <dt>Gerado em</dt>
-                <dd>{{ $report['generatedAt'] }}</dd>
-                <dt>Total</dt>
-                <dd>{{ $report['recordsCount'] }} registros</dd>
-            </dl>
-        </header>
+    @php
+        $isRegistrationFichas = $report['type']->value === 'registration_fichas';
+    @endphp
 
-        <section class="report-filters" aria-label="Filtros aplicados">
-            @foreach ($report['filters'] as $label => $value)
-                <div class="report-filter report-print-filter">
-                    <span>{{ $label }}</span>
-                    <strong>{{ $value ?: 'Não informado' }}</strong>
+    <main class="report-shell">
+        <section
+            @class([
+                'report-page',
+                'report-cover',
+                'report-cover--registration-fichas' => $isRegistrationFichas,
+            ])
+            aria-label="Dados do relatório"
+        >
+            <header class="report-heading report-print-panel">
+                <div class="report-heading__brand">
+                    <img class="report-heading__logo" src="{{ $logoSrc ?? asset('img/logo.png') }}" alt="Logo do acampamento">
+                    <div>
+                        <h1>{{ $report['title'] }}</h1>
+                        <p>{{ $report['description'] }}</p>
+                    </div>
                 </div>
-            @endforeach
+                <dl>
+                    <dt>Gerado em</dt>
+                    <dd>{{ $report['generatedAt'] }}</dd>
+                    <dt>Total</dt>
+                    <dd>{{ $report['recordsCount'] }} registros</dd>
+                </dl>
+            </header>
+
+            <div class="report-cover__intro">
+                <span>Dados do relatório</span>
+                <h2>Conferência da impressão</h2>
+                <p>Confira o tipo de relatório, a quantidade de registros e os filtros aplicados antes de distribuir as fichas.</p>
+            </div>
+
+            <section class="report-filters report-cover__filters" aria-label="Filtros aplicados">
+                @foreach ($report['filters'] as $label => $value)
+                    <div class="report-filter report-print-filter">
+                        <span>{{ $label }}</span>
+                        <strong>{{ $value ?: 'Não informado' }}</strong>
+                    </div>
+                @endforeach
+            </section>
+
+            @if ($report['showSensitiveHealth'] ?? false)
+                <section class="report-sensitive-alert" aria-label="Aviso sobre dados médicos sensíveis">
+                    <strong>Dados médicos sensíveis exibidos</strong>
+                    Este relatório contém informações de saúde e deve ser tratado com cuidado, sem compartilhamento fora das pessoas responsáveis pelo cuidado e pela operação do acampamento.
+                </section>
+            @endif
         </section>
 
-        @if ($report['showSensitiveHealth'] ?? false)
-            <section class="report-sensitive-alert" aria-label="Aviso sobre dados médicos sensíveis">
-                <strong>Dados médicos sensíveis exibidos</strong>
-                Este relatório contém informações de saúde e deve ser tratado com cuidado, sem compartilhamento fora das pessoas responsáveis pelo cuidado e pela operação do acampamento.
-            </section>
-        @endif
+        <section
+            @class([
+                'report-content',
+                'report-content--registration-fichas' => $isRegistrationFichas,
+            ])
+        >
+            @switch($report['type']->value)
+                @case('registration_fichas')
+                    @include('admin.reports.partials.registration-fichas', [
+                        'fichas' => $report['fichas'],
+                        'showSensitiveHealth' => $report['showSensitiveHealth'] ?? false,
+                    ])
+                    @break
 
-        @switch($report['type']->value)
-            @case('registration_fichas')
-                @include('admin.reports.partials.registration-fichas', ['fichas' => $report['fichas']])
-                @break
+                @case('tribe_quadrant')
+                    @include('admin.reports.partials.tribe-quadrant', ['tribes' => $report['tribes']])
+                    @break
 
-            @case('tribe_quadrant')
-                @include('admin.reports.partials.tribe-quadrant', ['tribes' => $report['tribes']])
-                @break
+                @case('sensitive_health')
+                    @include('admin.reports.partials.sensitive-health', ['rows' => $report['medicalRows']])
+                    @break
 
-            @case('sensitive_health')
-                @include('admin.reports.partials.sensitive-health', ['rows' => $report['medicalRows']])
-                @break
-
-            @case('mission_contacts')
-                @include('admin.reports.partials.mission-contacts', ['rows' => $report['missionRows']])
-                @break
-        @endswitch
+                @case('mission_contacts')
+                    @include('admin.reports.partials.mission-contacts', ['rows' => $report['missionRows']])
+                    @break
+            @endswitch
+        </section>
     </main>
 </body>
 </html>
