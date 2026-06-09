@@ -12,16 +12,29 @@
             --panel: #ffffff;
             --accent: #f46b12;
             --soft: #f3f8f9;
+            --report-screen-bg: #03181c;
+            --report-screen-base: #052f35;
+            --report-screen-surface: #073d45;
+            --report-screen-panel: #041f23;
+            --report-screen-line: rgba(157, 219, 239, .22);
+            --report-screen-line-strong: rgba(157, 219, 239, .36);
+            --report-screen-sky: #9ddbef;
+            --report-screen-text: #f4fbfd;
+            --report-screen-muted: #d8f2fa;
         }
 
-        * {
+        *,
+        *::before,
+        *::after {
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         body {
             margin: 0;
-            background: var(--soft);
-            color: var(--ink);
+            background: var(--report-screen-bg);
+            color: var(--report-screen-text);
             font-family: Arial, Helvetica, sans-serif;
             font-size: 13px;
             line-height: 1.45;
@@ -35,9 +48,10 @@
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            border-bottom: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.94);
+            border-bottom: 1px solid var(--report-screen-line);
+            background: rgba(3, 24, 28, .96);
             padding: 1rem 1.25rem;
+            color: var(--report-screen-text);
         }
 
         .report-toolbar strong {
@@ -46,19 +60,46 @@
         }
 
         .report-toolbar span {
-            color: var(--muted);
+            color: var(--report-screen-muted);
         }
 
+        .report-print-toolbar__eyebrow {
+            display: block;
+            color: var(--report-screen-sky);
+            font-size: .68rem;
+            font-weight: 900;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        .report-print-toolbar__actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: .5rem;
+        }
+
+        .report-print-action,
         .report-toolbar button {
+            display: inline-flex;
             min-height: 2.75rem;
-            border: 0;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(244, 107, 18, .72);
             background: var(--accent);
-            color: #082529;
+            color: var(--ink);
             cursor: pointer;
             font-weight: 800;
             letter-spacing: .08em;
             padding: .75rem 1.1rem;
+            text-decoration: none;
             text-transform: uppercase;
+        }
+
+        .report-print-action--secondary {
+            border-color: var(--report-screen-line-strong);
+            background: rgba(7, 61, 69, .74);
+            color: var(--report-screen-text);
         }
 
         .report-shell {
@@ -67,11 +108,11 @@
             padding: 1.5rem;
         }
 
-        .report-heading,
         .report-section,
         .report-page {
             border: 1px solid var(--line);
             background: var(--panel);
+            color: var(--ink);
         }
 
         .report-heading {
@@ -79,6 +120,9 @@
             grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
             gap: 1rem;
+            border: 1px solid var(--report-screen-line);
+            background: rgba(7, 61, 69, .82);
+            color: var(--report-screen-text);
             margin-bottom: 1rem;
             padding: 1.25rem;
         }
@@ -100,9 +144,14 @@
 
         .report-heading h1 {
             margin: 0 0 .35rem;
+            color: var(--report-screen-text);
             font-size: 1.7rem;
             line-height: 1.1;
             text-transform: uppercase;
+        }
+
+        .report-heading p {
+            color: var(--report-screen-muted);
         }
 
         .report-heading p,
@@ -112,7 +161,7 @@
         }
 
         .report-heading dt {
-            color: var(--muted);
+            color: var(--report-screen-sky);
             font-size: .72rem;
             font-weight: 800;
             letter-spacing: .08em;
@@ -120,6 +169,7 @@
         }
 
         .report-heading dd {
+            color: var(--report-screen-text);
             font-weight: 700;
         }
 
@@ -131,14 +181,15 @@
         }
 
         .report-filter {
-            border: 1px solid var(--line);
-            background: #fff;
+            border: 1px solid var(--report-screen-line);
+            background: rgba(4, 31, 35, .72);
+            color: var(--report-screen-text);
             padding: .75rem;
         }
 
         .report-filter span {
             display: block;
-            color: var(--muted);
+            color: var(--report-screen-sky);
             font-size: .7rem;
             font-weight: 800;
             letter-spacing: .08em;
@@ -148,6 +199,7 @@
         .report-filter strong {
             display: block;
             margin-top: .2rem;
+            color: var(--report-screen-text);
         }
 
         .report-section {
@@ -338,6 +390,13 @@
             align-items: start;
         }
 
+        .report-registration-ficha__bento {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .55rem;
+            align-items: start;
+        }
+
         .report-registration-ficha .report-card {
             page-break-inside: avoid;
         }
@@ -388,6 +447,26 @@
             gap: .45rem .75rem;
         }
 
+        .report-fields-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .report-fields-table .report-field {
+            padding: .12rem .55rem .32rem 0;
+            vertical-align: top;
+        }
+
+        .report-fields-table .report-field:last-child {
+            padding-right: 0;
+        }
+
+        .report-field--empty {
+            padding: 0;
+        }
+
+        .report-field__label,
         .report-fields dt,
         .report-table th {
             color: var(--muted);
@@ -397,9 +476,12 @@
             text-transform: uppercase;
         }
 
+        .report-field__value,
         .report-fields dd {
+            display: block;
             margin: .12rem 0 0;
             font-weight: 700;
+            line-height: 1.24;
             word-break: break-word;
         }
 
@@ -407,10 +489,12 @@
             grid-column: 1 / -1;
         }
 
+        .report-field--tone-warning .report-field__value,
         .report-field--tone-warning dd {
             color: #8a5a00;
         }
 
+        .report-field--tone-success .report-field__value,
         .report-field--tone-success dd {
             color: #0f6b38;
         }
@@ -418,6 +502,11 @@
         .report-registration-payment-section {
             margin-top: .75rem;
             page-break-inside: avoid;
+        }
+
+        .report-card--payments {
+            grid-column: 1 / -1;
+            margin-top: 0;
         }
 
         .report-registration-payments {
@@ -521,7 +610,7 @@
         .report-sensitive-alert {
             border: 1px solid rgba(244, 107, 18, .55);
             background: rgba(244, 107, 18, .12);
-            color: var(--ink);
+            color: var(--report-screen-text);
             margin-bottom: 1rem;
             padding: .85rem 1rem;
         }
@@ -543,10 +632,12 @@
 
             body {
                 background: #fff;
+                color: var(--ink);
                 font-size: 11px;
             }
 
-            .report-toolbar {
+            .report-toolbar,
+            .report-print-toolbar {
                 display: none;
             }
 
@@ -568,25 +659,49 @@
                 border-color: #b7c6c9;
             }
 
+            .report-heading,
+            .report-filter,
+            .report-sensitive-alert {
+                background: #fff;
+                color: var(--ink);
+            }
+
+            .report-heading h1,
+            .report-heading dd,
+            .report-filter strong {
+                color: var(--ink);
+            }
+
+            .report-heading p,
+            .report-heading dt,
+            .report-filter span {
+                color: var(--muted);
+            }
+
             .report-registration-payment a {
                 display: none;
             }
         }
     </style>
 </head>
-<body>
-    <div class="report-toolbar">
+<body class="report-print-document">
+    <div class="report-toolbar report-print-toolbar">
         <div>
+            <span class="report-print-toolbar__eyebrow">Prévia para impressão</span>
             <strong>{{ $report['title'] }}</strong>
             <span>{{ $report['recordsCount'] }} registros - gerado em {{ $report['generatedAt'] }}</span>
         </div>
-        <button type="button" onclick="window.print()">Imprimir</button>
+        <div class="report-print-toolbar__actions">
+            <a class="report-print-action report-print-action--secondary" href="{{ $returnUrl }}">Voltar para a central</a>
+            <button type="button" data-report-save-pdf onclick="window.print()">Salvar PDF</button>
+            <button type="button" data-report-print onclick="window.print()">Imprimir</button>
+        </div>
     </div>
 
     <main class="report-shell">
-        <header class="report-heading">
+        <header class="report-heading report-print-panel">
             <div class="report-heading__brand">
-                <img class="report-heading__logo" src="{{ asset('img/logo.png') }}" alt="Logo do acampamento">
+                <img class="report-heading__logo" src="{{ $logoSrc ?? asset('img/logo.png') }}" alt="Logo do acampamento">
                 <div>
                     <h1>{{ $report['title'] }}</h1>
                     <p>{{ $report['description'] }}</p>
@@ -602,7 +717,7 @@
 
         <section class="report-filters" aria-label="Filtros aplicados">
             @foreach ($report['filters'] as $label => $value)
-                <div class="report-filter">
+                <div class="report-filter report-print-filter">
                     <span>{{ $label }}</span>
                     <strong>{{ $value ?: 'Não informado' }}</strong>
                 </div>

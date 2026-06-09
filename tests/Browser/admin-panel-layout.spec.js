@@ -707,7 +707,9 @@ test('authenticated Filament select dropdowns open above sibling sections', asyn
     });
 });
 
-test('authenticated reports page uses native Filament filters in a balanced layout', async ({ page }) => {
+test('authenticated reports page uses native Filament filters with help and same-tab preview', async ({ page }) => {
+    test.setTimeout(120000);
+
     await mkdir('storage/app/screenshots', { recursive: true });
 
     await signIn(page);
@@ -718,42 +720,61 @@ test('authenticated reports page uses native Filament filters in a balanced layo
 
     await expect(page.locator('h1')).toContainText('Relatórios dinâmicos');
     await expect(page.getByRole('link', { name: /abrir prévia/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /dúvidas/i })).toBeVisible();
     await expect(page.locator('.juvenil-report-form select')).toHaveCount(0);
+    await expect(page.locator('.juvenil-report-card')).toHaveCount(0);
     await expectNoDocumentHorizontalOverflow(page);
 
     const layoutState = await page.evaluate(() => {
         const pageElement = document.querySelector('.fi-page');
         const brief = document.querySelector('.juvenil-report-brief');
-        const cards = [...document.querySelectorAll('.juvenil-report-card')]
-            .map((card) => card.getBoundingClientRect())
-            .filter((rect) => rect.width > 0 && rect.height > 0);
+        const meter = document.querySelector('.juvenil-report-brief__meter');
         const form = document.querySelector('.juvenil-report-form .fi-section');
+        const loading = document.querySelector('[data-report-preview-loading]');
 
-        if (! pageElement || ! brief || ! form || cards.length === 0) {
+        if (! pageElement || ! brief || ! form || ! meter || ! loading) {
             return null;
         }
 
         const pageRect = pageElement.getBoundingClientRect();
         const briefRect = brief.getBoundingClientRect();
         const formRect = form.getBoundingClientRect();
-        const firstCardTop = Math.min(...cards.map((rect) => rect.top));
-        const lastCardBottom = Math.max(...cards.map((rect) => rect.bottom));
+        const meterRect = meter.getBoundingClientRect();
 
         return {
             briefWidthRatio: briefRect.width / pageRect.width,
             formWidthRatio: formRect.width / pageRect.width,
-            cardsAreBetweenBriefAndForm: firstCardTop > briefRect.bottom && lastCardBottom < formRect.top,
-            cardMinWidth: Math.min(...cards.map((rect) => rect.width)),
+            formIsBelowBrief: formRect.top > briefRect.bottom,
+            meterIsInsideBrief: meterRect.right <= briefRect.right && meterRect.left >= briefRect.left,
+            loadingStartsHidden: loading.hidden,
         };
     });
 
     expect(layoutState).not.toBeNull();
     expect(layoutState.briefWidthRatio).toBeGreaterThanOrEqual(0.84);
     expect(layoutState.formWidthRatio).toBeGreaterThanOrEqual(0.84);
-    expect(layoutState.cardsAreBetweenBriefAndForm).toBe(true);
-    expect(layoutState.cardMinWidth).toBeGreaterThanOrEqual(220);
+    expect(layoutState.formIsBelowBrief).toBe(true);
+    expect(layoutState.meterIsInsideBrief).toBe(true);
+    expect(layoutState.loadingStartsHidden).toBe(true);
+
+    await page.getByRole('button', { name: /dúvidas/i }).click();
+    const helpDialog = page.getByRole('dialog');
+    await expect(page.locator('.fi-modal.fi-modal-open')).toBeVisible();
+    await expect(helpDialog.getByText('Como usar a central de relatórios')).toBeVisible();
+    await expect(helpDialog.getByText('Fichas de inscrição')).toBeVisible();
+    await helpDialog.locator('.fi-modal-footer').getByRole('button', { name: /fechar/i }).click();
+    await expect(page.locator('.fi-modal.fi-modal-open')).toHaveCount(0);
 
     const reportTypeField = page.locator('.juvenil-report-form .fi-fo-field').filter({ hasText: 'Tipo de relatório' }).first();
+    const searchInput = page.getByPlaceholder('Nome, responsável, bairro ou cidade');
+
+    await searchInput.fill('Ana Costa 101');
+    await page.waitForFunction(() => (
+        [...document.querySelectorAll('a')]
+            .find((link) => link.textContent?.includes('Abrir prévia'))
+            ?.href
+            .includes('search=Ana')
+    ));
 
     await reportTypeField.locator('.fi-select-input-btn').click();
     await expect(reportTypeField.locator('.fi-dropdown-panel[role="listbox"]')).toBeVisible();
@@ -806,21 +827,30 @@ test('authenticated reports page uses native Filament filters in a balanced layo
                 .includes(`type=${type}`)
         ), expectedType);
 
-        const previewPagePromise = page.waitForEvent('popup');
-        await previewLink.click();
-
-        const previewPage = await previewPagePromise;
-        await previewPage.waitForLoadState('domcontentloaded');
-        await expect(previewPage.locator('h1')).toContainText(expectedTitle);
-        await expect(previewPage.getByAltText('Logo do acampamento')).toBeVisible();
-
-        const logoLoaded = await previewPage.getByAltText('Logo do acampamento').evaluate((image) => (
-            image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+        const previewResponsePromise = page.waitForResponse((response) => (
+            response.url().includes('/admin/relatorios/imprimir')
         ));
 
-        expect(logoLoaded).toBe(true);
-        await previewPage.close();
+        await previewLink.click();
+
+        const previewResponse = await previewResponsePromise;
+        const previewHeaders = previewResponse.headers();
+
+        expect(previewResponse.status()).toBe(200);
+        expect(previewHeaders['content-type']).toContain('text/html');
+        await page.waitForURL(/\/admin\/relatorios\/imprimir/);
+        expect(page.url()).toContain(`type=${expectedType}`);
+        await expect(page.locator('.report-print-toolbar')).toBeVisible();
+        await expect(page.getByText(expectedTitle).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: /salvar pdf/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /imprimir/i })).toBeVisible();
+
+        await page.goBack({ waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('.juvenil-report-page');
+        await page.waitForSelector('.juvenil-report-form .fi-section');
     }
+
+    await page.evaluate(() => window.scrollTo(0, 0));
 
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-reports-filters-layout.png',

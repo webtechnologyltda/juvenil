@@ -14,7 +14,7 @@
                     @endif
                 </div>
 
-                <div>
+                <div class="report-registration-ficha__name">
                     <span class="report-badge">Ficha oficial</span>
                     <h2>{{ $ficha['name'] }}</h2>
                     <p class="report-registration-ficha__meta">
@@ -59,87 +59,132 @@
             @endforeach
         </section>
 
-        <div class="report-two-col report-registration-ficha__sections">
+        <div @class([
+            'report-registration-ficha__bento',
+            'report-registration-ficha__bento--with-payments' => $ficha['can_view_payments'],
+        ])>
             @foreach ($ficha['sections'] as $section)
-                <section class="report-card">
+                <section class="report-card report-card--{{ $section['area'] }}">
                     <h3>{{ $section['title'] }}</h3>
-                    <dl class="report-fields">
-                        @foreach ($section['fields'] as $field)
-                            <div @class([
-                                'report-field',
-                                'report-field--wide' => $field['wide'] ?? false,
-                                'report-field--tone-' . ($field['tone'] ?? '') => isset($field['tone']),
-                            ])>
-                                <dt>{{ $field['label'] }}</dt>
-                                <dd>{{ filled($field['value'] ?? null) ? $field['value'] : 'Não informado' }}</dd>
-                            </div>
+                    @php
+                        $fieldRows = [];
+                        $pendingFields = [];
+
+                        foreach ($section['fields'] as $field) {
+                            if ($field['wide'] ?? false) {
+                                if ($pendingFields !== []) {
+                                    $fieldRows[] = $pendingFields;
+                                    $pendingFields = [];
+                                }
+
+                                $fieldRows[] = [$field];
+
+                                continue;
+                            }
+
+                            $pendingFields[] = $field;
+
+                            if (count($pendingFields) === 2) {
+                                $fieldRows[] = $pendingFields;
+                                $pendingFields = [];
+                            }
+                        }
+
+                        if ($pendingFields !== []) {
+                            $fieldRows[] = $pendingFields;
+                        }
+                    @endphp
+
+                    <table class="report-fields-table">
+                        <tbody>
+                        @foreach ($fieldRows as $row)
+                            <tr>
+                                @foreach ($row as $field)
+                                    <td
+                                        @class([
+                                            'report-field',
+                                            'report-field--wide' => $field['wide'] ?? false,
+                                            'report-field--tone-' . ($field['tone'] ?? '') => isset($field['tone']),
+                                        ])
+                                        @if (count($row) === 1) colspan="2" @endif
+                                    >
+                                        <span class="report-field__label">{{ $field['label'] }}</span>
+                                        <strong class="report-field__value">{{ filled($field['value'] ?? null) ? $field['value'] : 'Não informado' }}</strong>
+                                    </td>
+                                @endforeach
+
+                                @if (count($row) === 1 && ! ($row[0]['wide'] ?? false))
+                                    <td class="report-field report-field--empty"></td>
+                                @endif
+                            </tr>
                         @endforeach
-                    </dl>
+                        </tbody>
+                    </table>
                 </section>
             @endforeach
+
+            @if ($ficha['can_view_payments'])
+                <section class="report-card report-card--payments report-registration-payment-section">
+                    <h3>Pagamentos vinculados</h3>
+
+                    @if (count($ficha['payments']))
+                        <div class="report-registration-payments">
+                            @foreach ($ficha['payments'] as $payment)
+                                <article class="report-registration-payment">
+                                    <header>
+                                        <div>
+                                            <span>Lançamento financeiro</span>
+                                            <strong>{{ $payment['name'] }}</strong>
+                                        </div>
+
+                                        @if ($payment['url'])
+                                            <a href="{{ $payment['url'] }}">Visualizar lançamento</a>
+                                        @endif
+                                    </header>
+
+                                    <dl>
+                                        <div>
+                                            <dt>Valor aplicado</dt>
+                                            <dd>{{ $payment['amount'] }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>Data</dt>
+                                            <dd>{{ $payment['date'] }}</dd>
+                                        </div>
+                                        <div
+                                            class="report-registration-payment__token"
+                                            data-report-payment-icon="{{ $payment['method']['icon'] }}"
+                                            data-report-payment-color="{{ $payment['method']['color'] }}"
+                                            style="--report-accent: {{ $payment['method']['accent'] }};"
+                                        >
+                                            <dt>Forma</dt>
+                                            <dd>
+                                                @svg($payment['method']['icon'], 'report-registration-payment__icon', ['aria-hidden' => 'true'])
+                                                {{ $payment['method']['label'] }}
+                                            </dd>
+                                        </div>
+                                        <div
+                                            class="report-registration-payment__token"
+                                            data-report-payment-icon="{{ $payment['status']['icon'] }}"
+                                            data-report-payment-color="{{ $payment['status']['color'] }}"
+                                            style="--report-accent: {{ $payment['status']['accent'] }};"
+                                        >
+                                            <dt>Status</dt>
+                                            <dd>
+                                                @svg($payment['status']['icon'], 'report-registration-payment__icon', ['aria-hidden' => 'true'])
+                                                {{ $payment['status']['label'] }}
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                </article>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="report-empty report-registration-payment-section__empty">Nenhum lançamento financeiro vinculado a esta inscrição.</p>
+                    @endif
+                </section>
+            @endif
         </div>
-
-        @if ($ficha['can_view_payments'])
-            <section class="report-card report-registration-payment-section">
-                <h3>Pagamentos vinculados</h3>
-
-                @if (count($ficha['payments']))
-                    <div class="report-registration-payments">
-                        @foreach ($ficha['payments'] as $payment)
-                            <article class="report-registration-payment">
-                                <header>
-                                    <div>
-                                        <span>Lançamento financeiro</span>
-                                        <strong>{{ $payment['name'] }}</strong>
-                                    </div>
-
-                                    @if ($payment['url'])
-                                        <a href="{{ $payment['url'] }}">Visualizar lançamento</a>
-                                    @endif
-                                </header>
-
-                                <dl>
-                                    <div>
-                                        <dt>Valor aplicado</dt>
-                                        <dd>{{ $payment['amount'] }}</dd>
-                                    </div>
-                                    <div>
-                                        <dt>Data</dt>
-                                        <dd>{{ $payment['date'] }}</dd>
-                                    </div>
-                                    <div
-                                        class="report-registration-payment__token"
-                                        data-report-payment-icon="{{ $payment['method']['icon'] }}"
-                                        data-report-payment-color="{{ $payment['method']['color'] }}"
-                                        style="--report-accent: {{ $payment['method']['accent'] }};"
-                                    >
-                                        <dt>Forma</dt>
-                                        <dd>
-                                            @svg($payment['method']['icon'], 'report-registration-payment__icon', ['aria-hidden' => 'true'])
-                                            {{ $payment['method']['label'] }}
-                                        </dd>
-                                    </div>
-                                    <div
-                                        class="report-registration-payment__token"
-                                        data-report-payment-icon="{{ $payment['status']['icon'] }}"
-                                        data-report-payment-color="{{ $payment['status']['color'] }}"
-                                        style="--report-accent: {{ $payment['status']['accent'] }};"
-                                    >
-                                        <dt>Status</dt>
-                                        <dd>
-                                            @svg($payment['status']['icon'], 'report-registration-payment__icon', ['aria-hidden' => 'true'])
-                                            {{ $payment['status']['label'] }}
-                                        </dd>
-                                    </div>
-                                </dl>
-                            </article>
-                        @endforeach
-                    </div>
-                @else
-                    <p class="report-empty report-registration-payment-section__empty">Nenhum lançamento financeiro vinculado a esta inscrição.</p>
-                @endif
-            </section>
-        @endif
     </article>
 @empty
     <p class="report-empty">Nenhuma ficha encontrada com os filtros informados.</p>

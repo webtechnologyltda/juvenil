@@ -7,17 +7,19 @@
 - Each item includes date + "Do instead".
 
 ## Execution & Validation (Highest Priority)
-1. **[2026-06-06] Public Livewire registration pages need settings rows in tests**
+1. **[2026-06-09] Large report previews need a real web request check**
+   Do instead: after admin report preview changes, test the unfiltered route through `juvenil.test` or Playwright and confirm the expected response type; focused small-record tests can miss web runtime failures.
+2. **[2026-06-06] Public Livewire registration pages need settings rows in tests**
    Do instead: use `RefreshDatabase`, disable Vite, and seed/update `general` settings before asserting route rendering.
-2. **[2026-06-07] Filament package translations use Laravel vendor overrides**
+3. **[2026-06-07] Filament package translations use Laravel vendor overrides**
    Do instead: add package keys under `lang/vendor/{package}/pt_BR/*.php` and validate with `php artisan tinker --execute='app()->setLocale("pt_BR"); echo __("package::file.key");'`.
-3. **[2026-06-07] Filament admin table theming is global CSS**
+4. **[2026-06-07] Filament admin table theming is global CSS**
    Do instead: style `.fi-ta-*` selectors in `resources/css/filament/admin/theme.css`, then validate with `npm run build`, focused PHP tests, and `tests/Browser/admin-panel-layout.spec.js`.
-4. **[2026-06-06] Browser checks may run through Vite dev assets**
+5. **[2026-06-06] Browser checks may run through Vite dev assets**
    Do instead: check `public/hot` and the loaded script URLs before trusting production-build screenshots.
-5. **[2026-06-07] Authenticated Filament layout needs real-login browser checks**
+6. **[2026-06-07] Authenticated Filament layout needs real-login browser checks**
    Do instead: use Playwright to log in, assert admin cookie consent is hidden, verify document/table overflow, and capture dashboard/list screenshots.
-6. **[2026-06-07] Filament dropdown tests need client readiness**
+7. **[2026-06-07] Filament dropdown tests need client readiness**
    Do instead: wait for `window.Alpine && window.Livewire`, then interact with `.fi-dropdown-trigger` for mousedown-driven dropdowns.
 
 ## Shell & Command Reliability
