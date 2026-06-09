@@ -6,8 +6,6 @@ use App\Enums\StatusInscricaoEquipeTrabalho;
 use Carbon\Carbon;
 use Filament\Actions\Action as FormAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
@@ -30,7 +28,7 @@ abstract class EquipeTrabalhoForm
     public static function getFormCreate(): array
     {
         return [
-            ...self::getFormEquipeTrabalho()
+            ...self::getFormEquipeTrabalho(),
         ];
     }
 
@@ -38,7 +36,7 @@ abstract class EquipeTrabalhoForm
     {
         return [
             ...self::getFormInformacaoInscricao(),
-            ...self::getFormEquipeTrabalho()
+            ...self::getFormEquipeTrabalho(),
         ];
     }
 
@@ -75,7 +73,7 @@ abstract class EquipeTrabalhoForm
                         ])
                         ->colors([
                             'M' => Color::Blue,
-                            'F' => Color::Pink
+                            'F' => Color::Pink,
                         ])
                         ->icons([
                             'M' => 'eos-male',
@@ -130,82 +128,82 @@ abstract class EquipeTrabalhoForm
                             'lg' => 5,
                         ])
                         ->schema([
-                        Html::make(new HtmlString('<p class="text-sm text-primary-600">Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.</p>'))
-                            ->columnSpanFull(),
+                            Html::make(new HtmlString('<p class="text-sm text-primary-600">Informe o CEP para preencher os campos de endereço automaticamente. Clique na lupa para localizar o endereço.</p>'))
+                                ->columnSpanFull(),
 
-                        CepInput::make('data_form.cep')
-                            ->label('CEP')
-                            ->required()
-                            ->columnSpan([
-                                'default' => 1,
-                                'lg' => 1,
-                            ])
-                            ->setMode('suffix')
-                            ->setActionLabel('Buscar CEP')
-                            ->setActionLabelHidden(true)
-                            ->setErrorMessage('CEP inválido.')
-                            ->setStreetField('data_form.rua')
-                            ->setNeighborhoodField('data_form.bairro')
-                            ->setCityField('data_form.cidade')
-                            ->setStateField('data_form.estado'),
+                            CepInput::make('data_form.cep')
+                                ->label('CEP')
+                                ->required()
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'lg' => 1,
+                                ])
+                                ->setMode('suffix')
+                                ->setActionLabel('Buscar CEP')
+                                ->setActionLabelHidden(true)
+                                ->setErrorMessage('CEP inválido.')
+                                ->setStreetField('data_form.rua')
+                                ->setNeighborhoodField('data_form.bairro')
+                                ->setCityField('data_form.cidade')
+                                ->setStateField('data_form.estado'),
 
-                        TextInput::make('data_form.rua')
-                            ->required()
-                            ->columnSpan([
-                                'default' => 1,
-                                'lg' => 4,
-                            ])
-                            ->label('Rua'),
+                            TextInput::make('data_form.rua')
+                                ->required()
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'lg' => 4,
+                                ])
+                                ->label('Rua'),
 
-                        TextInput::make('data_form.numero')
-                            ->required()
-                            ->numeric()
-                            ->columnSpan([
-                                'default' => 1,
-                                'lg' => 1,
-                            ])
-                            ->label('Número'),
-                        TextInput::make('data_form.ponto_referencia')
-                            ->label('Complemento')
-                            ->columnSpan([
-                                'default' => 1,
-                                'sm' => 1,
-                                'md' => 1,
-                                'xl' => 1,
-                            ]),
+                            TextInput::make('data_form.numero')
+                                ->required()
+                                ->numeric()
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'lg' => 1,
+                                ])
+                                ->label('Número'),
+                            TextInput::make('data_form.ponto_referencia')
+                                ->label('Complemento')
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'sm' => 1,
+                                    'md' => 1,
+                                    'xl' => 1,
+                                ]),
 
-                        TextInput::make('data_form.bairro')
-                            ->required()
-                            ->columnSpan([
-                                'default' => 1,
-                                'sm' => 1,
-                                'md' => 2,
-                                'xl' => 2,
-                            ])
-                            ->label('Bairro'),
+                            TextInput::make('data_form.bairro')
+                                ->required()
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'sm' => 1,
+                                    'md' => 2,
+                                    'xl' => 2,
+                                ])
+                                ->label('Bairro'),
 
-                        TextInput::make('data_form.cidade')
-                            ->required()
-                            ->columnSpan([
-                                'default' => 1,
-                                'sm' => 1,
-                                'md' => 1,
-                                'xl' => 1,
-                            ])
-                            ->readOnly()
-                            ->label('Cidade'),
+                            TextInput::make('data_form.cidade')
+                                ->required()
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'sm' => 1,
+                                    'md' => 1,
+                                    'xl' => 1,
+                                ])
+                                ->readOnly()
+                                ->label('Cidade'),
 
-                        TextInput::make('data_form.estado')
-                            ->required()
-                            ->columnSpan([
-                                'default' => 1,
-                                'sm' => 1,
-                                'md' => 1,
-                                'xl' => 1,
-                            ])
-                            ->readOnly()
-                            ->label('Estado'),
-                    ]),
+                            TextInput::make('data_form.estado')
+                                ->required()
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'sm' => 1,
+                                    'md' => 1,
+                                    'xl' => 1,
+                                ])
+                                ->readOnly()
+                                ->label('Estado'),
+                        ]),
 
                     ToggleButtons::make('data_form.ja_participou_retiro')
                         ->label('Já participou de algum acampamento/retiro ?')
@@ -231,8 +229,8 @@ abstract class EquipeTrabalhoForm
                         ->validationMessages([
                             'required' => 'Necessário informar ao menos um acampamento que já tenha participado.',
                         ])
-                        ->required(fn(Get $get) => $get('data_form.ja_participou_retiro'))
-                        ->visible(fn(Get $get) => $get('data_form.ja_participou_retiro') ?? false),
+                        ->required(fn (Get $get) => $get('data_form.ja_participou_retiro'))
+                        ->visible(fn (Get $get) => $get('data_form.ja_participou_retiro') ?? false),
 
                     ToggleButtons::make('data_form.pode_missas_diarias')
                         ->label('Pode participar das missas diárias ?')
@@ -271,12 +269,12 @@ abstract class EquipeTrabalhoForm
                     TextInput::make('data_form.tamanho_camiseta_outro')
                         ->label('Tamanho da camiseta:')
                         ->extraInputAttributes([
-                            'class' => 'uppercase'
+                            'class' => 'uppercase',
                         ])
                         ->columnSpan(1)
                         ->required()
-                        ->visible(fn(Get $get) => $get('data_form.tamanho_camiseta') == 'O')
-                        ->requiredIf('tamanho_camiseta', fn(Get $get) => $get('data_form.tamanho_camiseta') == 'O')
+                        ->visible(fn (Get $get) => $get('data_form.tamanho_camiseta') == 'O')
+                        ->requiredIf('tamanho_camiseta', fn (Get $get) => $get('data_form.tamanho_camiseta') == 'O')
                         ->minLength(1)
                         ->maxLength(3),
 
@@ -294,7 +292,7 @@ abstract class EquipeTrabalhoForm
                             true => 'Sim',
                             false => 'Não',
                         ]),
-                ])
+                ]),
 
         ];
     }
@@ -306,7 +304,7 @@ abstract class EquipeTrabalhoForm
             FileUpload::make('avatar_url')
                 ->hiddenLabel()
                 ->label('Foto de identificação')
-                ->placeholder(fn() => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
+                ->placeholder(fn () => new HtmlString('<span><a class="text-primary-600 font-bold">Clique aqui</a></br>Para adicionar uma foto sua</span>'))
                 ->alignCenter()
                 ->disk('public')
                 ->image()
@@ -342,8 +340,8 @@ abstract class EquipeTrabalhoForm
                     ->icon('heroicon-m-eye')
                     ->label('Visualizar foto')
                     ->requiresConfirmation()
-                    ->visible(fn(string $operation, array $data) => $operation !== 'create')
-                    ->url(fn(Model $record) => Storage::disk('public')->url($record->avatar_url), shouldOpenInNewTab: true),
+                    ->visible(fn (string $operation, array $data) => $operation !== 'create')
+                    ->url(fn (Model $record) => Storage::disk('public')->url($record->avatar_url), shouldOpenInNewTab: true),
             ])
                 ->visibleOn(['edit', 'view'])
                 ->alignCenter()
@@ -361,7 +359,7 @@ abstract class EquipeTrabalhoForm
                 ])
                 ->columnSpan([
                     'default' => 1,
-                    'lg' => 2
+                    'lg' => 2,
                 ])
                 ->schema([
                     Select::make('status')
@@ -372,8 +370,18 @@ abstract class EquipeTrabalhoForm
                         ->label('Status da Inscrição')
                         ->live()
                         ->preload()
-                        ->afterStateUpdated(fn(Set $set) => $set('dia_pagamento', Carbon::now()->format('Y-m-d')))
+                        ->afterStateUpdated(fn (Set $set) => $set('dia_pagamento', Carbon::now()->format('Y-m-d')))
                         ->options(StatusInscricaoEquipeTrabalho::class),
+
+                    Select::make('tribo_id')
+                        ->relationship('tribo', 'cor')
+                        ->searchable()
+                        ->preload()
+                        ->getOptionLabelFromRecordUsing(fn (Model $record): string => $record->cor ?? 'Não há tribos cadastradas')
+                        ->label('Tribo')
+                        ->columnSpan([
+                            'default' => 1,
+                        ]),
 
                     Textarea::make('observacoes')
                         ->label('Observações')

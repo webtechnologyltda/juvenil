@@ -20,6 +20,7 @@ class EquipeTrabalho extends Model implements Auditable
         'avatar_url',
         'data_form',
         'status',
+        'tribo_id',
     ];
 
     protected $casts = [
@@ -31,5 +32,10 @@ class EquipeTrabalho extends Model implements Auditable
     public function lancamentoItems(): MorphMany
     {
         return $this->morphMany(LancamentoItem::class, 'registration');
+    }
+
+    public function tribo()
+    {
+        return $this->belongsTo(Tribo::class);
     }
 }
