@@ -5,35 +5,51 @@
                 <p class="juvenil-report-brief__eyebrow">Prévia segura para impressão</p>
                 <h2>Central de impressão</h2>
                 <p>
-                    Gere fichas, quadrantes e listas operacionais com filtros por status, tribo,
-                    presença e busca. Relatórios sensíveis só aparecem para perfis autorizados.
+                    Gere fichas, quadrantes e listas operacionais com filtros por status, tribo, presença e busca.
+                    A prévia abre na mesma aba e mantém o retorno para esta central.
                 </p>
             </div>
-        </section>
 
-        <section class="juvenil-report-grid" aria-label="Tipos de relatório disponíveis">
-            @forelse ($this->reportTypes() as $type)
-                <article @class([
-                    'juvenil-report-card',
-                    'juvenil-report-card--sensitive' => $type['sensitive'],
-                ])>
-                    <span>{{ $type['sensitive'] ? 'Restrito' : 'Operacional' }}</span>
-                    <h3>{{ $type['title'] }}</h3>
-                    <p>{{ $type['description'] }}</p>
-                </article>
-            @empty
-                <article class="juvenil-report-card">
-                    <span>Sem acesso</span>
-                    <h3>Nenhum relatório disponível</h3>
-                    <p>Seu perfil ainda não possui permissão para gerar relatórios.</p>
-                </article>
-            @endforelse
+            <div class="juvenil-report-brief__meter" aria-hidden="true">
+                <span>{{ count($this->reportTypes()) }}</span>
+                <strong>modelos disponíveis</strong>
+            </div>
         </section>
 
         @if (count($this->reportTypes()))
             <div class="juvenil-report-form">
                 {{ $this->form }}
             </div>
+        @else
+            <section class="juvenil-report-empty" aria-label="Nenhum relatório disponível">
+                <span>Sem acesso</span>
+                <h3>Nenhum relatório disponível</h3>
+                <p>Seu perfil ainda não possui permissão para gerar relatórios.</p>
+            </section>
         @endif
+
+        <div class="juvenil-report-loading" data-report-preview-loading role="status" aria-live="polite" hidden>
+            <div class="juvenil-report-loading__panel">
+                <span class="juvenil-report-loading__spinner" aria-hidden="true"></span>
+                <strong>Abrindo prévia para impressão</strong>
+                <p>Se houver muitos dados, mantenha esta aba aberta até o relatório carregar.</p>
+            </div>
+        </div>
     </div>
+
+    <script>
+        document.addEventListener('click', function (event) {
+            const previewLink = event.target.closest('[data-report-preview-link]');
+
+            if (! previewLink || previewLink.getAttribute('aria-disabled') === 'true' || ! previewLink.href) {
+                return;
+            }
+
+            const loading = document.querySelector('[data-report-preview-loading]');
+
+            if (loading) {
+                loading.hidden = false;
+            }
+        });
+    </script>
 </x-filament-panels::page>

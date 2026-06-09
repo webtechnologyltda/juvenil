@@ -9,8 +9,11 @@ use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
 use App\Models\Tribo;
 use App\Models\User;
+use App\Support\Reports\CampistaReportData;
+use App\Support\Reports\CampistaReportType;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -86,6 +89,38 @@ function reportCampistaLinkedPayment(Campista $campista): Lancamento
     return $lancamento;
 }
 
+function reportHtml(string $type, array $filters, User $user): string
+{
+    $filters = [
+        'type' => $type,
+        ...$filters,
+    ];
+
+    return view('admin.reports.print', [
+        'report' => app(CampistaReportData::class)->payload(
+            CampistaReportType::from($type),
+            $filters,
+            $user,
+        ),
+        'returnUrl' => route('filament.admin.pages.reports-page', $filters),
+        'logoSrc' => asset('img/logo.png'),
+    ])->render();
+}
+
+function assertPrintableHtml(TestResponse $response): TestResponse
+{
+    $response->assertOk();
+
+    expect($response->headers->get('content-type'))->toContain('text/html')
+        ->and($response->headers->get('content-disposition'))->toBeNull()
+        ->and($response->getContent())->not->toStartWith('%PDF')
+        ->and($response->getContent())->toContain('Prévia para impressão')
+        ->toContain('data-report-print')
+        ->toContain('data-report-save-pdf');
+
+    return $response;
+}
+
 it('seeds report permissions with least privilege by role', function () {
     $this->seed(ShieldSeeder::class);
 
@@ -150,8 +185,7 @@ it('uses the reports page permission to expose standard operational reports', fu
 
     $this->actingAs($user)
         ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
-        ->assertOk()
-        ->assertSee('Fichas de inscrição');
+        ->tap(fn (TestResponse $response) => assertPrintableHtml($response));
 
     $this->actingAs($user)
         ->get(route('admin.reports.print', ['type' => 'sensitive_health']))
@@ -161,43 +195,135 @@ it('uses the reports page permission to expose standard operational reports', fu
 it('renders the sensitive health disclosure control only for authorized report users', function () {
     $this->seed(ShieldSeeder::class);
 
+    $superAdministrator = reportUserWithRole('Super Administrador');
     $administrator = reportUserWithRole('Administrador');
     $infirmary = reportUserWithRole('Enfermaria');
+
+    $this->actingAs($superAdministrator)
+        ->get(route('filament.admin.pages.reports-page'))
+        ->assertOk()
+        ->assertSee('Exibir dados de pagamento')
+        ->assertSee('Por padrão, dados de pagamento permanecem ocultos');
 
     $this->actingAs($administrator)
         ->get(route('filament.admin.pages.reports-page'))
         ->assertOk()
         ->assertDontSee('Exibir dados médicos')
-        ->assertDontSee('Dados médicos sensíveis');
+        ->assertDontSee('Dados médicos sensíveis')
+        ->assertDontSee('Exibir dados de pagamento');
 
     $this->actingAs($infirmary)
         ->get(route('filament.admin.pages.reports-page'))
         ->assertOk()
         ->assertSee('Exibir dados médicos')
-        ->assertSee('Por padrão, dados médicos permanecem ocultos');
+        ->assertSee('Por padrão, dados médicos permanecem ocultos')
+        ->assertDontSee('Exibir dados de pagamento');
 });
 
 it('builds the report filters with native Filament form components', function () {
     $page = file_get_contents(app_path('Filament/Pages/ReportsPage.php'));
     $view = file_get_contents(resource_path('views/filament/pages/reports-page.blade.php'));
+    $helpView = resource_path('views/filament/pages/partials/reports-help.blade.php');
 
     expect($page)
+        ->toContain("Action::make('reportHelp')")
+        ->toContain('->slideOver()')
+        ->toContain("view('filament.pages.partials.reports-help'")
         ->toContain("Select::make('type')")
         ->toContain("Select::make('status')")
         ->toContain("Select::make('tribo_id')")
         ->toContain("Select::make('presenca')")
         ->toContain("Toggle::make('show_sensitive_health')")
+        ->toContain("Toggle::make('show_payment_data')")
+        ->toContain('Exibir dados de pagamento')
+        ->toContain('Por padrão, dados de pagamento permanecem ocultos')
         ->toContain("Checkbox::make('confirm_sensitive_health')")
         ->toContain('Dados médicos sensíveis')
         ->toContain("TextInput::make('search')")
         ->toContain('->footerActions([')
-        ->toContain('->openUrlInNewTab()')
+        ->not->toContain('->openUrlInNewTab()')
         ->toContain('->live()')
         ->toContain('->live(debounce: 500)')
         ->and($view)
         ->toContain('{{ $this->form }}')
+        ->toContain('juvenil-report-loading')
+        ->toContain('data-report-preview-loading')
+        ->not->toContain('juvenil-report-grid')
+        ->not->toContain('juvenil-report-card')
         ->not->toContain('<select')
-        ->not->toContain('<input');
+        ->not->toContain('<input')
+        ->and($helpView)
+        ->toBeFile()
+        ->and(file_get_contents($helpView))
+        ->toContain('Como usar a central de relatórios')
+        ->toContain('Fichas de inscrição')
+        ->toContain('Quadrante das inscrições por tribo')
+        ->toContain('Lista médica da enfermaria')
+        ->toContain('Contatos e endereços para missão');
+});
+
+it('renders the printable preview as HTML in the same tab', function () {
+    $this->seed(ShieldSeeder::class);
+
+    reportCampista();
+
+    $administrator = reportUserWithRole('Administrador');
+    $returnUrl = route('filament.admin.pages.reports-page', [
+        'type' => 'registration_fichas',
+        'status' => [StatusInscricao::Pago->value],
+        'search' => 'Centro',
+    ]);
+
+    $response = $this->actingAs($administrator)
+        ->get(route('admin.reports.print', [
+            'type' => 'registration_fichas',
+            'status' => [StatusInscricao::Pago->value],
+            'search' => 'Centro',
+            'return' => $returnUrl,
+        ]));
+
+    assertPrintableHtml($response);
+
+    $html = reportHtml('registration_fichas', [
+        'status' => [StatusInscricao::Pago->value],
+        'search' => 'Centro',
+    ], $administrator);
+
+    expect($html)
+        ->toContain('<body class="report-print-document">')
+        ->toContain('report-print-toolbar')
+        ->toContain('report-print-panel')
+        ->toContain('report-print-filter')
+        ->toContain('--report-screen-bg: #03181c')
+        ->toContain('background: var(--report-screen-bg);')
+        ->toContain('report-print-document')
+        ->toContain('Salvar PDF')
+        ->toContain('Imprimir')
+        ->toContain('Voltar para a central')
+        ->toContain(e($returnUrl))
+        ->toContain('Logo do acampamento')
+        ->not->toContain('<dt>Central</dt>');
+});
+
+it('keeps printable previews on the HTML rendering path', function () {
+    $controller = file_get_contents(app_path('Http/Controllers/Admin/PrintableReportController.php'));
+    $printView = file_get_contents(resource_path('views/admin/reports/print.blade.php'));
+
+    expect($controller)
+        ->toContain("return view('admin.reports.print'")
+        ->not->toContain('Pdf::')
+        ->not->toContain('preparePdfRuntime')
+        ->and($printView)
+        ->toContain('report-print-toolbar')
+        ->toContain('report-print-document')
+        ->toContain('data-report-save-pdf')
+        ->toContain('window.print()')
+        ->toContain('-webkit-print-color-adjust: exact;')
+        ->toContain('print-color-adjust: exact;')
+        ->not->toContain('Salvar HTML')
+        ->not->toContain('data-report-save>')
+        ->not->toContain('new Blob')
+        ->not->toContain('report-pdf-document');
 });
 
 it('renders the campista photo in printable registration fichas', function () {
@@ -209,14 +335,14 @@ it('renders the campista photo in printable registration fichas', function () {
 
     $administrator = reportUserWithRole('Administrador');
 
-    $this->actingAs($administrator)
-        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
-        ->assertOk()
-        ->assertSee('Foto de Ana Maria Juvenil')
-        ->assertSee('/storage/foto-formulario/ana.png', false);
+    $html = reportHtml('registration_fichas', [], $administrator);
+
+    expect($html)
+        ->toContain('Foto de Ana Maria Juvenil')
+        ->toContain('/storage/foto-formulario/ana.png');
 });
 
-it('applies ficha visual styling and linked payment badges to printable registration reports', function () {
+it('applies ficha visual styling and keeps linked payments hidden by default on printable registration reports', function () {
     $this->seed(ShieldSeeder::class);
 
     $tribe = Tribo::query()->create(['cor' => 'Rosa']);
@@ -225,29 +351,72 @@ it('applies ficha visual styling and linked payment badges to printable registra
         'forma_pagamento' => FormaPagamento::Pix,
         'status' => StatusInscricao::Pago,
     ]);
+    reportCampistaLinkedPayment($campista);
+    $superAdministrator = reportUserWithRole('Super Administrador');
+
+    $html = reportHtml('registration_fichas', [], $superAdministrator);
+
+    expect($html)
+        ->toContain('report-registration-summary')
+        ->toContain('report-registration-ficha__bento')
+        ->toContain('report-card--personal')
+        ->toContain('report-card--contact')
+        ->toContain('report-card--address')
+        ->toContain('report-card--community')
+        ->toContain('report-card--health')
+        ->toContain('data-report-summary-icon="polaris-payment-icon"')
+        ->toContain('data-report-summary-icon="fab-pix"')
+        ->toContain('data-report-summary-icon="heroicon-o-flag"')
+        ->toContain('--report-accent: #ec4899')
+        ->not->toContain('report-card--control')
+        ->not->toContain('Controle da inscrição')
+        ->not->toContain('Data de inscrição')
+        ->not->toContain('Data de pagamento')
+        ->not->toContain('<section class="report-card report-registration-payment-section">')
+        ->not->toContain('Pagamentos vinculados')
+        ->not->toContain('Lançamento relatório inscrição')
+        ->not->toContain('Comprovantes anexados');
+
+    $printView = file_get_contents(resource_path('views/admin/reports/print.blade.php'));
+
+    expect($printView)
+        ->toContain('report-fields-table')
+        ->toContain('table-layout: fixed;')
+        ->toContain('report-field__label')
+        ->toContain('report-field__value')
+        ->toContain('.report-card--payments')
+        ->toContain('grid-column: 1 / -1;')
+        ->toContain('margin-top: 0;');
+});
+
+it('shows linked payment badges on printable registration reports only when the financial toggle is enabled', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $campista = reportCampista([
+        'forma_pagamento' => FormaPagamento::Pix,
+        'status' => StatusInscricao::Pago,
+    ]);
     $lancamento = reportCampistaLinkedPayment($campista);
     $superAdministrator = reportUserWithRole('Super Administrador');
 
-    $this->actingAs($superAdministrator)
-        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
-        ->assertOk()
-        ->assertSee('report-registration-summary', false)
-        ->assertSee('data-report-summary-icon="polaris-payment-icon"', false)
-        ->assertSee('data-report-summary-icon="fab-pix"', false)
-        ->assertSee('data-report-summary-icon="heroicon-o-flag"', false)
-        ->assertSee('--report-accent: #ec4899', false)
-        ->assertSee('<section class="report-card report-registration-payment-section">', false)
-        ->assertSee('Pagamentos vinculados')
-        ->assertSee('Lançamento relatório inscrição')
-        ->assertSee('R$ 350,00')
-        ->assertSee('08/06/2026')
-        ->assertSee('Visualizar lançamento')
-        ->assertSee(route('filament.admin.resources.lancamentos.view', ['record' => $lancamento]), false)
-        ->assertSee('data-report-payment-icon="fab-pix"', false)
-        ->assertSee('data-report-payment-color="teal"', false)
-        ->assertSee('data-report-payment-icon="polaris-payment-icon"', false)
-        ->assertSee('data-report-payment-color="success"', false)
-        ->assertDontSee('Comprovantes anexados');
+    $html = reportHtml('registration_fichas', [
+        'show_payment_data' => 1,
+    ], $superAdministrator);
+
+    expect($html)
+        ->toContain('report-registration-ficha__bento')
+        ->toContain('<section class="report-card report-card--payments report-registration-payment-section">')
+        ->toContain('Pagamentos vinculados')
+        ->toContain('Lançamento relatório inscrição')
+        ->toContain('R$ 350,00')
+        ->toContain('08/06/2026')
+        ->toContain('Visualizar lançamento')
+        ->toContain(route('filament.admin.resources.lancamentos.view', ['record' => $lancamento]))
+        ->toContain('data-report-payment-icon="fab-pix"')
+        ->toContain('data-report-payment-color="teal"')
+        ->toContain('data-report-payment-icon="polaris-payment-icon"')
+        ->toContain('data-report-payment-color="success"')
+        ->not->toContain('Comprovantes anexados');
 });
 
 it('hides linked payments on printable registration reports without financial view permissions', function () {
@@ -257,13 +426,15 @@ it('hides linked payments on printable registration reports without financial vi
     reportCampistaLinkedPayment($campista);
     $administrator = reportUserWithRole('Administrador');
 
-    $this->actingAs($administrator)
-        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
-        ->assertOk()
-        ->assertSee('report-registration-summary', false)
-        ->assertDontSee('<section class="report-card report-registration-payment-section">', false)
-        ->assertDontSee('Pagamentos vinculados')
-        ->assertDontSee('Lançamento relatório inscrição');
+    $html = reportHtml('registration_fichas', [
+        'show_payment_data' => 1,
+    ], $administrator);
+
+    expect($html)
+        ->toContain('report-registration-summary')
+        ->not->toContain('<section class="report-card report-registration-payment-section">')
+        ->not->toContain('Pagamentos vinculados')
+        ->not->toContain('Lançamento relatório inscrição');
 });
 
 it('renders the camp logo in every printable report header', function () {
@@ -275,18 +446,14 @@ it('renders the camp logo in every printable report header', function () {
     $infirmary = reportUserWithRole('Enfermaria');
 
     foreach (['registration_fichas', 'tribe_quadrant', 'mission_contacts'] as $type) {
-        $this->actingAs($administrator)
-            ->get(route('admin.reports.print', ['type' => $type]))
-            ->assertOk()
-            ->assertSee('Logo do acampamento')
-            ->assertSee('/img/logo.png', false);
+        expect(reportHtml($type, [], $administrator))
+            ->toContain('Logo do acampamento')
+            ->toContain('/img/logo.png');
     }
 
-    $this->actingAs($infirmary)
-        ->get(route('admin.reports.print', ['type' => 'sensitive_health']))
-        ->assertOk()
-        ->assertSee('Logo do acampamento')
-        ->assertSee('/img/logo.png', false);
+    expect(reportHtml('sensitive_health', [], $infirmary))
+        ->toContain('Logo do acampamento')
+        ->toContain('/img/logo.png');
 });
 
 it('blocks the medical report for administrators and exposes it only to the infirmary', function () {
@@ -301,26 +468,21 @@ it('blocks the medical report for administrators and exposes it only to the infi
         ->get(route('admin.reports.print', ['type' => 'sensitive_health']))
         ->assertForbidden();
 
-    $this->actingAs($infirmary)
-        ->get(route('admin.reports.print', ['type' => 'sensitive_health']))
-        ->assertOk()
-        ->assertSee('Lista médica da enfermaria')
-        ->assertSee('Ana Maria Juvenil')
-        ->assertSee('Informação restrita')
-        ->assertDontSee('Dipirona a cada 8 horas')
-        ->assertDontSee('Evitar amendoim');
+    expect(reportHtml('sensitive_health', [], $infirmary))
+        ->toContain('Lista médica da enfermaria')
+        ->toContain('Ana Maria Juvenil')
+        ->toContain('Informação restrita')
+        ->not->toContain('Dipirona a cada 8 horas')
+        ->not->toContain('Evitar amendoim');
 
-    $this->actingAs($infirmary)
-        ->get(route('admin.reports.print', [
-            'type' => 'sensitive_health',
-            'show_sensitive_health' => 1,
-            'confirm_sensitive_health' => 1,
-        ]))
-        ->assertOk()
-        ->assertSee('Lista médica da enfermaria')
-        ->assertSee('Ana Maria Juvenil')
-        ->assertSee('Dipirona a cada 8 horas')
-        ->assertSee('Evitar amendoim');
+    expect(reportHtml('sensitive_health', [
+        'show_sensitive_health' => 1,
+        'confirm_sensitive_health' => 1,
+    ], $infirmary))
+        ->toContain('Lista médica da enfermaria')
+        ->toContain('Ana Maria Juvenil')
+        ->toContain('Dipirona a cada 8 horas')
+        ->toContain('Evitar amendoim');
 });
 
 it('requires the sensitive health toggle and confirmation before exposing medical data in any report', function () {
@@ -330,32 +492,24 @@ it('requires the sensitive health toggle and confirmation before exposing medica
 
     $infirmary = reportUserWithRole('Enfermaria');
 
-    $this->actingAs($infirmary)
-        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
-        ->assertOk()
-        ->assertSee('Informação restrita')
-        ->assertDontSee('Dipirona a cada 8 horas')
-        ->assertDontSee('Evitar amendoim');
+    expect(reportHtml('registration_fichas', [], $infirmary))
+        ->toContain('Informação restrita')
+        ->not->toContain('Dipirona a cada 8 horas')
+        ->not->toContain('Evitar amendoim');
 
-    $this->actingAs($infirmary)
-        ->get(route('admin.reports.print', [
-            'type' => 'registration_fichas',
-            'show_sensitive_health' => 1,
-        ]))
-        ->assertOk()
-        ->assertSee('Informação restrita')
-        ->assertDontSee('Dipirona a cada 8 horas')
-        ->assertDontSee('Evitar amendoim');
+    expect(reportHtml('registration_fichas', [
+        'show_sensitive_health' => 1,
+    ], $infirmary))
+        ->toContain('Informação restrita')
+        ->not->toContain('Dipirona a cada 8 horas')
+        ->not->toContain('Evitar amendoim');
 
-    $this->actingAs($infirmary)
-        ->get(route('admin.reports.print', [
-            'type' => 'registration_fichas',
-            'show_sensitive_health' => 1,
-            'confirm_sensitive_health' => 1,
-        ]))
-        ->assertOk()
-        ->assertSee('Dipirona a cada 8 horas')
-        ->assertSee('Evitar amendoim');
+    expect(reportHtml('registration_fichas', [
+        'show_sensitive_health' => 1,
+        'confirm_sensitive_health' => 1,
+    ], $infirmary))
+        ->toContain('Dipirona a cada 8 horas')
+        ->toContain('Evitar amendoim');
 });
 
 it('does not leak medical details in non medical reports', function () {
@@ -365,22 +519,18 @@ it('does not leak medical details in non medical reports', function () {
 
     $administrator = reportUserWithRole('Administrador');
 
-    $this->actingAs($administrator)
-        ->get(route('admin.reports.print', ['type' => 'mission_contacts']))
-        ->assertOk()
-        ->assertSee('Contatos e endereços para missão')
-        ->assertSee('Maria Responsavel')
-        ->assertSee('Rua da Missão')
-        ->assertDontSee('Dipirona a cada 8 horas')
-        ->assertDontSee('Evitar amendoim');
+    expect(reportHtml('mission_contacts', [], $administrator))
+        ->toContain('Contatos e endereços para missão')
+        ->toContain('Maria Responsavel')
+        ->toContain('Rua da Missão')
+        ->not->toContain('Dipirona a cada 8 horas')
+        ->not->toContain('Evitar amendoim');
 
-    $this->actingAs($administrator)
-        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
-        ->assertOk()
-        ->assertSee('Fichas de inscrição')
-        ->assertSee('Informação restrita')
-        ->assertDontSee('Dipirona a cada 8 horas')
-        ->assertDontSee('Evitar amendoim');
+    expect(reportHtml('registration_fichas', [], $administrator))
+        ->toContain('Fichas de inscrição')
+        ->toContain('Informação restrita')
+        ->not->toContain('Dipirona a cada 8 horas')
+        ->not->toContain('Evitar amendoim');
 });
 
 it('renders the tribe quadrant grouped by tribe', function () {
@@ -395,15 +545,13 @@ it('renders the tribe quadrant grouped by tribe', function () {
 
     $administrator = reportUserWithRole('Administrador');
 
-    $this->actingAs($administrator)
-        ->get(route('admin.reports.print', ['type' => 'tribe_quadrant']))
-        ->assertOk()
-        ->assertSee('Quadrante das inscrições por tribo')
-        ->assertSee('Azul')
-        ->assertSee('2 campistas')
-        ->assertSee('Ana Azul')
-        ->assertSee('Bruno Azul')
-        ->assertSee('Verde')
-        ->assertSee('1 campista')
-        ->assertSee('Carla Verde');
+    expect(reportHtml('tribe_quadrant', [], $administrator))
+        ->toContain('Quadrante das inscrições por tribo')
+        ->toContain('Azul')
+        ->toContain('2 campistas')
+        ->toContain('Ana Azul')
+        ->toContain('Bruno Azul')
+        ->toContain('Verde')
+        ->toContain('1 campista')
+        ->toContain('Carla Verde');
 });

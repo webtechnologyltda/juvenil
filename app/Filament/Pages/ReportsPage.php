@@ -19,6 +19,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\Width;
 use Illuminate\Support\HtmlString;
 
 class ReportsPage extends Page
@@ -50,6 +51,7 @@ class ReportsPage extends Page
         'search' => null,
         'show_sensitive_health' => false,
         'confirm_sensitive_health' => false,
+        'show_payment_data' => false,
     ];
 
     public static function getRoutePath(Panel $panel): string
@@ -59,6 +61,7 @@ class ReportsPage extends Page
 
     public function mount(): void
     {
+        $this->filters = $this->filtersFromQuery(request()->query());
         $this->filters['type'] ??= $this->defaultReportType();
 
         $this->form->fill($this->filters);
@@ -71,8 +74,23 @@ class ReportsPage extends Page
             ->columns(1)
             ->components([
                 Section::make('Montar relatório')
-                    ->description('Escolha o tipo e refine a prévia antes de imprimir.')
+                    ->description('Escolha o tipo, aplique os filtros e gere a prévia no mesmo navegador.')
                     ->icon('heroicon-o-adjustments-horizontal')
+                    ->headerActions([
+                        Action::make('reportHelp')
+                            ->label('Dúvidas')
+                            ->icon('heroicon-o-question-mark-circle')
+                            ->color('gray')
+                            ->slideOver()
+                            ->modalWidth(Width::Large)
+                            ->modalHeading('Dúvidas da central de relatórios')
+                            ->modalDescription('Use esta referência para escolher o relatório certo antes de abrir a prévia.')
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Fechar')
+                            ->modalContent(fn () => view('filament.pages.partials.reports-help', [
+                                'types' => $this->reportTypes(),
+                            ])),
+                    ])
                     ->schema([
                         Grid::make([
                             'default' => 1,
@@ -90,8 +108,19 @@ class ReportsPage extends Page
                                     ->selectablePlaceholder(false)
                                     ->columnSpan([
                                         'default' => 'full',
-                                        'md' => 1,
-                                        'xl' => 3,
+                                        'md' => 2,
+                                        'xl' => 4,
+                                    ]),
+
+                                TextInput::make('search')
+                                    ->label('Busca')
+                                    ->placeholder('Nome, responsável, bairro ou cidade')
+                                    ->prefixIcon('heroicon-o-magnifying-glass')
+                                    ->live(debounce: 500)
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 2,
+                                        'xl' => 8,
                                     ]),
 
                                 Select::make('status')
@@ -104,7 +133,7 @@ class ReportsPage extends Page
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => 1,
-                                        'xl' => 3,
+                                        'xl' => 4,
                                     ]),
 
                                 Select::make('tribo_id')
@@ -119,7 +148,7 @@ class ReportsPage extends Page
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => 1,
-                                        'xl' => 3,
+                                        'xl' => 4,
                                     ]),
 
                                 Select::make('presenca')
@@ -134,17 +163,7 @@ class ReportsPage extends Page
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => 1,
-                                        'xl' => 3,
-                                    ]),
-
-                                TextInput::make('search')
-                                    ->label('Busca')
-                                    ->placeholder('Nome, responsável, bairro ou cidade')
-                                    ->prefixIcon('heroicon-o-magnifying-glass')
-                                    ->live(debounce: 500)
-                                    ->columnSpan([
-                                        'default' => 'full',
-                                        'xl' => 9,
+                                        'xl' => 4,
                                     ]),
 
                                 Toggle::make('show_sensitive_health')
@@ -159,7 +178,19 @@ class ReportsPage extends Page
                                     ->visible(fn (): bool => $this->canUseSensitiveHealthFilter())
                                     ->columnSpan([
                                         'default' => 'full',
-                                        'xl' => 3,
+                                        'md' => 1,
+                                        'xl' => 6,
+                                    ]),
+
+                                Toggle::make('show_payment_data')
+                                    ->label('Exibir dados de pagamento')
+                                    ->helperText('Por padrão, dados de pagamento permanecem ocultos nos relatórios.')
+                                    ->live()
+                                    ->visible(fn (): bool => $this->canUsePaymentDataFilter())
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 6,
                                     ]),
 
                                 Html::make(new HtmlString(
@@ -185,7 +216,7 @@ class ReportsPage extends Page
                             ->icon('heroicon-o-printer')
                             ->color('primary')
                             ->url(fn (): string => route('admin.reports.print', $this->previewQuery()))
-                            ->openUrlInNewTab()
+                            ->extraAttributes(['data-report-preview-link' => 'true'])
                             ->disabled(fn (): bool => blank($this->filters['type'] ?? null) || $this->missingSensitiveHealthConfirmation()),
                     ])
                     ->footerActionsAlignment(Alignment::End),
@@ -209,14 +240,28 @@ class ReportsPage extends Page
 
     public function previewQuery(): array
     {
-        return collect($this->filters)
+        $query = collect($this->filters)
             ->filter(fn (mixed $value): bool => $value !== null && $value !== '' && $value !== [] && $value !== false)
             ->all();
+
+        return [
+            ...$query,
+            'return' => route('filament.admin.pages.reports-page', $query),
+        ];
     }
 
     private function canUseSensitiveHealthFilter(): bool
     {
         return auth()->user()?->can('view_sensitive_health_campista') ?? false;
+    }
+
+    private function canUsePaymentDataFilter(): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null
+            && $user->can('view_any_lancamento')
+            && $user->can('view_lancamento');
     }
 
     private function missingSensitiveHealthConfirmation(): bool
@@ -229,5 +274,56 @@ class ReportsPage extends Page
     private function defaultReportType(): ?string
     {
         return data_get($this->reportTypes(), '0.value');
+    }
+
+    private function filtersFromQuery(array $query): array
+    {
+        $filters = $this->filters;
+
+        if (array_key_exists('type', $query)) {
+            $filters['type'] = filled($query['type']) ? (string) $query['type'] : null;
+        }
+
+        if (array_key_exists('status', $query)) {
+            $filters['status'] = $this->integerList($query['status']);
+        }
+
+        if (array_key_exists('tribo_id', $query)) {
+            $filters['tribo_id'] = $this->integerList($query['tribo_id']);
+        }
+
+        if (array_key_exists('presenca', $query)) {
+            $filters['presenca'] = $query['presenca'] === '' || $query['presenca'] === null
+                ? null
+                : (string) (int) $query['presenca'];
+        }
+
+        if (array_key_exists('search', $query)) {
+            $filters['search'] = filled($query['search']) ? (string) $query['search'] : null;
+        }
+
+        foreach (['show_sensitive_health', 'confirm_sensitive_health', 'show_payment_data'] as $key) {
+            if (array_key_exists($key, $query)) {
+                $filters[$key] = $this->truthy($query[$key]);
+            }
+        }
+
+        return $filters;
+    }
+
+    private function integerList(mixed $values): array
+    {
+        $values = is_array($values) ? $values : [$values];
+
+        return collect($values)
+            ->filter(fn (mixed $value): bool => $value !== null && $value !== '')
+            ->map(fn (mixed $value): int => (int) $value)
+            ->values()
+            ->all();
+    }
+
+    private function truthy(mixed $value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 }

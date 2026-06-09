@@ -40,6 +40,7 @@ class CampistaReportData
         $records = $this->records($filters);
         $canUseSensitiveHealth = $user->can('view_sensitive_health_campista');
         $showSensitiveHealth = $this->canExposeSensitiveHealth($filters, $user);
+        $showPaymentData = $this->canExposePaymentData($filters, $user);
 
         if ($type === CampistaReportType::SensitiveHealth) {
             $records = $records->filter(fn (Campista $campista): bool => $this->hasSensitiveHealthFlag($campista))->values();
@@ -55,7 +56,7 @@ class CampistaReportData
             'showSensitiveHealth' => $showSensitiveHealth,
             'recordsCount' => $records->count(),
             'fichas' => $type === CampistaReportType::RegistrationFichas
-                ? $records->map(fn (Campista $campista): array => $this->ficha($campista, $showSensitiveHealth, $user))->all()
+                ? $records->map(fn (Campista $campista): array => $this->ficha($campista, $showSensitiveHealth, $showPaymentData))->all()
                 : [],
             'tribes' => $type === CampistaReportType::TribeQuadrant
                 ? $this->tribeGroups($records)
@@ -113,7 +114,7 @@ class CampistaReportData
             ->get();
     }
 
-    private function ficha(Campista $campista, bool $showSensitiveHealth, User $user): array
+    private function ficha(Campista $campista, bool $showSensitiveHealth, bool $showPaymentData): array
     {
         $formData = $campista->form_data ?? [];
         $status = $this->statusEnum($campista);
@@ -174,6 +175,7 @@ class CampistaReportData
             'sections' => [
                 [
                     'title' => 'Dados pessoais',
+                    'area' => 'personal',
                     'fields' => [
                         ['label' => 'Nome completo', 'value' => $campista->nome],
                         ['label' => 'Nascimento', 'value' => data_get($formData, 'data_nacimento')],
@@ -187,6 +189,7 @@ class CampistaReportData
                 ],
                 [
                     'title' => 'Contato e responsável',
+                    'area' => 'contact',
                     'fields' => [
                         ['label' => 'Responsável', 'value' => $this->responsibleName($campista)],
                         ['label' => 'Telefone do responsável', 'value' => $this->responsiblePhone($campista)],
@@ -194,6 +197,7 @@ class CampistaReportData
                 ],
                 [
                     'title' => 'Endereço',
+                    'area' => 'address',
                     'fields' => [
                         ['label' => 'CEP', 'value' => data_get($formData, 'cep')],
                         ['label' => 'Rua', 'value' => data_get($formData, 'rua')],
@@ -206,6 +210,7 @@ class CampistaReportData
                 ],
                 [
                     'title' => 'Comunidade e experiência',
+                    'area' => 'community',
                     'fields' => [
                         ['label' => 'Paróquia', 'value' => $this->parishLabel(data_get($formData, 'paroquia'))],
                         ['label' => 'Comunidade', 'value' => $this->communityLabel(data_get($formData, 'paroquia'), data_get($formData, 'comunidade'))],
@@ -218,6 +223,7 @@ class CampistaReportData
                 ],
                 [
                     'title' => 'Saúde e cuidados',
+                    'area' => 'health',
                     'fields' => [
                         ['label' => 'Toma remédio?', 'value' => $this->sensitiveBooleanLabel($takesMedicine, $showSensitiveHealth), 'tone' => $takesMedicine ? 'warning' : 'success'],
                         ['label' => 'Detalhes do remédio', 'value' => $this->sensitiveValue(data_get($formData, 'remedio'), $takesMedicine, $showSensitiveHealth)],
@@ -225,30 +231,17 @@ class CampistaReportData
                         ['label' => 'Recomendação de cuidado', 'value' => $this->sensitiveValue(data_get($formData, 'recomendacao'), $hasRecommendation, $showSensitiveHealth)],
                     ],
                 ],
-                [
-                    'title' => 'Controle da inscrição',
-                    'fields' => [
-                        ['label' => 'Data de inscrição', 'value' => $campista->created_at?->format('d/m/Y H:i')],
-                        ['label' => 'Data de pagamento', 'value' => $campista->dia_pagamento?->format('d/m/Y')],
-                        ['label' => 'Forma de pagamento', 'value' => $payment?->getLabel()],
-                        ['label' => 'Observações', 'value' => $campista->observacoes, 'wide' => true],
-                    ],
-                ],
             ],
-            'can_view_payments' => $this->canViewLinkedPayments($user),
-            'payments' => $this->linkedPaymentsData($campista, $user),
+            'can_view_payments' => $showPaymentData,
+            'payments' => $showPaymentData ? $this->linkedPaymentsData($campista) : [],
         ];
     }
 
     /**
      * @return array<int, array{name: string, amount: string, date: string, method: array{label: string, icon: string, color: string, accent: string}, status: array{label: string, icon: string, color: string, accent: string}, url: ?string}>
      */
-    private function linkedPaymentsData(Campista $campista, User $user): array
+    private function linkedPaymentsData(Campista $campista): array
     {
-        if (! $this->canViewLinkedPayments($user)) {
-            return [];
-        }
-
         $items = $campista->relationLoaded('lancamentoItems')
             ? $campista->lancamentoItems
             : $campista->lancamentoItems()->with('lancamento')->get();
@@ -287,12 +280,6 @@ class CampistaReportData
             ],
             'url' => $lancamento ? route('filament.admin.resources.lancamentos.view', ['record' => $lancamento]) : null,
         ];
-    }
-
-    private function canViewLinkedPayments(User $user): bool
-    {
-        return $user->can('view_any_lancamento')
-            && $user->can('view_lancamento');
     }
 
     private function money(int $amount): string
@@ -462,6 +449,13 @@ class CampistaReportData
         return $user->can('view_sensitive_health_campista')
             && $this->truthy($filters['show_sensitive_health'] ?? false)
             && $this->truthy($filters['confirm_sensitive_health'] ?? false);
+    }
+
+    private function canExposePaymentData(array $filters, User $user): bool
+    {
+        return $user->can('view_any_lancamento')
+            && $user->can('view_lancamento')
+            && $this->truthy($filters['show_payment_data'] ?? false);
     }
 
     private function integerList(mixed $values): array
