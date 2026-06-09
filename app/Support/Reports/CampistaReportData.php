@@ -181,9 +181,9 @@ class CampistaReportData
                     'title' => 'Saúde e cuidados',
                     'area' => 'health',
                     'fields' => [
-                        ['label' => 'Toma remédio?', 'value' => $this->sensitiveBooleanLabel($takesMedicine, $showSensitiveHealth), 'tone' => $takesMedicine ? 'warning' : 'success'],
+                        ['label' => 'Toma remédio?', 'value' => $this->sensitiveBooleanLabel($takesMedicine), 'tone' => $takesMedicine ? 'warning' : 'success'],
                         ['label' => 'Detalhes do remédio', 'value' => $this->sensitiveValue(data_get($formData, 'remedio'), $takesMedicine, $showSensitiveHealth)],
-                        ['label' => 'Tem recomendação?', 'value' => $this->sensitiveBooleanLabel($hasRecommendation, $showSensitiveHealth), 'tone' => $hasRecommendation ? 'warning' : 'success'],
+                        ['label' => 'Tem recomendação?', 'value' => $this->sensitiveBooleanLabel($hasRecommendation), 'tone' => $hasRecommendation ? 'warning' : 'success'],
                         ['label' => 'Recomendação de cuidado', 'value' => $this->sensitiveValue(data_get($formData, 'recomendacao'), $hasRecommendation, $showSensitiveHealth)],
                     ],
                 ],
@@ -591,17 +591,9 @@ class CampistaReportData
         return filled($value) ? (string) $value : 'Não detalhado';
     }
 
-    private function sensitiveBooleanLabel(bool $hasSensitiveInfo, bool $showSensitiveHealth): string
+    private function sensitiveBooleanLabel(bool $hasSensitiveInfo): string
     {
-        if (! $hasSensitiveInfo) {
-            return 'Não';
-        }
-
-        if (! $showSensitiveHealth) {
-            return 'Informação restrita';
-        }
-
-        return 'Sim';
+        return $hasSensitiveInfo ? 'Sim' : 'Não';
     }
 
     private function truthy(mixed $value): bool
