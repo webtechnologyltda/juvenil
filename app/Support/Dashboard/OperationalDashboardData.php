@@ -5,6 +5,7 @@ namespace App\Support\Dashboard;
 use App\Enums\StatusInscricao;
 use App\Models\Campista;
 use App\Support\Campistas\ParishCommunityLabels;
+use App\Support\Tribes\TribeColor;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -95,6 +96,14 @@ class OperationalDashboardDataSet
             ->groupBy(fn (Campista $campista): string => $campista->tribo?->cor ?: 'Sem tribo')
             ->map->count()
             ->sortDesc()
+            ->all();
+    }
+
+    public function tribeColors(): array
+    {
+        return $this->records
+            ->groupBy(fn (Campista $campista): string => $campista->tribo?->cor ?: 'Sem tribo')
+            ->map(fn (Collection $campistas): string => TribeColor::forTribe($campistas->first()?->tribo))
             ->all();
     }
 

@@ -52,7 +52,7 @@ it('calculates the operational pipeline excluding cancelled records by default',
 });
 
 it('applies status tribe parish community and presence filters to operational metrics', function () {
-    $blue = Tribo::query()->create(['cor' => 'Azul']);
+    $blue = Tribo::query()->create(['cor' => 'Azul', 'cor_hex' => '#123abc']);
     $red = Tribo::query()->create(['cor' => 'Vermelha']);
 
     makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value, 'presenca' => false, 'tribo_id' => $blue->id], ['paroquia' => 0, 'comunidade' => 2]);
@@ -131,7 +131,7 @@ it('filters operational metrics by community text when another parish is selecte
 });
 
 it('builds tribe shirt community age and sex distributions with incomplete form data tolerance', function () {
-    $blue = Tribo::query()->create(['cor' => 'Azul']);
+    $blue = Tribo::query()->create(['cor' => 'Azul', 'cor_hex' => '#123abc']);
 
     makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value, 'tribo_id' => $blue->id], [
         'sexo' => 'M',
@@ -161,6 +161,8 @@ it('builds tribe shirt community age and sex distributions with incomplete form 
 
     expect($data->tribes())->toHaveKey('Azul', 1)
         ->and($data->tribes())->toHaveKey('Sem tribo', 2)
+        ->and($data->tribeColors())->toHaveKey('Azul', '#123abc')
+        ->and($data->tribeColors())->toHaveKey('Sem tribo', '#94a3b8')
         ->and($data->shirts())->toHaveKey('Outros: XGG', 1)
         ->and($data->shirts())->toHaveKey('M', 1)
         ->and($data->shirts())->toHaveKey('Sem tamanho', 1)

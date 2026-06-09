@@ -18,6 +18,7 @@ class Tribo extends Model implements Auditable
      */
     protected $fillable = [
         'cor',
+        'cor_hex',
     ];
 
     public function campistas()

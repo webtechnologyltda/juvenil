@@ -4,15 +4,18 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TriboResource\Pages;
 use App\Models\Tribo;
+use App\Support\Tribes\TribeColor;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 use Tapp\FilamentAuditing\RelationManagers\AuditsRelationManager;
 
 class TriboResource extends Resource implements HasShieldPermissions
@@ -26,11 +29,28 @@ class TriboResource extends Resource implements HasShieldPermissions
     public static function form(Schema $schema): Schema
     {
         return $schema
-            ->columns(1)
+            ->columns([
+                'default' => 1,
+                'lg' => 4,
+            ])
             ->components([
                 TextInput::make('cor')
-                    ->label('Cor da Tribo')
-                    ->required(),
+                    ->label('Nome da tribo')
+                    ->maxLength(255)
+                    ->required()
+                    ->columnSpan([
+                        'default' => 1,
+                        'lg' => 3,
+                    ]),
+
+                ColorPicker::make('cor_hex')
+                    ->label('Cor da tribo')
+                    ->default(TribeColor::FALLBACK)
+                    ->required()
+                    ->columnSpan([
+                        'default' => 1,
+                        'lg' => 1,
+                    ]),
             ]);
     }
 
@@ -41,7 +61,15 @@ class TriboResource extends Resource implements HasShieldPermissions
                 TextColumn::make('id')
                     ->label('Código'),
                 TextColumn::make('cor')
-                    ->label('Cor da Tribo'),
+                    ->label('Tribo'),
+                TextColumn::make('cor_hex')
+                    ->label('Cor')
+                    ->formatStateUsing(fn (?string $state, Tribo $record): HtmlString => new HtmlString(sprintf(
+                        '<span style="display:inline-flex;align-items:center;gap:.5rem;"><span style="width:1rem;height:1rem;border-radius:999px;border:1px solid rgba(148,163,184,.45);background:%s;"></span><span>%s</span></span>',
+                        e(TribeColor::resolve($state, $record->cor)),
+                        e(TribeColor::resolve($state, $record->cor)),
+                    )))
+                    ->html(),
             ])
             ->filters([
                 //

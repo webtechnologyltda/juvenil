@@ -1,7 +1,10 @@
 @forelse ($tribes as $tribe)
     <section class="report-section">
-        <div class="report-page__top">
-            <h2>{{ $tribe['tribe'] }}</h2>
+        <div class="report-page__top report-page__top--tribe" style="--report-accent: {{ $tribe['accent'] }};">
+            <h2>
+                <span class="report-tribe-swatch" aria-hidden="true"></span>
+                {{ $tribe['tribe'] }}
+            </h2>
             <span class="report-badge">{{ $tribe['count'] }} {{ $tribe['count'] === 1 ? 'campista' : 'campistas' }}</span>
         </div>
 

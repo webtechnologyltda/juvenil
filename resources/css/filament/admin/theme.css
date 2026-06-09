@@ -580,6 +580,19 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-fo-date-time-picker-panel 
     z-index: 100;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section, .fi-sc):has(.fi-fo-color-picker-panel) {
+    position: relative;
+    z-index: 20;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section, .fi-sc):has(.fi-fo-color-picker:focus-within) {
+    z-index: 70;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) :is(.fi-section, .fi-sc) .fi-fo-color-picker-panel {
+    z-index: 100;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-section:has(.fi-select-input-btn[aria-expanded='true']) {
     position: relative;
     z-index: 70;

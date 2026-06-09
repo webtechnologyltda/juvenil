@@ -32,6 +32,18 @@ it('seeds deterministic complete registration data for dashboard validation', fu
             'Preta',
             'Cinza',
         ])
+        ->and(Tribo::query()->pluck('cor_hex', 'cor')->all())->toBe([
+            'Azul' => '#2563eb',
+            'Vermelha' => '#dc2626',
+            'Verde' => '#16a34a',
+            'Amarela' => '#eab308',
+            'Roxa' => '#7c3aed',
+            'Laranja' => '#f97316',
+            'Rosa' => '#ec4899',
+            'Branca' => '#f8fafc',
+            'Preta' => '#111827',
+            'Cinza' => '#64748b',
+        ])
         ->and(Campista::query()->count())->toBe(120)
         ->and(EquipeTrabalho::query()->count())->toBe(200);
 

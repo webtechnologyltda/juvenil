@@ -16,7 +16,12 @@
                 @foreach ($rows as $row)
                     <tr>
                         <td>{{ $row['name'] }}</td>
-                        <td>{{ $row['tribe'] }}</td>
+                        <td>
+                            <span class="report-table-tribe" style="--report-accent: {{ $row['tribe_accent'] }};">
+                                <span class="report-table-tribe__swatch" aria-hidden="true"></span>
+                                {{ $row['tribe'] }}
+                            </span>
+                        </td>
                         <td>{{ $row['age'] ?? '-' }}</td>
                         <td>{{ $row['medicine'] }}</td>
                         <td>{{ $row['recommendation'] }}</td>

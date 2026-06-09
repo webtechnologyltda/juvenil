@@ -4,6 +4,7 @@ namespace App\Filament\Widgets\Operational;
 
 use App\Filament\Widgets\Operational\Concerns\UsesOperationalDashboardData;
 use App\Models\Campista;
+use App\Support\Tribes\TribeColor;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -54,7 +55,8 @@ class OperationalPendingTasksTable extends TableWidget
                 TextColumn::make('tribo.cor')
                     ->label('Tribo')
                     ->placeholder('Sem tribo')
-                    ->badge(),
+                    ->formatStateUsing(fn (?string $state, Campista $record) => TribeColor::badge($record->tribo))
+                    ->html(),
                 TextColumn::make('pending_issues')
                     ->label('Pendências')
                     ->state(fn (Campista $record): string => $this->pendingIssues($record))

@@ -4,6 +4,7 @@ namespace App\Filament\Widgets\Operational;
 
 use App\Filament\Widgets\Operational\Concerns\UsesOperationalDashboardData;
 use App\Models\Campista;
+use App\Support\Tribes\TribeColor;
 use Carbon\Carbon;
 use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
@@ -56,7 +57,8 @@ class SensitiveHealthTable extends TableWidget
                 TextColumn::make('tribo.cor')
                     ->label('Tribo')
                     ->placeholder('Sem tribo')
-                    ->badge(),
+                    ->formatStateUsing(fn (?string $state, Campista $record) => TribeColor::badge($record->tribo))
+                    ->html(),
                 TextColumn::make('form_data.data_nacimento')
                     ->label('Idade')
                     ->alignCenter()
