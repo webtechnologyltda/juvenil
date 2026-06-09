@@ -368,19 +368,20 @@ it('applies ficha visual styling and keeps linked payments hidden by default on 
     $html = reportHtml('registration_fichas', [], $superAdministrator);
 
     expect($html)
-        ->toContain('report-registration-summary')
         ->toContain('report-registration-ficha__bento')
         ->toContain('report-card--personal')
         ->toContain('report-card--contact')
         ->toContain('report-card--address')
         ->toContain('report-card--community')
         ->toContain('report-card--health')
-        ->toContain('data-report-summary-icon="polaris-payment-icon"')
-        ->toContain('data-report-summary-icon="fab-pix"')
-        ->toContain('data-report-summary-icon="heroicon-s-flag"')
-        ->toContain('data-report-summary-icon="heroicon-s-clock"')
-        ->not->toContain('data-report-summary-icon="heroicon-o-')
+        ->toContain('data-report-badge-icon="heroicon-s-flag"')
         ->toContain('--report-accent: #ec4899')
+        ->not->toContain('report-registration-summary')
+        ->not->toContain('Resumo da inscrição')
+        ->not->toContain('data-report-summary-icon')
+        ->not->toContain('data-report-summary-color')
+        ->not->toContain('class="report-badge report-badge--success"')
+        ->not->toContain('class="report-badge report-badge--warning"')
         ->not->toContain('report-card--control')
         ->not->toContain('Controle da inscrição')
         ->not->toContain('Data de inscrição')
@@ -399,7 +400,8 @@ it('applies ficha visual styling and keeps linked payments hidden by default on 
         ->toContain('report-field__value')
         ->toContain('.report-card--payments')
         ->toContain('grid-column: 1 / -1;')
-        ->toContain('margin-top: 0;');
+        ->toContain('margin-top: 0;')
+        ->not->toContain('.report-registration-summary');
 });
 
 it('starts printable registration fichas after a report data cover page', function () {
@@ -489,7 +491,7 @@ it('hides linked payments on printable registration reports without financial vi
     ], $administrator);
 
     expect($html)
-        ->toContain('report-registration-summary')
+        ->not->toContain('report-registration-summary')
         ->not->toContain('<section class="report-card report-registration-payment-section">')
         ->not->toContain('Pagamentos vinculados')
         ->not->toContain('Lançamento relatório inscrição');

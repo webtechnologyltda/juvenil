@@ -27,13 +27,9 @@
             </div>
 
             <div class="report-registration-ficha__badges">
-                <span class="report-badge report-badge--{{ $ficha['status']['tone'] }}">
-                    @svg($ficha['status']['icon'], 'report-badge__icon', ['aria-hidden' => 'true'])
-                    {{ $ficha['status']['label'] }}
-                </span>
                 <span
                     class="report-badge report-badge--tribe"
-                    data-report-summary-icon="heroicon-s-flag"
+                    data-report-badge-icon="heroicon-s-flag"
                     style="--report-accent: {{ $ficha['tribe']['accent'] }};"
                 >
                     @svg('heroicon-s-flag', 'report-badge__icon', ['aria-hidden' => 'true'])
@@ -41,23 +37,6 @@
                 </span>
             </div>
         </header>
-
-        <section class="report-registration-summary" aria-label="Resumo da inscrição">
-            @foreach ($ficha['summary'] as $summary)
-                <div
-                    class="report-registration-summary__item report-registration-summary__item--{{ $summary['tone'] }}"
-                    data-report-summary-icon="{{ $summary['icon'] }}"
-                    data-report-summary-color="{{ $summary['color'] }}"
-                    style="--report-accent: {{ $summary['accent'] }};"
-                >
-                    <span>{{ $summary['label'] }}</span>
-                    <strong>
-                        @svg($summary['icon'], 'report-registration-summary__icon', ['aria-hidden' => 'true'])
-                        {{ $summary['value'] }}
-                    </strong>
-                </div>
-            @endforeach
-        </section>
 
         <div @class([
             'report-registration-ficha__bento',
