@@ -761,6 +761,76 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-placeholder {
     color: rgba(244, 251, 253, 0.92);
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-content-ctn {
+    overflow-x: auto;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-table {
+    min-width: 92rem;
+    table-layout: fixed;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-header-cell-label {
+    white-space: nowrap;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell {
+    vertical-align: middle;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell-nome .fi-ta-text,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell-registration-payments-summary .fi-ta-text,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell-batch-code .fi-ta-text {
+    width: 100%;
+    min-width: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registrations {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registration {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    color: rgba(244, 251, 253, 0.92);
+    line-height: 1.25;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registration-meta,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registration-amount {
+    color: rgba(157, 219, 239, 0.74);
+    font-size: 0.72rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registration-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registration-extra {
+    justify-self: start;
+    border: 1px solid rgba(157, 219, 239, 0.18);
+    padding: 0.08rem 0.4rem;
+    background: rgba(157, 219, 239, 0.08);
+    color: rgba(216, 242, 250, 0.78);
+    font-size: 0.72rem;
+    font-weight: 900;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__empty {
+    color: rgba(216, 242, 250, 0.62);
+    font-size: 0.78rem;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-empty-state {
     min-height: 17rem;
     border-color: rgba(157, 219, 239, 0.16);
@@ -1005,6 +1075,7 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__su
     display: inline-flex;
     width: fit-content;
     align-items: center;
+    gap: 0.38rem;
     border: 1px solid rgba(157, 219, 239, 0.18);
     background: rgba(3, 24, 28, 0.62);
     padding: 0.22rem 0.48rem;
@@ -1040,6 +1111,42 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__su
     color: var(--juvenil-camp-sky);
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--teal strong {
+    border-color: rgba(45, 212, 191, 0.4);
+    background: rgba(45, 212, 191, 0.12);
+    color: #5eead4;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--orange strong {
+    border-color: rgba(244, 107, 18, 0.48);
+    background: rgba(244, 107, 18, 0.12);
+    color: #fdba74;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--violet strong {
+    border-color: rgba(167, 139, 250, 0.44);
+    background: rgba(167, 139, 250, 0.13);
+    color: #c4b5fd;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--neutral strong {
+    border-color: rgba(148, 163, 184, 0.34);
+    background: rgba(148, 163, 184, 0.1);
+    color: #cbd5e1;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--tribe strong {
+    border-color: color-mix(in srgb, var(--summary-accent) 58%, rgba(157, 219, 239, 0.32));
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--summary-accent) 16%, transparent), rgba(3, 24, 28, 0.58)),
+        rgba(3, 24, 28, 0.62);
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item--tribe .juvenil-registration-card__summary-badge-icon {
+    color: var(--summary-accent);
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1047,19 +1154,47 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__su
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item {
+    --summary-accent: #9ddbef;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
     min-height: 6rem;
     padding: 1rem;
     border-right: 1px solid rgba(157, 219, 239, 0.16);
-    background: rgba(3, 24, 28, 0.24);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--summary-accent) 9%, transparent), transparent 58%),
+        rgba(3, 24, 28, 0.24);
+    overflow: hidden;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 2px;
+    background: var(--summary-accent);
+    content: "";
+    opacity: 0.9;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item:last-child {
     border-right: 0;
 }
 
-body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-item span {
-    display: block;
-    margin-bottom: 0.6rem;
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-heading {
+    display: flex;
+    align-items: center;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-badge-icon {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__summary-label {
     color: rgba(216, 242, 250, 0.72);
     font-size: 0.68rem;
     font-weight: 900;
@@ -1081,7 +1216,7 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__se
         rgba(3, 24, 28, 0.34);
 }
 
-body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__section--documents {
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__section--payments {
     grid-column: 1 / -1;
 }
 
@@ -1155,28 +1290,120 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__fi
     font-weight: 800;
 }
 
-body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents {
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payments {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
     padding: 1rem;
 }
 
-body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents a {
-    display: grid;
-    gap: 0.3rem;
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment {
     border: 1px solid rgba(157, 219, 239, 0.18);
-    background: rgba(3, 24, 28, 0.5);
-    padding: 0.85rem;
+    background:
+        linear-gradient(180deg, rgba(4, 31, 35, 0.86), rgba(3, 24, 28, 0.62)),
+        rgba(3, 24, 28, 0.5);
+    padding: 1rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-header p {
+    margin: 0 0 0.35rem;
+    color: var(--juvenil-camp-sky);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-header strong {
+    display: block;
     color: var(--juvenil-camp-text);
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-header a {
+    display: inline-flex;
+    min-height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(244, 107, 18, 0.58);
+    background: rgba(244, 107, 18, 0.12);
+    padding: 0.45rem 0.72rem;
+    color: var(--juvenil-camp-orange);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
     text-decoration: none;
+    text-transform: uppercase;
 }
 
-body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents a:hover {
-    border-color: rgba(244, 107, 18, 0.58);
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-header a:hover {
+    border-color: rgba(157, 219, 239, 0.55);
+    color: var(--juvenil-camp-sky);
 }
 
-body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents small,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-fields {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0.95rem 0 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-fields dt {
+    color: rgba(216, 242, 250, 0.64);
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-fields dd {
+    margin: 0.25rem 0 0;
+    color: var(--juvenil-camp-text);
+    font-size: 0.9rem;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-field--with-icon {
+    --payment-accent: #9ddbef;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-field--with-icon dd {
+    display: inline-flex;
+    min-height: 1.55rem;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-field-icon {
+    display: inline-flex;
+    width: 1.45rem;
+    height: 1.45rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--payment-accent) 62%, rgba(216, 242, 250, 0.28));
+    background: color-mix(in srgb, var(--payment-accent) 16%, rgba(3, 24, 28, 0.68));
+    color: var(--payment-accent);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-field-icon-svg,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-field-icon svg {
+    width: 0.82rem;
+    height: 0.82rem;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__empty {
     color: rgba(216, 242, 250, 0.7);
 }
@@ -1457,7 +1684,8 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-report-form :is(.fi-i
     }
 
     body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__fields,
-    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__documents,
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payments,
+    body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-registration-card__payment-fields,
     body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-receipts {
         grid-template-columns: 1fr;
     }

@@ -5,8 +5,10 @@ namespace App\Support\Reports;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Models\Campista;
+use App\Models\LancamentoItem;
 use App\Models\Tribo;
 use App\Models\User;
+use App\Support\Campistas\ParishCommunityLabels;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -53,7 +55,7 @@ class CampistaReportData
             'showSensitiveHealth' => $showSensitiveHealth,
             'recordsCount' => $records->count(),
             'fichas' => $type === CampistaReportType::RegistrationFichas
-                ? $records->map(fn (Campista $campista): array => $this->ficha($campista, $showSensitiveHealth))->all()
+                ? $records->map(fn (Campista $campista): array => $this->ficha($campista, $showSensitiveHealth, $user))->all()
                 : [],
             'tribes' => $type === CampistaReportType::TribeQuadrant
                 ? $this->tribeGroups($records)
@@ -85,7 +87,7 @@ class CampistaReportData
     private function records(array $filters): Collection
     {
         return Campista::query()
-            ->with('tribo')
+            ->with(['tribo', 'lancamentoItems.lancamento'])
             ->when(
                 $this->statusValues($filters) !== [],
                 fn (Builder $query): Builder => $query->whereIn('status', $this->statusValues($filters)),
@@ -111,7 +113,7 @@ class CampistaReportData
             ->get();
     }
 
-    private function ficha(Campista $campista, bool $showSensitiveHealth): array
+    private function ficha(Campista $campista, bool $showSensitiveHealth, User $user): array
     {
         $formData = $campista->form_data ?? [];
         $status = $this->statusEnum($campista);
@@ -123,18 +125,64 @@ class CampistaReportData
             'id' => $campista->getKey(),
             'name' => $campista->nome,
             'avatar_url' => $this->avatarUrl($campista),
-            'status' => $status?->getLabel() ?? 'Sem status',
-            'tribe' => $campista->tribo?->cor ?? 'Sem tribo',
+            'created_at' => $campista->created_at?->format('d/m/Y H:i'),
+            'status' => [
+                'label' => $status?->getLabel() ?? 'Sem status',
+                'tone' => $this->statusTone($status),
+                'icon' => $status?->getIcon() ?? 'heroicon-o-question-mark-circle',
+                'color' => $this->summaryColor($status?->getColor(), $this->statusTone($status)),
+                'accent' => $this->summaryAccent($status?->getColor(), $this->statusTone($status)),
+            ],
+            'tribe' => [
+                'label' => $campista->tribo?->cor ?? 'Sem tribo',
+                'accent' => $this->tribeAccent($campista->tribo?->cor) ?? $this->summaryAccent('neutral'),
+            ],
+            'summary' => [
+                [
+                    'label' => 'Status',
+                    'value' => $status?->getLabel() ?? 'Sem status',
+                    'tone' => $this->statusTone($status),
+                    'icon' => $status?->getIcon() ?? 'heroicon-o-question-mark-circle',
+                    'color' => $this->summaryColor($status?->getColor(), $this->statusTone($status)),
+                    'accent' => $this->summaryAccent($status?->getColor(), $this->statusTone($status)),
+                ],
+                [
+                    'label' => 'Pagamento',
+                    'value' => $payment?->getLabel() ?? 'Não informado',
+                    'tone' => $this->paymentTone($payment),
+                    'icon' => $payment?->getIcon() ?? 'heroicon-o-credit-card',
+                    'color' => $this->summaryColor($payment?->getColor(), $this->paymentTone($payment)),
+                    'accent' => $this->summaryAccent($payment?->getColor(), $this->paymentTone($payment)),
+                ],
+                [
+                    'label' => 'Presença',
+                    'value' => $campista->presenca ? 'Confirmada' : 'Pendente',
+                    'tone' => $campista->presenca ? 'success' : 'warning',
+                    'icon' => $campista->presenca ? 'heroicon-o-check-circle' : 'heroicon-o-clock',
+                    'color' => $campista->presenca ? 'success' : 'warning',
+                    'accent' => $this->summaryAccent($campista->presenca ? 'success' : 'warning'),
+                ],
+                [
+                    'label' => 'Tribo',
+                    'value' => $campista->tribo?->cor ?? 'Sem tribo',
+                    'tone' => $campista->tribo ? 'tribe' : 'neutral',
+                    'icon' => 'heroicon-o-flag',
+                    'color' => $campista->tribo ? 'tribe' : 'neutral',
+                    'accent' => $this->tribeAccent($campista->tribo?->cor) ?? $this->summaryAccent('neutral'),
+                ],
+            ],
             'sections' => [
                 [
                     'title' => 'Dados pessoais',
                     'fields' => [
                         ['label' => 'Nome completo', 'value' => $campista->nome],
                         ['label' => 'Nascimento', 'value' => data_get($formData, 'data_nacimento')],
-                        ['label' => 'Idade', 'value' => $this->age(data_get($formData, 'data_nacimento'))],
                         ['label' => 'Sexo', 'value' => $this->sexLabel(data_get($formData, 'sexo'))],
                         ['label' => 'Telefone', 'value' => data_get($formData, 'telefone_campista')],
+                        ['label' => 'Rede social', 'value' => data_get($formData, 'rede_social')],
                         ['label' => 'Camiseta', 'value' => $this->shirtLabel($formData)],
+                        ['label' => 'Altura', 'value' => $this->withSuffix(data_get($formData, 'altura'), 'cm')],
+                        ['label' => 'Peso', 'value' => $this->withSuffix(data_get($formData, 'peso'), 'kg')],
                     ],
                 ],
                 [
@@ -157,26 +205,172 @@ class CampistaReportData
                     ],
                 ],
                 [
+                    'title' => 'Comunidade e experiência',
+                    'fields' => [
+                        ['label' => 'Paróquia', 'value' => $this->parishLabel(data_get($formData, 'paroquia'))],
+                        ['label' => 'Comunidade', 'value' => $this->communityLabel(data_get($formData, 'paroquia'), data_get($formData, 'comunidade'))],
+                        ['label' => 'Já participou?', 'value' => $this->booleanLabel(data_get($formData, 'ja_participou_retiro'))],
+                        ['label' => 'Retiro/acampamento', 'value' => $this->listLabel(data_get($formData, 'retiro_que_participou'))],
+                        ['label' => 'Conhece participante?', 'value' => $this->booleanLabel(data_get($formData, 'algum_parente'))],
+                        ['label' => 'Nomes indicados', 'value' => $this->listLabel(data_get($formData, 'algum_parente_participante'))],
+                        ['label' => 'Declaração', 'value' => $this->declarationLabel(data_get($formData, 'declaro')), 'wide' => true],
+                    ],
+                ],
+                [
                     'title' => 'Saúde e cuidados',
                     'fields' => [
-                        ['label' => 'Toma remédio?', 'value' => $this->sensitiveBooleanLabel($takesMedicine, $showSensitiveHealth)],
+                        ['label' => 'Toma remédio?', 'value' => $this->sensitiveBooleanLabel($takesMedicine, $showSensitiveHealth), 'tone' => $takesMedicine ? 'warning' : 'success'],
                         ['label' => 'Detalhes do remédio', 'value' => $this->sensitiveValue(data_get($formData, 'remedio'), $takesMedicine, $showSensitiveHealth)],
-                        ['label' => 'Tem recomendação?', 'value' => $this->sensitiveBooleanLabel($hasRecommendation, $showSensitiveHealth)],
+                        ['label' => 'Tem recomendação?', 'value' => $this->sensitiveBooleanLabel($hasRecommendation, $showSensitiveHealth), 'tone' => $hasRecommendation ? 'warning' : 'success'],
                         ['label' => 'Recomendação de cuidado', 'value' => $this->sensitiveValue(data_get($formData, 'recomendacao'), $hasRecommendation, $showSensitiveHealth)],
                     ],
                 ],
                 [
                     'title' => 'Controle da inscrição',
                     'fields' => [
-                        ['label' => 'Status', 'value' => $status?->getLabel()],
-                        ['label' => 'Pagamento', 'value' => $payment?->getLabel()],
-                        ['label' => 'Presença', 'value' => $campista->presenca ? 'Confirmada' : 'Pendente'],
-                        ['label' => 'Tribo', 'value' => $campista->tribo?->cor],
-                        ['label' => 'Observações', 'value' => $campista->observacoes],
+                        ['label' => 'Data de inscrição', 'value' => $campista->created_at?->format('d/m/Y H:i')],
+                        ['label' => 'Data de pagamento', 'value' => $campista->dia_pagamento?->format('d/m/Y')],
+                        ['label' => 'Forma de pagamento', 'value' => $payment?->getLabel()],
+                        ['label' => 'Observações', 'value' => $campista->observacoes, 'wide' => true],
                     ],
                 ],
             ],
+            'can_view_payments' => $this->canViewLinkedPayments($user),
+            'payments' => $this->linkedPaymentsData($campista, $user),
         ];
+    }
+
+    /**
+     * @return array<int, array{name: string, amount: string, date: string, method: array{label: string, icon: string, color: string, accent: string}, status: array{label: string, icon: string, color: string, accent: string}, url: ?string}>
+     */
+    private function linkedPaymentsData(Campista $campista, User $user): array
+    {
+        if (! $this->canViewLinkedPayments($user)) {
+            return [];
+        }
+
+        $items = $campista->relationLoaded('lancamentoItems')
+            ? $campista->lancamentoItems
+            : $campista->lancamentoItems()->with('lancamento')->get();
+
+        return $items
+            ->sortByDesc('id')
+            ->map(fn (LancamentoItem $payment): array => $this->linkedPaymentData($payment))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{name: string, amount: string, date: string, method: array{label: string, icon: string, color: string, accent: string}, status: array{label: string, icon: string, color: string, accent: string}, url: ?string}
+     */
+    private function linkedPaymentData(LancamentoItem $payment): array
+    {
+        $lancamento = $payment->lancamento;
+        $method = $lancamento?->forma_pagamento;
+        $status = $lancamento?->status;
+
+        return [
+            'name' => $lancamento?->nome ?? 'Lançamento removido',
+            'amount' => $this->money((int) $payment->valor),
+            'date' => $lancamento?->data ? Carbon::parse($lancamento->data)->format('d/m/Y') : 'Sem data',
+            'method' => [
+                'label' => $method?->getLabel() ?? 'Sem forma',
+                'icon' => $method?->getIcon() ?? 'heroicon-o-credit-card',
+                'color' => $this->summaryColor($method?->getColor(), 'neutral'),
+                'accent' => $this->summaryAccent($method?->getColor(), 'neutral'),
+            ],
+            'status' => [
+                'label' => $status?->getLabel() ?? 'Sem status',
+                'icon' => $status?->getIcon() ?? 'heroicon-o-question-mark-circle',
+                'color' => $this->summaryColor($status?->getColor(), 'neutral'),
+                'accent' => $this->summaryAccent($status?->getColor(), 'neutral'),
+            ],
+            'url' => $lancamento ? route('filament.admin.resources.lancamentos.view', ['record' => $lancamento]) : null,
+        ];
+    }
+
+    private function canViewLinkedPayments(User $user): bool
+    {
+        return $user->can('view_any_lancamento')
+            && $user->can('view_lancamento');
+    }
+
+    private function money(int $amount): string
+    {
+        return 'R$ '.number_format(abs($amount) / 100, 2, ',', '.');
+    }
+
+    private function statusTone(?StatusInscricao $status): string
+    {
+        return match ($status) {
+            StatusInscricao::Pago => 'success',
+            StatusInscricao::Cancelado => 'danger',
+            StatusInscricao::Pendente => 'warning',
+            default => 'neutral',
+        };
+    }
+
+    private function paymentTone(?FormaPagamento $payment): string
+    {
+        return match ($payment) {
+            FormaPagamento::Pix => 'info',
+            FormaPagamento::Dinheiro => 'success',
+            FormaPagamento::Cartao => 'warning',
+            FormaPagamento::NaoPago => 'danger',
+            default => 'neutral',
+        };
+    }
+
+    private function summaryColor(string|array|null $color, string $fallback = 'neutral'): string
+    {
+        if (is_array($color)) {
+            $color = collect($color)
+                ->filter(fn (mixed $value): bool => is_string($value) && filled($value))
+                ->first();
+        }
+
+        return is_string($color) && filled($color) ? $color : $fallback;
+    }
+
+    private function summaryAccent(string|array|null $color, string $fallback = 'neutral'): string
+    {
+        return match ($this->summaryColor($color, $fallback)) {
+            'success' => '#22c55e',
+            'warning' => '#facc15',
+            'danger' => '#fb7185',
+            'info' => '#9ddbef',
+            'teal' => '#2dd4bf',
+            'orange' => '#f46b12',
+            'violet' => '#a78bfa',
+            default => '#94a3b8',
+        };
+    }
+
+    private function tribeAccent(?string $color): ?string
+    {
+        if (blank($color)) {
+            return null;
+        }
+
+        $normalized = Str::lower(Str::ascii(trim($color)));
+
+        if (preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/', $normalized) === 1) {
+            return $normalized;
+        }
+
+        return match ($normalized) {
+            'azul' => '#2563eb',
+            'vermelha', 'vermelho' => '#dc2626',
+            'verde' => '#16a34a',
+            'amarela', 'amarelo' => '#eab308',
+            'roxa', 'roxo' => '#7c3aed',
+            'laranja' => '#f97316',
+            'rosa' => '#ec4899',
+            'branca', 'branco' => '#f8fafc',
+            'preta', 'preto' => '#111827',
+            'cinza' => '#64748b',
+            default => null,
+        };
     }
 
     private function tribeGroups(Collection $records): array
@@ -417,6 +611,42 @@ class CampistaReportData
         }
 
         return $size;
+    }
+
+    private function withSuffix(mixed $value, string $suffix): ?string
+    {
+        return filled($value) ? trim((string) $value).' '.$suffix : null;
+    }
+
+    private function parishLabel(mixed $parish): ?string
+    {
+        return ParishCommunityLabels::parishLabel($parish);
+    }
+
+    private function communityLabel(mixed $parish, mixed $community): ?string
+    {
+        return ParishCommunityLabels::communityLabel($parish, $community);
+    }
+
+    private function booleanLabel(mixed $value): string
+    {
+        return $this->truthy($value) ? 'Sim' : 'Não';
+    }
+
+    private function declarationLabel(mixed $value): string
+    {
+        return $this->truthy($value)
+            ? 'Declara nunca ter participado'
+            : 'Já participou de alguma edição';
+    }
+
+    private function listLabel(mixed $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return is_array($value) ? implode(', ', array_filter($value)) : (string) $value;
     }
 
     private function sensitiveValue(mixed $value, bool $hasSensitiveInfo, bool $canViewSensitiveHealth): ?string

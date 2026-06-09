@@ -89,6 +89,28 @@ it('configures the launch table to open view pages by default while keeping edit
         ->toContain('EditAction::make()');
 });
 
+it('uses a compact readable layout for the launch table columns', function () {
+    $resource = file_get_contents(app_path('Filament/Resources/LancamentoResource.php'));
+    $theme = file_get_contents(resource_path('css/filament/admin/theme.css'));
+
+    expect($resource)
+        ->toContain("->extraAttributes(['class' => 'juvenil-lancamento-table'], merge: true)")
+        ->toContain("->label('Cód.')")
+        ->toContain("->label('Tipo')")
+        ->toContain("->label('Data')")
+        ->toContain("->headerTooltip('Data do lançamento')")
+        ->toContain('->lineClamp(1)')
+        ->toContain('self::registrationPaymentBadges($record)')
+        ->toContain('class="juvenil-lancamento-table__registration"')
+        ->and($theme)
+        ->toContain('.juvenil-lancamento-table .fi-ta-table')
+        ->toContain('min-width: 92rem;')
+        ->toContain('.juvenil-lancamento-table__registration')
+        ->toContain('grid-template-columns: auto minmax(0, 1fr) auto;')
+        ->toContain('.juvenil-lancamento-table__registration-name')
+        ->toContain('text-overflow: ellipsis;');
+});
+
 it('renders receipt documents as preview cards for images and pdfs', function () {
     $this->seed(ShieldSeeder::class);
     Storage::fake((string) config('filament.default_filesystem_disk', 'local'));

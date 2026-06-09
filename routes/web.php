@@ -1,8 +1,8 @@
 <?php
 
-use App\Settings\GeneralSettings;
-use App\Http\Controllers\Admin\PrintableReportController;
 use App\Http\Controllers\Admin\LancamentoReceiptController;
+use App\Http\Controllers\Admin\PrintableReportController;
+use App\Settings\GeneralSettings;
 use Illuminate\Support\Facades\Route;
 
 $campistaRegistrationPage = function () {
@@ -23,7 +23,7 @@ Route::get('/termos-inscricao', function () {
 })->name('termos-inscricao');
 
 Route::get('/pdf/{filename}', function ($filename) {
-    return response()->file(asset('pdf/' . $filename));
+    return response()->file(asset('pdf/'.$filename));
 })->name('pdf.show');
 
 Route::middleware('auth')

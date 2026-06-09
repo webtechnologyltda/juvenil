@@ -7,6 +7,7 @@ use App\Filament\Exports\LancamentoExporter;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages;
 use App\Filament\Resources\LancamentoResource\Widgets\StatsFinanceiro;
+use App\Models\Campista;
 use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
 use App\Models\LancamentoItem;
@@ -49,18 +50,25 @@ class LancamentoResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['items.categoria', 'items.registration']))
             ->recordUrl(fn (Lancamento $record): string => static::getUrl('view', ['record' => $record]))
+            ->extraAttributes(['class' => 'juvenil-lancamento-table'], merge: true)
             ->columns([
                 TextColumn::make('id')
-                    ->label('Código')
-                    ->searchable(),
+                    ->label('Cód.')
+                    ->searchable()
+                    ->width('4.5rem')
+                    ->grow(false),
 
                 TextColumn::make('nome')
                     ->label('Nome do Lançamento')
-                    ->searchable(),
+                    ->searchable()
+                    ->lineClamp(1)
+                    ->tooltip(fn (Lancamento $record): string => $record->nome)
+                    ->width('20rem'),
 
                 TextColumn::make('valor')
                     ->prefix(fn (Lancamento $record) => ($record->tipo == TipoLacamento::Despesa ? '-' : '').'R$ ')
                     ->label('Valor')
+                    ->alignEnd()
                     ->formatStateUsing(fn (int $state, Lancamento $record) => number_format($state / ($record->tipo == TipoLacamento::Despesa ? -100 : 100), 2, ',', '.'))
                     ->summarize(
                         Tables\Columns\Summarizers\Sum::make()
@@ -68,12 +76,16 @@ class LancamentoResource extends Resource
                             ->label('Total')
                             ->money('BRL', locale: 'pt_BR', divideBy: 100)
                     )
-                    ->sortable(),
+                    ->sortable()
+                    ->width('7rem')
+                    ->grow(false),
 
                 TextColumn::make('tipo')
                     ->badge()
                     ->alignCenter()
-                    ->label('Lançamento'),
+                    ->label('Tipo')
+                    ->width('7rem')
+                    ->grow(false),
 
                 TextColumn::make('categories_summary')
                     ->label('Categorias')
@@ -81,31 +93,41 @@ class LancamentoResource extends Resource
                     ->formatStateUsing(fn (mixed $state, Lancamento $record): HtmlString => self::categoryBadges($record))
                     ->tooltip(fn (Lancamento $record): string => $record->categories_summary)
                     ->placeholder('Sem categoria')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->width('5.25rem')
+                    ->grow(false),
 
                 TextColumn::make('registration_payments_summary')
                     ->label('Inscrições')
-                    ->formatStateUsing(fn (?string $state): string => nl2br(e($state ?? 'Sem inscrições vinculadas')))
+                    ->formatStateUsing(fn (mixed $state, Lancamento $record): HtmlString => self::registrationPaymentBadges($record))
                     ->html()
+                    ->tooltip(fn (Lancamento $record): string => $record->registration_payments_summary)
                     ->placeholder('Sem inscrições vinculadas')
-                    ->wrap(),
+                    ->width('18.5rem'),
 
                 TextColumn::make('status')
                     ->badge()
                     ->alignCenter()
-                    ->label('Status'),
+                    ->label('Status')
+                    ->width('7rem')
+                    ->grow(false),
 
                 TextColumn::make('batch_code')
                     ->label('Lote')
                     ->badge()
                     ->placeholder('Sem lote')
-                    ->searchable(),
+                    ->searchable()
+                    ->width('10.5rem')
+                    ->grow(false),
 
                 TextColumn::make('data')
                     ->alignCenter()
-                    ->label('Data lançamento')
+                    ->label('Data')
+                    ->headerTooltip('Data do lançamento')
                     ->dateTime('d/m/Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->width('7.25rem')
+                    ->grow(false),
 
             ])
             ->groups([
@@ -189,7 +211,7 @@ class LancamentoResource extends Resource
             ->values();
 
         if ($categories->isEmpty()) {
-            return new HtmlString('Sem categoria');
+            return new HtmlString('<span class="juvenil-lancamento-table__empty" title="Sem categoria">Sem categ.</span>');
         }
 
         $visible = $categories
@@ -207,5 +229,44 @@ class LancamentoResource extends Resource
             : '';
 
         return new HtmlString('<span style="display:inline-flex;align-items:center;gap:.25rem;">'.$visible.$extraBadge.'</span>');
+    }
+
+    private static function registrationPaymentBadges(Lancamento $record): HtmlString
+    {
+        $items = $record->relationLoaded('items')
+            ? $record->items
+            : $record->items()->with('registration')->get();
+
+        $registrationItems = $items
+            ->filter(fn (LancamentoItem $item): bool => filled($item->registration_type) && filled($item->registration_id))
+            ->values();
+
+        if ($registrationItems->isEmpty()) {
+            return new HtmlString('<span class="juvenil-lancamento-table__empty">Sem inscrições vinculadas</span>');
+        }
+
+        $visibleItems = $registrationItems
+            ->take(2)
+            ->map(function (LancamentoItem $item): string {
+                $registration = $item->registration;
+                $type = $registration instanceof Campista ? 'Campista' : 'Equipe';
+                $name = (string) ($registration?->getAttribute('nome') ?? 'Inscrição removida');
+                $amount = 'R$ '.number_format($item->valor / 100, 2, ',', '.');
+                $title = "{$type} #{$item->registration_id} - {$name} ({$amount})";
+
+                return '<span class="juvenil-lancamento-table__registration" title="'.e($title).'">'
+                    .'<span class="juvenil-lancamento-table__registration-meta">'.e($type).' #'.e((string) $item->registration_id).'</span>'
+                    .'<span class="juvenil-lancamento-table__registration-name">'.e($name).'</span>'
+                    .'<span class="juvenil-lancamento-table__registration-amount">'.e($amount).'</span>'
+                    .'</span>';
+            })
+            ->implode('');
+
+        $extra = $registrationItems->count() - 2;
+        $extraBadge = $extra > 0
+            ? '<span class="juvenil-lancamento-table__registration-extra">+'.e((string) $extra).'</span>'
+            : '';
+
+        return new HtmlString('<span class="juvenil-lancamento-table__registrations">'.$visibleItems.$extraBadge.'</span>');
     }
 }
