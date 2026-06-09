@@ -89,6 +89,8 @@ class TriboResource extends Resource implements HasShieldPermissions
     public static function getRelations(): array
     {
         return [
+            TriboResource\RelationManagers\CampistasRelationManager::class,
+            TriboResource\RelationManagers\EquipeTrabalhosRelationManager::class,
             AuditsRelationManager::class,
         ];
     }

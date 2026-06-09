@@ -56,6 +56,43 @@ class TribeColor
         ));
     }
 
+    public static function contrastText(?string $color): string
+    {
+        return self::isLight($color) ? '#03181c' : '#ffffff';
+    }
+
+    public static function isLight(?string $color): bool
+    {
+        $hex = self::normalizeHex($color);
+
+        if ($hex === null) {
+            return false;
+        }
+
+        $hex = ltrim($hex, '#');
+
+        if (strlen($hex) === 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+
+        $channels = [
+            hexdec(substr($hex, 0, 2)) / 255,
+            hexdec(substr($hex, 2, 2)) / 255,
+            hexdec(substr($hex, 4, 2)) / 255,
+        ];
+
+        $linear = array_map(
+            fn (float $channel): float => $channel <= 0.03928
+                ? $channel / 12.92
+                : (($channel + 0.055) / 1.055) ** 2.4,
+            $channels,
+        );
+
+        $luminance = (0.2126 * $linear[0]) + (0.7152 * $linear[1]) + (0.0722 * $linear[2]);
+
+        return $luminance >= 0.45;
+    }
+
     private static function normalizeHex(?string $color): ?string
     {
         if (blank($color)) {

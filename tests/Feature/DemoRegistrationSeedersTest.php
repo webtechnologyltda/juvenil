@@ -66,7 +66,8 @@ it('seeds deterministic complete registration data for dashboard validation', fu
         ->and($firstEquipe->data_form['cep'])->toStartWith('883')
         ->and($firstEquipe->avatar_url)->toStartWith('foto-formulario-equipe-trabalho/')
         ->and(Storage::disk('public')->exists($firstEquipe->avatar_url))->toBeTrue()
-        ->and(Storage::disk('public')->mimeType($firstEquipe->avatar_url))->toBe('image/png');
+        ->and(Storage::disk('public')->mimeType($firstEquipe->avatar_url))->toBe('image/png')
+        ->and($firstEquipe->tribo_id)->not->toBeNull();
 
     expect(Campista::query()->whereNotNull('avatar_url')->get()->every(
         fn (Campista $campista): bool => Storage::disk('public')->exists($campista->avatar_url),

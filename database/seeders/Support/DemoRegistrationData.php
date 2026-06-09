@@ -101,7 +101,7 @@ class DemoRegistrationData
         ];
     }
 
-    public static function equipeTrabalhoAttributes(int $index): array
+    public static function equipeTrabalhoAttributes(int $index, ?int $triboId = null): array
     {
         $createdAt = self::createdAt($index);
 
@@ -110,6 +110,7 @@ class DemoRegistrationData
             'avatar_url' => self::equipeTrabalhoAvatarPath($index),
             'data_form' => self::equipeTrabalhoFormData($index),
             'status' => self::equipeTrabalhoStatus($index)->value,
+            'tribo_id' => $triboId,
             'descricao' => self::DEMO_OBSERVATION,
             'created_at' => $createdAt,
             'updated_at' => $createdAt,

@@ -25,4 +25,9 @@ class Tribo extends Model implements Auditable
     {
         return $this->hasMany(Campista::class);
     }
+
+    public function equipeTrabalhos()
+    {
+        return $this->hasMany(EquipeTrabalho::class);
+    }
 }
