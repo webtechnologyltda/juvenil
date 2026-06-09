@@ -356,7 +356,7 @@ it('renders the campista photo in printable registration fichas', function () {
 it('applies ficha visual styling and keeps linked payments hidden by default on printable registration reports', function () {
     $this->seed(ShieldSeeder::class);
 
-    $tribe = Tribo::query()->create(['cor' => 'Rosa']);
+    $tribe = Tribo::query()->create(['cor' => 'Rosa', 'cor_hex' => '#123abc']);
     $campista = reportCampista([
         'tribo_id' => $tribe->id,
         'forma_pagamento' => FormaPagamento::Pix,
@@ -375,7 +375,7 @@ it('applies ficha visual styling and keeps linked payments hidden by default on 
         ->toContain('report-card--community')
         ->toContain('report-card--health')
         ->toContain('data-report-badge-icon="heroicon-s-flag"')
-        ->toContain('--report-accent: #ec4899')
+        ->toContain('--report-accent: #123abc')
         ->not->toContain('report-registration-summary')
         ->not->toContain('Resumo da inscrição')
         ->not->toContain('data-report-summary-icon')
@@ -519,7 +519,8 @@ it('renders the camp logo in every printable report header', function () {
 it('blocks the medical report for administrators and exposes it only to the infirmary', function () {
     $this->seed(ShieldSeeder::class);
 
-    reportCampista();
+    $tribe = Tribo::query()->create(['cor' => 'Azul', 'cor_hex' => '#123abc']);
+    reportCampista(['tribo_id' => $tribe->id]);
 
     $administrator = reportUserWithRole('Administrador');
     $infirmary = reportUserWithRole('Enfermaria');
@@ -531,6 +532,8 @@ it('blocks the medical report for administrators and exposes it only to the infi
     expect(reportHtml('sensitive_health', [], $infirmary))
         ->toContain('Lista médica da enfermaria')
         ->toContain('Ana Maria Juvenil')
+        ->toContain('report-table-tribe')
+        ->toContain('--report-accent: #123abc')
         ->toContain('Informação restrita')
         ->not->toContain('Dipirona a cada 8 horas')
         ->not->toContain('Evitar amendoim');
@@ -603,8 +606,8 @@ it('does not leak medical details in non medical reports', function () {
 it('renders the tribe quadrant grouped by tribe', function () {
     $this->seed(ShieldSeeder::class);
 
-    $azul = Tribo::query()->create(['cor' => 'Azul']);
-    $verde = Tribo::query()->create(['cor' => 'Verde']);
+    $azul = Tribo::query()->create(['cor' => 'Azul', 'cor_hex' => '#123abc']);
+    $verde = Tribo::query()->create(['cor' => 'Verde', 'cor_hex' => '#16a34a']);
 
     reportCampista(['nome' => 'Ana Azul', 'tribo_id' => $azul->id]);
     reportCampista(['nome' => 'Bruno Azul', 'tribo_id' => $azul->id]);
@@ -614,6 +617,8 @@ it('renders the tribe quadrant grouped by tribe', function () {
 
     expect(reportHtml('tribe_quadrant', [], $administrator))
         ->toContain('Quadrante das inscrições por tribo')
+        ->toContain('report-tribe-swatch')
+        ->toContain('--report-accent: #123abc')
         ->toContain('Azul')
         ->toContain('2 campistas')
         ->toContain('Ana Azul')

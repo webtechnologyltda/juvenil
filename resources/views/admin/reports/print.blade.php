@@ -293,6 +293,37 @@
             min-width: 0;
         }
 
+        .report-page__top--tribe h2 {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+        }
+
+        .report-tribe-swatch {
+            width: .85rem;
+            height: .85rem;
+            border: 1px solid rgba(8, 37, 41, .28);
+            border-radius: 999px;
+            background: var(--report-accent);
+            flex: 0 0 auto;
+        }
+
+        .report-table-tribe {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            font-weight: 800;
+        }
+
+        .report-table-tribe__swatch {
+            width: .62rem;
+            height: .62rem;
+            border: 1px solid rgba(8, 37, 41, .28);
+            border-radius: 999px;
+            background: var(--report-accent);
+            flex: 0 0 auto;
+        }
+
         .report-photo {
             display: grid;
             width: 4.5rem;

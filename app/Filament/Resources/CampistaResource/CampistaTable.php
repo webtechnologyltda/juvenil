@@ -6,6 +6,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Models\Campista;
 use App\Models\Tribo;
+use App\Support\Tribes\TribeColor;
 use Carbon\Carbon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
@@ -57,6 +58,8 @@ abstract class CampistaTable
 
             TextColumn::make('tribo.cor')
                 ->label('Cor da Tribo')
+                ->formatStateUsing(fn (?string $state, Campista $record) => TribeColor::badge($record->tribo))
+                ->html()
                 ->sortable()
                 ->hidden( fn() => auth()->user()->can('update_campista', Campista::class))
                 ->searchable(true)

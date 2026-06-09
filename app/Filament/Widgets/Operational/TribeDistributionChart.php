@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Operational;
 
 use App\Filament\Widgets\Operational\Concerns\UsesOperationalDashboardData;
+use App\Support\Tribes\TribeColor;
 use Filament\Support\RawJs;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
@@ -26,7 +27,10 @@ class TribeDistributionChart extends ApexChartWidget
 
     protected function getOptions(): array
     {
-        $data = $this->chartData($this->operationalData()->tribes());
+        $operationalData = $this->operationalData();
+        $data = $this->chartData($operationalData->tribes());
+        $labels = array_keys($data);
+        $colors = $operationalData->tribeColors();
 
         return [
             'chart' => [
@@ -34,7 +38,7 @@ class TribeDistributionChart extends ApexChartWidget
                 'height' => 320,
                 'toolbar' => ['show' => false],
             ],
-            'labels' => array_keys($data),
+            'labels' => $labels,
             'series' => array_values($data),
             'legend' => [
                 'position' => 'bottom',
@@ -43,16 +47,7 @@ class TribeDistributionChart extends ApexChartWidget
             'dataLabels' => [
                 'enabled' => true,
             ],
-            'colors' => [
-                '#7c3aed',
-                '#0891b2',
-                '#f97316',
-                '#16a34a',
-                '#dc2626',
-                '#d946ef',
-                '#64748b',
-                '#eab308',
-            ],
+            'colors' => array_map(fn (string $tribe): string => $colors[$tribe] ?? TribeColor::resolve(null, $tribe), $labels),
             'stroke' => [
                 'width' => 2,
             ],

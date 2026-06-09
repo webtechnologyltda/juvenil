@@ -138,6 +138,29 @@ function firstRecordId(modelClass) {
     return id;
 }
 
+function firstOrCreateTriboId() {
+    const output = execFileSync('php', [
+        'artisan',
+        'tinker',
+        '--execute',
+        "echo App\\Models\\Tribo::query()->firstOrCreate(['cor' => 'Teste ColorPicker'], ['cor_hex' => '#2563eb'])->id;",
+    ], { encoding: 'utf8' }).trim();
+
+    const id = output.match(/\d+/)?.[0];
+    expect(id).toBeTruthy();
+
+    return id;
+}
+
+function deleteColorPickerTestTribo() {
+    execFileSync('php', [
+        'artisan',
+        'tinker',
+        '--execute',
+        "App\\Models\\Tribo::query()->where('cor', 'Teste ColorPicker')->delete();",
+    ], { encoding: 'utf8' });
+}
+
 test('authenticated Filament panel keeps branded layout clear of visual obstructions', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
@@ -337,6 +360,55 @@ test('authenticated Filament table column manager opens outside the table and ap
         path: 'storage/app/screenshots/playwright-admin-column-manager-dropdown.png',
         fullPage: false,
     });
+});
+
+test('authenticated tribe color picker opens above relation tables', async ({ page }) => {
+    const triboId = firstOrCreateTriboId();
+
+    try {
+        await signIn(page);
+        await page.goto(`${adminBaseUrl}/admin/tribos/${triboId}/edit`);
+        await page.waitForSelector('.fi-fo-color-picker');
+        await page.waitForSelector('.fi-ta');
+
+        const colorPicker = page.locator('.fi-fo-color-picker').first();
+        await colorPicker.locator('input').focus();
+        await expect(page.locator('.fi-fo-color-picker-panel')).toBeVisible();
+
+        const colorPickerLayer = await page.evaluate(() => {
+            const panel = [...document.querySelectorAll('.fi-fo-color-picker-panel')]
+                .find((element) => {
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+
+                    return rect.width > 0 && rect.height > 0 && style.display !== 'none';
+                });
+            const section = panel?.closest('.fi-section, .fi-sc');
+
+            if (! panel || ! section) {
+                return null;
+            }
+
+            const panelRect = panel.getBoundingClientRect();
+            const topElement = document.elementFromPoint(
+                panelRect.left + (panelRect.width / 2),
+                panelRect.top + (panelRect.height / 2),
+            );
+
+            return {
+                panelZIndex: Number.parseInt(getComputedStyle(panel).zIndex, 10),
+                sectionZIndex: Number.parseInt(getComputedStyle(section).zIndex, 10),
+                topElementInsidePanel: panel.contains(topElement),
+            };
+        });
+
+        expect(colorPickerLayer).not.toBeNull();
+        expect(colorPickerLayer.sectionZIndex).toBeGreaterThanOrEqual(70);
+        expect(colorPickerLayer.panelZIndex).toBeGreaterThanOrEqual(100);
+        expect(colorPickerLayer.topElementInsidePanel).toBe(true);
+    } finally {
+        deleteColorPickerTestTribo();
+    }
 });
 
 test('authenticated Filament notifications render above the branded topbar', async ({ page }) => {

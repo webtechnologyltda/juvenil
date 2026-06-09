@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Enums\StatusInscricao;
 use App\Filament\Widgets\Concerns\SupportsWidgetShield;
 use App\Models\Campista;
+use App\Support\Tribes\TribeColor;
 use Carbon\Carbon;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
@@ -52,6 +53,8 @@ class UtilizaRemedioTableWidget extends BaseWidget
                     ->sortable()
                     ->searchable()
                     ->alignCenter()
+                    ->formatStateUsing(fn (?string $state, Campista $record) => TribeColor::badge($record->tribo))
+                    ->html()
                     ->label('Tribo'),
 
                 TextColumn::make('form_data.data_nacimento')

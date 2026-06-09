@@ -8,6 +8,7 @@ use App\Models\LancamentoItem;
 use App\Models\Tribo;
 use App\Models\User;
 use App\Support\Campistas\ParishCommunityLabels;
+use App\Support\Tribes\TribeColor;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -126,7 +127,7 @@ class CampistaReportData
             'created_at' => $campista->created_at?->format('d/m/Y H:i'),
             'tribe' => [
                 'label' => $campista->tribo?->cor ?? 'Sem tribo',
-                'accent' => $this->tribeAccent($campista->tribo?->cor) ?? $this->summaryAccent('neutral'),
+                'accent' => TribeColor::forTribe($campista->tribo),
             ],
             'sections' => [
                 [
@@ -277,33 +278,6 @@ class CampistaReportData
         };
     }
 
-    private function tribeAccent(?string $color): ?string
-    {
-        if (blank($color)) {
-            return null;
-        }
-
-        $normalized = Str::lower(Str::ascii(trim($color)));
-
-        if (preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/', $normalized) === 1) {
-            return $normalized;
-        }
-
-        return match ($normalized) {
-            'azul' => '#2563eb',
-            'vermelha', 'vermelho' => '#dc2626',
-            'verde' => '#16a34a',
-            'amarela', 'amarelo' => '#eab308',
-            'roxa', 'roxo' => '#7c3aed',
-            'laranja' => '#f97316',
-            'rosa' => '#ec4899',
-            'branca', 'branco' => '#f8fafc',
-            'preta', 'preto' => '#111827',
-            'cinza' => '#64748b',
-            default => null,
-        };
-    }
-
     private function tribeGroups(Collection $records): array
     {
         return $records
@@ -311,6 +285,7 @@ class CampistaReportData
             ->sortKeys()
             ->map(fn (Collection $campistas, string $tribe): array => [
                 'tribe' => $tribe,
+                'accent' => TribeColor::forTribe($campistas->first()?->tribo),
                 'count' => $campistas->count(),
                 'records' => $campistas
                     ->sortBy('nome')
@@ -334,6 +309,7 @@ class CampistaReportData
         return [
             'name' => $campista->nome,
             'tribe' => $campista->tribo?->cor ?? 'Sem tribo',
+            'tribe_accent' => TribeColor::forTribe($campista->tribo),
             'age' => $this->age(data_get($formData, 'data_nacimento')),
             'medicine' => $this->sensitiveValue(data_get($formData, 'remedio'), $this->truthy(data_get($formData, 'toma_remedio')), $showSensitiveHealth),
             'recommendation' => $this->sensitiveValue(data_get($formData, 'recomendacao'), $this->truthy(data_get($formData, 'tem_recomendacao')), $showSensitiveHealth),

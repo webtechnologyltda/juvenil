@@ -9,6 +9,7 @@ use App\Filament\Resources\CampistaResource\CampistaForm;
 use App\Filament\Resources\LancamentoResource;
 use App\Models\LancamentoItem;
 use App\Support\Campistas\ParishCommunityLabels;
+use App\Support\Tribes\TribeColor;
 use Carbon\Carbon;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -116,7 +117,7 @@ class ViewCampista extends ViewRecord
                     'tone' => $record->tribo ? 'tribe' : 'neutral',
                     'icon' => 'heroicon-o-flag',
                     'color' => $record->tribo ? 'tribe' : 'neutral',
-                    'accent' => $this->tribeAccent($record->tribo?->cor) ?? $this->summaryAccent('neutral'),
+                    'accent' => TribeColor::forTribe($record->tribo),
                 ],
             ],
             'sections' => [
@@ -338,33 +339,6 @@ class ViewCampista extends ViewRecord
             'orange' => '#f46b12',
             'violet' => '#a78bfa',
             default => '#94a3b8',
-        };
-    }
-
-    private function tribeAccent(?string $color): ?string
-    {
-        if (blank($color)) {
-            return null;
-        }
-
-        $normalized = Str::lower(Str::ascii(trim($color)));
-
-        if (preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/', $normalized) === 1) {
-            return $normalized;
-        }
-
-        return match ($normalized) {
-            'azul' => '#2563eb',
-            'vermelha', 'vermelho' => '#dc2626',
-            'verde' => '#16a34a',
-            'amarela', 'amarelo' => '#eab308',
-            'roxa', 'roxo' => '#7c3aed',
-            'laranja' => '#f97316',
-            'rosa' => '#ec4899',
-            'branca', 'branco' => '#f8fafc',
-            'preta', 'preto' => '#111827',
-            'cinza' => '#64748b',
-            default => null,
         };
     }
 

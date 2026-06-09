@@ -20,7 +20,7 @@ it('renders the campista view as a registration ficha with a single styled heade
     $user = User::factory()->create();
     $user->assignRole('Super Administrador');
 
-    $tribo = Tribo::query()->firstOrCreate(['cor' => 'Preta']);
+    $tribo = Tribo::query()->firstOrCreate(['cor' => 'Preta'], ['cor_hex' => '#101010']);
 
     $campista = Campista::factory()->create([
         'nome' => 'Lucas Teste Juvenil',
@@ -71,7 +71,7 @@ it('renders the campista view as a registration ficha with a single styled heade
         ->assertSee('data-summary-icon="heroicon-o-check-circle"', false)
         ->assertSee('data-summary-icon="heroicon-o-flag"', false)
         ->assertSee('data-summary-color="tribe"', false)
-        ->assertSee('--summary-accent: #111827', false)
+        ->assertSee('--summary-accent: #101010', false)
         ->assertSee('juvenil-registration-card__summary-badge-icon', false)
         ->assertDontSee('juvenil-registration-card__summary-color', false)
         ->assertSee('juvenil-registration-header-edit', false)
