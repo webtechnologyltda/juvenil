@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Mapa visual da tela de lançamento</title>
+  <desc id="desc">Mapa simplificado mostrando dados do lançamento, itens e comprovantes.</desc>
+  <defs>
+    <style>
+      .bg { fill: #03181c; }
+      .panel { fill: #073d45; stroke: #2a6872; stroke-width: 2; }
+      .panel-soft { fill: #0b464f; stroke: #3f7882; stroke-width: 1.5; }
+      .field { fill: #052f35; }
+      .muted { fill: #d8f2fa; }
+      .text { fill: #f4fbfd; }
+      .label { fill: #9ddbef; font-size: 15px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+      .title { fill: #f4fbfd; font-size: 30px; font-weight: 900; }
+      .body { fill: #d8f2fa; font-size: 17px; }
+      .small { fill: #d8f2fa; font-size: 15px; }
+      .chip { fill: #144e56; stroke: #5398a4; stroke-width: 1.5; }
+      .accent { fill: #f46b12; }
+      .accent-text { fill: #082529; font-weight: 900; }
+      text { font-family: Inter, Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="960" height="560"/>
+  <rect x="34" y="28" width="892" height="504" fill="#04252a" stroke="#1f5f68" stroke-width="2"/>
+
+  <text class="label" x="64" y="70">Guia rapido</text>
+  <text class="title" x="64" y="108">Editar lançamento financeiro</text>
+  <text class="body" x="64" y="138">A tela separa o movimento em tres blocos: dados gerais, itens e comprovantes.</text>
+
+  <rect class="panel" x="64" y="172" width="862" height="134"/>
+  <circle class="accent" cx="104" cy="218" r="18"/>
+  <text class="accent-text" x="99" y="224" font-size="18">1</text>
+  <text class="title" x="132" y="224" font-size="24">Dados do lançamento</text>
+  <text class="body" x="132" y="250">Nome, data, status, forma de pagamento, comprador e descrição.</text>
+
+  <g transform="translate(132 270)">
+    <rect class="field" width="190" height="24" rx="4"/>
+    <rect class="field" x="210" width="118" height="24" rx="4"/>
+    <rect class="chip" x="348" width="116" height="24" rx="4"/>
+    <rect class="chip" x="484" width="126" height="24" rx="4"/>
+    <text class="small" x="14" y="17">Sr. Luis Padilha</text>
+    <text class="small" x="224" y="17">25/03/2006</text>
+    <text class="small" x="370" y="17">Pendente</text>
+    <text class="small" x="506" y="17">Dinheiro</text>
+  </g>
+
+  <rect class="panel" x="64" y="332" width="538" height="166"/>
+  <circle class="accent" cx="104" cy="378" r="18"/>
+  <text class="accent-text" x="99" y="384" font-size="18">2</text>
+  <text class="title" x="132" y="384" font-size="24">Itens do lançamento</text>
+  <text class="body" x="132" y="410">Classifique o valor e vincule inscrições.</text>
+  <rect class="panel-soft" x="92" y="432" width="472" height="46" rx="5"/>
+  <text class="small" x="116" y="460">Inscrição Ana Costa</text>
+  <text class="small" x="330" y="460">R$ 350,00</text>
+  <rect x="450" y="444" width="86" height="22" rx="3" fill="#2a1d16" stroke="#f46b12"/>
+  <text x="464" y="460" fill="#ffb48a" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800">Inscrição</text>
+
+  <rect class="panel" x="628" y="332" width="298" height="166"/>
+  <circle class="accent" cx="668" cy="378" r="18"/>
+  <text class="accent-text" x="663" y="384" font-size="18">3</text>
+  <text class="title" x="696" y="384" font-size="24">Comprovantes</text>
+  <text class="body" x="696" y="410">PDF, imagem e observação.</text>
+  <rect class="panel-soft" x="660" y="432" width="96" height="56" rx="5"/>
+  <rect class="field" x="772" y="432" width="144" height="56" rx="5"/>
+  <text class="small" x="682" y="464">PDF</text>
+  <text class="small" x="792" y="454">PIX recebido</text>
+  <text class="small" x="792" y="474">pelo responsável</text>
+</svg>

@@ -42,6 +42,7 @@
         "webtechnologyltda/tracefy-sdk": "^1.1"
     },
     "require-dev": {
+        "filament/blueprint": "^2.2",
         "laravel/boost": "^2.4",
         "laravel/pao": "^1.1",
         "laravel/pint": "^1.29",
@@ -101,6 +102,10 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "repositories": [{
+        "name": "filament",
+        "type": "composer",
+        "url": "https://packages.filamentphp.com/composer"
+    },{
         "name": "tracefy-sdk",
         "type": "vcs",
         "url": "https://github.com/webtechnologyltda/tracefy-sdk.git"

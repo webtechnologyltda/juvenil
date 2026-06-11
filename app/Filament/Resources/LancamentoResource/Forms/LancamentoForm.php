@@ -11,6 +11,7 @@ use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Support\EnumOptionBadge;
+use App\Support\Financeiro\MoneyAmount;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
 use App\Support\IconBadge;
 use Filament\Actions\Action;
@@ -24,12 +25,14 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\Support\RawJs;
-use Leandrocfe\FilamentPtbrFormFields\Money;
+use Illuminate\Support\HtmlString;
 
 abstract class LancamentoForm
 {
@@ -109,12 +112,14 @@ abstract class LancamentoForm
                                 ->options(TipoLacamento::class)
                                 ->inline()
                                 ->live()
-                                ->afterStateUpdated(static function (Set $set, mixed $state): void {
-                                    $set('items', []);
+                                ->afterStateUpdated(static function (Set $set, Get $get): void {
+                                    $items = $get('items');
 
-                                    if (! self::isExpenseType($state)) {
-                                        $set('comprador', null);
+                                    if (! is_array($items)) {
+                                        return;
                                     }
+
+                                    $set('items', self::itemsWithoutCategories($items));
                                 })
                                 ->required()
                                 ->columnSpan([
@@ -133,6 +138,17 @@ abstract class LancamentoForm
                                     'default' => 'full',
                                     'md' => 1,
                                     'xl' => 4,
+                                ]),
+
+                            Html::make(fn (Get $get): HtmlString => self::itemsTotalHtml($get('items') ?? [], $get('tipo')))
+                                ->columnSpan([
+                                    'default' => 'full',
+                                    'md' => 1,
+                                    'xl' => 4,
+                                ])
+                                ->columnStart([
+                                    'md' => 2,
+                                    'xl' => 9,
                                 ]),
 
                             RichEditor::make('descricao')
@@ -158,18 +174,33 @@ abstract class LancamentoForm
                                         ->columnSpan([
                                             'default' => 'full',
                                             'md' => 1,
-                                            'xl' => 5,
+                                            'xl' => 4,
                                         ]),
 
-                                    Money::make('valor')
+                                    TextInput::make('valor')
                                         ->label('Valor')
-                                        ->intFormat()
-                                        ->prefix(RawJs::make('R$'))
+                                        ->prefix('R$')
+                                        ->mask(RawJs::make(<<<'JS'
+                                            (() => {
+                                                const digits = $input.replace(/\D/g, '');
+                                                const paddedLength = Math.max(digits.length, 3);
+                                                const integerLength = Math.max(paddedLength - 2, 1);
+                                                const integerMask = Array.from({ length: integerLength })
+                                                    .fill('9')
+                                                    .join('')
+                                                    .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+                                                return `${integerMask},99`;
+                                            })()
+                                        JS))
+                                        ->formatStateUsing(fn (mixed $state): string => MoneyAmount::formatForInput($state))
+                                        ->dehydrateStateUsing(fn (mixed $state): int => MoneyAmount::toCents($state))
+                                        ->inputMode('decimal')
                                         ->required()
                                         ->columnSpan([
                                             'default' => 'full',
                                             'md' => 1,
-                                            'xl' => 2,
+                                            'xl' => 4,
                                         ]),
 
                                     Select::make('categoria_lancamento_id')
@@ -183,7 +214,7 @@ abstract class LancamentoForm
                                         ->columnSpan([
                                             'default' => 'full',
                                             'md' => 1,
-                                            'xl' => 5,
+                                            'xl' => 4,
                                         ]),
 
                                     Select::make('registration_type')
@@ -195,6 +226,8 @@ abstract class LancamentoForm
                                             $set('registration_id', null);
                                         })
                                         ->placeholder('Sem vínculo')
+                                        ->visible(fn (Get $get): bool => ! self::isExpenseType($get('../../tipo')))
+                                        ->dehydrated(fn (Get $get): bool => ! self::isExpenseType($get('../../tipo')))
                                         ->columnSpan([
                                             'default' => 'full',
                                             'md' => 1,
@@ -230,6 +263,8 @@ abstract class LancamentoForm
                                                 $set('nome', $name);
                                             }
                                         })
+                                        ->visible(fn (Get $get): bool => ! self::isExpenseType($get('../../tipo')))
+                                        ->dehydrated(fn (Get $get): bool => ! self::isExpenseType($get('../../tipo')))
                                         ->disabled(fn (Get $get): bool => blank($get('registration_type')))
                                         ->columnSpan([
                                             'default' => 'full',
@@ -395,6 +430,19 @@ abstract class LancamentoForm
         return $data;
     }
 
+    public static function itemsTotalHtml(array $items, mixed $type): HtmlString
+    {
+        $total = self::signedItemsTotal($items, $type);
+        $valueColor = self::itemsTotalValueColor($type);
+
+        return new HtmlString(
+            '<div role="status" data-lancamento-total x-data="'.e(self::itemsTotalAlpineData($total)).'" x-init="init()" class="flex w-fit min-w-72 flex-col items-start gap-1 rounded-lg bg-white/5 px-5 py-4">'
+                .'<span class="text-sm font-semibold leading-none text-white">Total do lançamento</span>'
+                .'<span x-text="formattedTotal" x-bind:style="valueStyle" class="text-[2.75rem] font-black leading-none tracking-normal" style="color: '.e($valueColor).';">'.e(self::formatCurrency($total)).'</span>'
+            .'</div>',
+        );
+    }
+
     /**
      * @return array<int, array{url: array<int, string>, observacao: string|null}>
      */
@@ -538,6 +586,191 @@ abstract class LancamentoForm
         }
 
         return (int) $paymentMethod === FormaPagamento::Dinheiro->value;
+    }
+
+    private static function signedItemsTotal(array $items, mixed $type): int
+    {
+        $total = collect($items)
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->sum(fn (array $item): int => MoneyAmount::toCents($item['valor'] ?? 0));
+
+        return self::isExpenseType($type) ? $total * -1 : $total;
+    }
+
+    private static function itemsTotalAlpineData(int $initialTotal): string
+    {
+        $expenseType = TipoLacamento::Despesa->value;
+        $typeColors = json_encode(self::itemsTotalTypeColors(), JSON_THROW_ON_ERROR);
+
+        return sprintf(<<<'JS'
+            {
+                total: %d,
+                expenseType: %d,
+                typeColors: %s,
+                observer: null,
+                controller: null,
+                refreshQueued: false,
+                init() {
+                    this.root = this.$root.closest('form') || document;
+                    this.controller = new AbortController();
+                    ['input', 'change', 'keyup', 'click'].forEach((eventName) => {
+                        this.root.addEventListener(eventName, () => this.queueRefresh(), {
+                            capture: true,
+                            signal: this.controller.signal,
+                        });
+                    });
+                    this.observer = new MutationObserver(() => this.queueRefresh());
+                    this.observer.observe(this.root, {
+                        childList: true,
+                        subtree: true,
+                    });
+                    this.$nextTick(() => this.refresh());
+                },
+                destroy() {
+                    this.controller?.abort();
+                    this.observer?.disconnect();
+                },
+                queueRefresh() {
+                    if (this.refreshQueued) {
+                        return;
+                    }
+
+                    this.refreshQueued = true;
+
+                    requestAnimationFrame(() => {
+                        this.refreshQueued = false;
+                        this.refresh();
+                    });
+                },
+                refresh() {
+                    const total = this.valueInputs()
+                        .reduce((sum, input) => sum + this.toCents(input.value), 0);
+
+                    this.total = this.isExpenseType() ? total * -1 : total;
+                },
+                valueInputs() {
+                    return Array.from(this.root.querySelectorAll('input:not([type="hidden"])'))
+                        .filter((input) => this.isFieldState(input, 'items', 'valor'));
+                },
+                isExpenseType() {
+                    return Number.parseInt(this.typeValue(), 10) === this.expenseType;
+                },
+                typeValue() {
+                    const candidates = Array.from(this.root.querySelectorAll('input, select'))
+                        .filter((input) => this.isFieldState(input, null, 'tipo'));
+                    const selected = candidates.find((input) => input.checked)
+                        || candidates.find((input) => input.tagName === 'SELECT')
+                        || candidates.find((input) => input.type === 'hidden');
+
+                    return selected?.value ?? '';
+                },
+                isFieldState(input, parent, field) {
+                    const statePath = [
+                        input.getAttribute('name'),
+                        input.getAttribute('wire:model'),
+                        input.getAttribute('wire:model.live'),
+                        input.getAttribute('wire:model.blur'),
+                        input.getAttribute('wire:model.change'),
+                    ].filter(Boolean).join(' ');
+
+                    const hasField = statePath.endsWith(`[${field}]`)
+                        || statePath.endsWith(`.${field}`)
+                        || statePath.includes(`[${field}]`)
+                        || statePath.includes(`.${field}`);
+
+                    if (! hasField) {
+                        return false;
+                    }
+
+                    return parent === null
+                        || statePath.includes(`[${parent}]`)
+                        || statePath.includes(`.${parent}.`);
+                },
+                toCents(value) {
+                    const sanitized = String(value ?? '').replaceAll('R$', '').trim();
+
+                    if (sanitized === '') {
+                        return 0;
+                    }
+
+                    if (sanitized.includes(',')) {
+                        const decimal = sanitized.replaceAll('.', '').replace(',', '.');
+
+                        return Math.abs(Math.round((Number.parseFloat(decimal) || 0) * 100));
+                    }
+
+                    if (/^-?\\d+\\.\\d{1,2}$/.test(sanitized)) {
+                        return Math.abs(Math.round((Number.parseFloat(sanitized) || 0) * 100));
+                    }
+
+                    return Math.abs(Number.parseInt(sanitized.replace(/\\D/g, ''), 10) || 0);
+                },
+                formatCurrency(value) {
+                    const prefix = value < 0 ? '-R$ ' : 'R$ ';
+
+                    return prefix + (Math.abs(value) / 100).toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    });
+                },
+                get formattedTotal() {
+                    return this.formatCurrency(this.total);
+                },
+                get valueStyle() {
+                    return `color: ${this.typeColors[this.typeValue()] || 'oklch(1 0 0)'}`;
+                },
+            }
+        JS, $initialTotal, $expenseType, $typeColors);
+    }
+
+    private static function formatCurrency(int $amount): string
+    {
+        $prefix = $amount < 0 ? '-R$ ' : 'R$ ';
+
+        return $prefix.number_format(abs($amount) / 100, 2, ',', '.');
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $items
+     * @return array<array-key, mixed>
+     */
+    private static function itemsWithoutCategories(array $items): array
+    {
+        foreach ($items as $key => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $item['categoria_lancamento_id'] = null;
+            $items[$key] = $item;
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function itemsTotalTypeColors(): array
+    {
+        return [
+            TipoLacamento::Receita->value => Color::Green[400],
+            TipoLacamento::Despesa->value => Color::Red[400],
+            TipoLacamento::Doacao->value => Color::Blue[400],
+        ];
+    }
+
+    private static function itemsTotalValueColor(mixed $type): string
+    {
+        if ($type instanceof TipoLacamento) {
+            $type = $type->value;
+        }
+
+        if (blank($type)) {
+            return 'oklch(1 0 0)';
+        }
+
+        return self::itemsTotalTypeColors()[(int) $type] ?? 'oklch(1 0 0)';
     }
 
     private static function registrationName(?string $registrationType, mixed $registrationId): ?string

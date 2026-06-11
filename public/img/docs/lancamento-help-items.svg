@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Exemplo visual de item de lançamento</title>
+  <desc id="desc">Exemplo mostrando como preencher nome, valor, categoria e vínculo de inscrição em um item.</desc>
+  <defs>
+    <style>
+      .bg { fill: #03181c; }
+      .panel { fill: #073d45; stroke: #2a6872; stroke-width: 2; }
+      .panel-soft { fill: #0b464f; stroke: #3f7882; stroke-width: 1.5; }
+      .field { fill: #052f35; }
+      .field-active { fill: #062e34; stroke: #f46b12; stroke-width: 2; }
+      .text { fill: #f4fbfd; }
+      .muted { fill: #d8f2fa; }
+      .sky { fill: #9ddbef; }
+      .label { fill: #9ddbef; font-size: 15px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+      .title { fill: #f4fbfd; font-size: 31px; font-weight: 900; }
+      .body { fill: #d8f2fa; font-size: 17px; }
+      .small { fill: #d8f2fa; font-size: 15px; }
+      .accent { fill: #f46b12; }
+      .accent-dark { fill: #24150e; stroke: #f46b12; stroke-width: 1.5; }
+      .accent-text { fill: #ffb48a; font-size: 14px; font-weight: 900; letter-spacing: .04em; }
+      text { font-family: Inter, Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="960" height="560"/>
+  <rect class="panel" x="44" y="38" width="872" height="484"/>
+
+  <text class="label" x="82" y="86">Exemplo de preenchimento</text>
+  <text class="title" x="82" y="126">Item do lançamento</text>
+  <text class="body" x="82" y="156">Use uma linha para cada parte do valor financeiro.</text>
+
+  <g transform="translate(82 196)">
+    <text class="label" x="0" y="0">Nome</text>
+    <text class="label" x="326" y="0">Valor</text>
+    <text class="label" x="494" y="0">Categoria</text>
+    <rect class="field" y="18" width="286" height="54" rx="5"/>
+    <rect class="field" x="326" y="18" width="128" height="54" rx="5"/>
+    <rect class="field" x="494" y="18" width="280" height="54" rx="5"/>
+    <text class="small" x="22" y="52">Inscrição Ana Costa</text>
+    <text class="small" x="348" y="52">R$ 350,00</text>
+    <rect class="accent-dark" x="516" y="33" width="92" height="24" rx="3"/>
+    <text class="accent-text" x="528" y="50">Inscrição</text>
+  </g>
+
+  <g transform="translate(82 318)">
+    <text class="label" x="0" y="0">Tipo da inscrição</text>
+    <text class="label" x="326" y="0">Inscrição vinculada</text>
+    <rect class="field" y="18" width="286" height="54" rx="5"/>
+    <rect class="field-active" x="326" y="18" width="448" height="54" rx="5"/>
+    <text class="small" x="22" y="52">Campista</text>
+    <text class="small" x="348" y="52">Ana Costa 101</text>
+    <rect class="accent" x="620" y="28" width="124" height="34" rx="4"/>
+    <text x="643" y="50" fill="#082529" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="900">Selecionar</text>
+  </g>
+
+  <g transform="translate(82 430)">
+    <rect class="panel-soft" width="774" height="58" rx="5"/>
+    <circle class="accent" cx="28" cy="29" r="12"/>
+    <text x="25" y="34" fill="#082529" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="900">i</text>
+    <text class="text" x="54" y="25" font-size="16" font-weight="800">Receita de inscrição</text>
+    <text class="muted" x="54" y="46" font-size="15">Normalmente precisa de vínculo. Despesa comum pode ficar sem inscrição vinculada.</text>
+  </g>
+</svg>

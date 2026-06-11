@@ -161,6 +161,37 @@ function deleteColorPickerTestTribo() {
     ], { encoding: 'utf8' });
 }
 
+function createLancamentoClientTotalRecord() {
+    const output = execFileSync('php', [
+        'artisan',
+        'tinker',
+        '--execute',
+        [
+            "$category = App\\Models\\CategoriaLancamento::query()->create(['nome' => uniqid('Categoria browser total '), 'tipo' => 0, 'cor' => '#10b981', 'icone' => 'heroicon-o-banknotes', 'ativo' => true]);",
+            "$lancamento = App\\Models\\Lancamento::query()->create(['nome' => 'Browser total client-side', 'descricao' => 'Registro temporário para teste de total no cliente.', 'comprador' => null, 'data' => '2026-07-01', 'valor' => 0, 'tipo' => 0, 'status' => 1, 'forma_pagamento' => 1, 'comprovante' => [], 'batch_code' => null, 'user_id' => null]);",
+            "$lancamento->items()->create(['nome' => 'Item temporário', 'valor' => 0, 'categoria_lancamento_id' => $category->id, 'registration_type' => null, 'registration_id' => null, 'descricao' => null]);",
+            "echo $lancamento->id.':'.$category->id;",
+        ].join(' '),
+    ], { encoding: 'utf8' }).trim();
+
+    const ids = output.match(/(\d+):(\d+)/);
+    expect(ids).toBeTruthy();
+
+    return {
+        categoryId: ids[2],
+        lancamentoId: ids[1],
+    };
+}
+
+function deleteLancamentoClientTotalRecord(lancamentoId, categoryId) {
+    execFileSync('php', [
+        'artisan',
+        'tinker',
+        '--execute',
+        `App\\Models\\LancamentoItem::query()->where('lancamento_id', ${Number(lancamentoId)})->delete(); App\\Models\\Lancamento::query()->where('id', ${Number(lancamentoId)})->delete(); App\\Models\\CategoriaLancamento::query()->where('id', ${Number(categoryId)})->delete();`,
+    ], { encoding: 'utf8' });
+}
+
 test('authenticated Filament panel keeps branded layout clear of visual obstructions', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
@@ -640,7 +671,7 @@ test('authenticated launch edit form uses a balanced operational workspace', asy
         const byText = (text) => sections.find((section) => section.text.includes(text));
         const pageRect = pageElement?.getBoundingClientRect();
         const launch = byText('Lançamento');
-        const linkedRegistrations = byText('Inscrições vinculadas');
+        const linkedRegistrations = byText('Itens do lançamento');
         const receipts = byText('Comprovantes');
 
         if (! pageRect || ! launch || ! linkedRegistrations || ! receipts) {
@@ -666,10 +697,54 @@ test('authenticated launch edit form uses a balanced operational workspace', asy
     expect(launchWorkspace.receiptsRightDelta).toBeLessThanOrEqual(2);
     expect(launchWorkspace.linkedBeforeReceipts).toBe(true);
 
+    await page.getByRole('button', { name: /dúvidas/i }).click();
+    const helpDialog = page.getByRole('dialog');
+
+    await expect(helpDialog.getByText('Guia do lançamento financeiro')).toBeVisible();
+    await expect(helpDialog.getByText('Como editar um lançamento financeiro')).toBeVisible();
+    await expect(helpDialog.getByText('Exemplos de preenchimento')).toBeVisible();
+    await expect(helpDialog.locator('img[src*="lancamento-help-"]')).toHaveCount(3);
+    await helpDialog.locator('.fi-modal-footer').getByRole('button', { name: /fechar/i }).click();
+    await expect(page.locator('.fi-modal.fi-modal-open')).toHaveCount(0);
+
     await page.screenshot({
         path: 'storage/app/screenshots/playwright-admin-lancamento-edit-workspace.png',
         fullPage: false,
     });
+});
+
+test('launch item total updates in the browser without Livewire requests from value typing', async ({ page }) => {
+    await signIn(page);
+
+    const { categoryId, lancamentoId } = createLancamentoClientTotalRecord();
+
+    try {
+        await page.goto(`${adminBaseUrl}/admin/lancamentos/${lancamentoId}/edit`, { waitUntil: 'domcontentloaded' });
+        await waitForFilamentClient(page);
+        await page.waitForSelector('[data-lancamento-total]');
+
+        const valueInput = page.locator('input[id^="form.items."][id$=".valor"]').first();
+
+        await expect(valueInput).toBeVisible();
+
+        const livewireRequests = [];
+
+        page.on('request', (request) => {
+            if (request.method() !== 'GET' && request.url().includes('/livewire')) {
+                livewireRequests.push(request.url());
+            }
+        });
+
+        await valueInput.fill('');
+        await valueInput.pressSequentially('12345');
+        await page.waitForTimeout(500);
+
+        await expect(valueInput).toHaveValue('123,45');
+        await expect(page.locator('[data-lancamento-total]')).toContainText('R$ 123,45');
+        expect(livewireRequests).toEqual([]);
+    } finally {
+        deleteLancamentoClientTotalRecord(lancamentoId, categoryId);
+    }
 });
 
 test('general settings date picker opens above the following sections', async ({ page }) => {
