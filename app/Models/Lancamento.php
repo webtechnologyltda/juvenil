@@ -14,6 +14,12 @@ class Lancamento extends Model
 {
     use HasFactory;
 
+    public const ORIGIN_AUTO_REGISTRATION = 'auto_registration';
+
+    public const ORIGIN_CONTEXT_OBSERVER = 'observer';
+
+    public const ORIGIN_CONTEXT_DAILY_RECONCILIATION = 'daily_reconciliation';
+
     protected $fillable = [
         'nome',
         'descricao',
@@ -26,6 +32,8 @@ class Lancamento extends Model
         'comprovante',
         'batch_code',
         'user_id',
+        'origin',
+        'origin_context',
     ];
 
     protected $casts = [

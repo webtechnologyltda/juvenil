@@ -259,9 +259,9 @@ class BatchLancamentos extends Page
                             ->inline()
                             ->live()
                             ->required(fn (Get $get): bool => $get('mode') === LancamentoBatchCreator::MODE_MANUAL)
-                            ->afterStateUpdated(function (Set $set): void {
+                            ->afterStateUpdated(function (Get $get, Set $set): void {
                                 $set('categoria_lancamento_id', null);
-                                $set('manual_items', [$this->blankManualItem()]);
+                                $set('manual_items', $this->manualItemsWithoutCategories($get('manual_items') ?? []));
                             })
                             ->columnSpan([
                                 'default' => 'full',
@@ -430,6 +430,24 @@ class BatchLancamentos extends Page
             'categoria_lancamento_id' => null,
             'descricao' => null,
         ];
+    }
+
+    /**
+     * @param  array<int, mixed>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function manualItemsWithoutCategories(array $items): array
+    {
+        $items = collect($items)
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->map(fn (array $item): array => [
+                ...$item,
+                'categoria_lancamento_id' => null,
+            ])
+            ->values()
+            ->all();
+
+        return $items === [] ? [$this->blankManualItem()] : $items;
     }
 
     /**

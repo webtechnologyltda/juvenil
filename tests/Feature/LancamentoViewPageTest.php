@@ -89,6 +89,20 @@ it('configures the launch table to open view pages by default while keeping edit
         ->toContain('EditAction::make()');
 });
 
+it('uses an edit-like read-only layout on the launch view page', function () {
+    $viewPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/ViewLancamento.php'));
+
+    expect($viewPage)
+        ->toContain("Section::make('Lançamento')")
+        ->toContain("->description('Controle financeiro do acampamento')")
+        ->toContain("Section::make('Itens do lançamento')")
+        ->toContain("->description('Classifique valores, categorias e vínculos financeiros.')")
+        ->toContain("Section::make('Comprovantes')")
+        ->toContain("RepeatableEntry::make('items')")
+        ->toContain('->contained()')
+        ->not->toContain('->table([');
+});
+
 it('uses a compact readable layout for the launch table columns', function () {
     $resource = file_get_contents(app_path('Filament/Resources/LancamentoResource.php'));
     $theme = file_get_contents(resource_path('css/filament/admin/theme.css'));
@@ -114,6 +128,7 @@ it('uses a compact readable layout for the launch table columns', function () {
 it('renders receipt documents as preview cards for images and pdfs', function () {
     $this->seed(ShieldSeeder::class);
     Storage::fake((string) config('filament.default_filesystem_disk', 'local'));
+    $theme = file_get_contents(resource_path('css/filament/admin/theme.css'));
 
     $user = User::factory()->create();
     $user->assignRole('Super Administrador');
@@ -156,6 +171,16 @@ it('renders receipt documents as preview cards for images and pdfs', function ()
         ->assertSee('<img', false)
         ->assertSee('<iframe', false)
         ->assertSee('PIX e recibo conferidos');
+
+    expect($theme)
+        ->toContain('.juvenil-lancamento-receipt-card__body')
+        ->toContain('background: rgba(3, 24, 28, 0.9);')
+        ->toContain('.juvenil-lancamento-receipt-card__body a')
+        ->toContain('background: rgba(3, 24, 28, 0.94);')
+        ->toContain('box-shadow:')
+        ->toContain('text-shadow: 0 1px 1px rgba(3, 24, 28, 0.8);')
+        ->toContain('.fi-fo-file-upload :is(.filepond--download-icon, .filepond--open-icon)')
+        ->toContain('drop-shadow(0 1px 2px rgba(3, 24, 28, 0.95))');
 
     $this->actingAs($user)
         ->get(URL::temporarySignedRoute('admin.lancamentos.comprovantes.show', now()->addMinutes(5), [

@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Campista;
+use App\Models\EquipeTrabalho;
+use App\Observers\CampistaObserver;
+use App\Observers\EquipeTrabalhoObserver;
 use App\Support\Livewire\FilamentNotificationsWireableSynth;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
@@ -24,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Campista::observe(CampistaObserver::class);
+        EquipeTrabalho::observe(EquipeTrabalhoObserver::class);
+
         FilamentColor::register([
             'primary' => Color::generatePalette('#f46b12'),
         ]);

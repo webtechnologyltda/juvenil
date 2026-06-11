@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Support\Financeiro\LancamentoBatchCreator;
 use Carbon\Carbon;
 use Database\Seeders\ShieldSeeder;
+use Filament\Forms\Components\Repeater;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -249,6 +250,64 @@ it('creates one pending manual launch per free item with editable categories', f
         ->toBe([$donation->id]);
 
     Carbon::setTestNow();
+});
+
+it('keeps manual batch items when changing type and only clears item categories', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $revenueCategory = CategoriaLancamento::query()->create([
+        'nome' => 'Receita avulsa preserve',
+        'tipo' => TipoLacamento::Receita,
+        'cor' => '#22c55e',
+        'icone' => 'heroicon-o-banknotes',
+        'ativo' => true,
+    ]);
+
+    $undoRepeaterFake = Repeater::fake();
+
+    try {
+        Livewire::test(BatchLancamentos::class)
+            ->fillForm([
+                'mode' => LancamentoBatchCreator::MODE_MANUAL,
+                'data' => '2026-07-02',
+                'tipo' => TipoLacamento::Receita->value,
+                'categoria_lancamento_id' => $revenueCategory->id,
+                'manual_items' => [
+                    [
+                        'nome' => 'Primeiro avulso preservado',
+                        'valor' => 10000,
+                        'categoria_lancamento_id' => $revenueCategory->id,
+                        'descricao' => 'Descrição avulsa preservada',
+                    ],
+                    [
+                        'nome' => 'Segundo avulso preservado',
+                        'valor' => 20000,
+                        'categoria_lancamento_id' => $revenueCategory->id,
+                        'descricao' => null,
+                    ],
+                ],
+            ])
+            ->set('data.tipo', TipoLacamento::Despesa->value)
+            ->assertFormSet(function (array $state): array {
+                expect($state['manual_items'])
+                    ->toHaveCount(2)
+                    ->and(data_get($state, 'manual_items.0.nome'))->toBe('Primeiro avulso preservado')
+                    ->and(data_get($state, 'manual_items.0.valor'))->toBe(10000)
+                    ->and(data_get($state, 'manual_items.0.categoria_lancamento_id'))->toBeNull()
+                    ->and(data_get($state, 'manual_items.0.descricao'))->toBe('Descrição avulsa preservada')
+                    ->and(data_get($state, 'manual_items.1.nome'))->toBe('Segundo avulso preservado')
+                    ->and(data_get($state, 'manual_items.1.valor'))->toBe(20000)
+                    ->and(data_get($state, 'manual_items.1.categoria_lancamento_id'))->toBeNull();
+
+                return [];
+            });
+    } finally {
+        $undoRepeaterFake();
+    }
 });
 
 it('increments the daily batch code and does not keep partial launches when validation fails', function () {

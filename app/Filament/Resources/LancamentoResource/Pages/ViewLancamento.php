@@ -16,21 +16,21 @@ use App\Support\Financeiro\LancamentoReceiptDocuments;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
-use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
+use Illuminate\Support\HtmlString;
 
 class ViewLancamento extends ViewRecord
 {
     protected static string $resource = LancamentoResource::class;
 
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         parent::mount($record);
 
@@ -61,92 +61,107 @@ class ViewLancamento extends ViewRecord
         return $schema
             ->columns(1)
             ->components([
-                Section::make('Resumo financeiro')
-                    ->icon('heroicon-o-banknotes')
-                    ->columns([
-                        'default' => 1,
-                        'md' => 2,
-                        'xl' => 6,
-                    ])
-                    ->schema([
-                        TextEntry::make('nome')
-                            ->label('Lançamento')
-                            ->weight(FontWeight::Bold)
-                            ->columnSpan([
-                                'default' => 'full',
-                                'xl' => 2,
-                            ]),
-
-                        TextEntry::make('valor')
-                            ->label('Valor total')
-                            ->formatStateUsing(fn (int $state, Lancamento $record): string => $this->money($state, $record))
-                            ->weight(FontWeight::Bold)
-                            ->color(fn (Lancamento $record): string => $this->amountColor($record)),
-
-                        TextEntry::make('status')
-                            ->label('Status')
-                            ->badge()
-                            ->formatStateUsing(fn (?StatusLacamento $state): string => $state?->getLabel() ?? 'Sem status')
-                            ->color(fn (?StatusLacamento $state): string|array|null => $state?->getColor())
-                            ->icon(fn (?StatusLacamento $state): ?string => $state?->getIcon()),
-
-                        TextEntry::make('forma_pagamento')
-                            ->label('Pagamento')
-                            ->badge()
-                            ->formatStateUsing(fn (?FormaPagamento $state): string => $state?->getLabel() ?? 'Não informado')
-                            ->color(fn (?FormaPagamento $state): string|array|null => $state?->getColor())
-                            ->icon(fn (?FormaPagamento $state): ?string => $state?->getIcon()),
-
-                        TextEntry::make('tipo')
-                            ->label('Tipo')
-                            ->badge()
-                            ->formatStateUsing(fn (?TipoLacamento $state): string => $state?->getLabel() ?? 'Sem tipo')
-                            ->color(fn (?TipoLacamento $state): string|array|null => $state?->getColor())
-                            ->icon(fn (?TipoLacamento $state): ?string => $state?->getIcon()),
-
-                        TextEntry::make('batch_code')
-                            ->label('Lote')
-                            ->badge()
-                            ->placeholder('Sem lote'),
-                    ]),
-
                 Grid::make([
                     'default' => 1,
-                    'lg' => 3,
+                    'lg' => 12,
                 ])
                     ->schema([
-                        Section::make('Dados do lançamento')
-                            ->icon('heroicon-o-clipboard-document-list')
-                            ->columnSpan([
-                                'default' => 1,
-                                'lg' => 2,
-                            ])
+                        Section::make('Lançamento')
+                            ->description('Controle financeiro do acampamento')
                             ->columns([
                                 'default' => 1,
                                 'md' => 2,
+                                'xl' => 12,
+                            ])
+                            ->columnSpan([
+                                'default' => 1,
+                                'lg' => 12,
                             ])
                             ->schema([
+                                TextEntry::make('nome')
+                                    ->label('Nome')
+                                    ->weight(FontWeight::Bold)
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 4,
+                                    ]),
+
                                 TextEntry::make('data')
-                                    ->label('Data')
-                                    ->date('d/m/Y'),
+                                    ->label('Data de Lançamento')
+                                    ->date('d/m/Y')
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 2,
+                                    ]),
+
+                                TextEntry::make('status')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->formatStateUsing(fn (?StatusLacamento $state): string => $state?->getLabel() ?? 'Sem status')
+                                    ->color(fn (?StatusLacamento $state): string|array|null => $state?->getColor())
+                                    ->icon(fn (?StatusLacamento $state): ?string => $state?->getIcon())
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 2,
+                                    ]),
+
+                                TextEntry::make('forma_pagamento')
+                                    ->label('Forma de Pagamento')
+                                    ->badge()
+                                    ->formatStateUsing(fn (?FormaPagamento $state): string => $state?->getLabel() ?? 'Não informado')
+                                    ->color(fn (?FormaPagamento $state): string|array|null => $state?->getColor())
+                                    ->icon(fn (?FormaPagamento $state): ?string => $state?->getIcon())
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 2,
+                                    ]),
+
+                                TextEntry::make('batch_code')
+                                    ->label('Lote')
+                                    ->badge()
+                                    ->placeholder('Sem lote')
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 2,
+                                    ]),
+
+                                TextEntry::make('tipo')
+                                    ->label('Tipo de Lançamento')
+                                    ->badge()
+                                    ->formatStateUsing(fn (?TipoLacamento $state): string => $state?->getLabel() ?? 'Sem tipo')
+                                    ->color(fn (?TipoLacamento $state): string|array|null => $state?->getColor())
+                                    ->icon(fn (?TipoLacamento $state): ?string => $state?->getIcon())
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 2,
+                                        'xl' => 4,
+                                    ]),
 
                                 TextEntry::make('comprador')
                                     ->label('Comprador')
                                     ->placeholder('Não informado')
-                                    ->visible(fn (Lancamento $record): bool => $record->tipo === TipoLacamento::Despesa),
+                                    ->visible(fn (Lancamento $record): bool => $record->tipo === TipoLacamento::Despesa)
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 4,
+                                    ]),
 
-                                TextEntry::make('categories_summary')
-                                    ->label('Categorias')
-                                    ->state(fn (Lancamento $record): array => $this->categoryNames($record))
-                                    ->badge()
-                                    ->placeholder('Sem categoria'),
-
-                                TextEntry::make('registration_payments_summary')
-                                    ->label('Inscrições vinculadas')
-                                    ->state(fn (Lancamento $record): array => $this->registrationSummaries($record))
-                                    ->listWithLineBreaks()
-                                    ->placeholder('Sem inscrições vinculadas')
-                                    ->columnSpanFull(),
+                                Html::make(fn (Lancamento $record): HtmlString => $this->totalPreviewHtml($record))
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 4,
+                                    ])
+                                    ->columnStart([
+                                        'md' => 2,
+                                        'xl' => 9,
+                                    ]),
 
                                 TextEntry::make('descricao')
                                     ->label('Descrição')
@@ -155,8 +170,89 @@ class ViewLancamento extends ViewRecord
                                     ->columnSpanFull(),
                             ]),
 
+                        Section::make('Itens do lançamento')
+                            ->description('Classifique valores, categorias e vínculos financeiros.')
+                            ->columnSpan([
+                                'default' => 1,
+                                'lg' => 8,
+                            ])
+                            ->schema([
+                                RepeatableEntry::make('items')
+                                    ->hiddenLabel()
+                                    ->contained()
+                                    ->grid(1)
+                                    ->columns([
+                                        'default' => 1,
+                                        'md' => 2,
+                                        'xl' => 12,
+                                    ])
+                                    ->schema([
+                                        TextEntry::make('nome')
+                                            ->label('Nome')
+                                            ->weight(FontWeight::SemiBold)
+                                            ->columnSpan([
+                                                'default' => 'full',
+                                                'md' => 1,
+                                                'xl' => 4,
+                                            ]),
+
+                                        TextEntry::make('valor')
+                                            ->label('Valor')
+                                            ->formatStateUsing(fn (int $state): string => $this->money($state))
+                                            ->weight(FontWeight::SemiBold)
+                                            ->columnSpan([
+                                                'default' => 'full',
+                                                'md' => 1,
+                                                'xl' => 4,
+                                            ]),
+
+                                        TextEntry::make('categoria.nome')
+                                            ->label('Categoria')
+                                            ->badge()
+                                            ->placeholder('Sem categoria')
+                                            ->columnSpan([
+                                                'default' => 'full',
+                                                'md' => 1,
+                                                'xl' => 4,
+                                            ]),
+
+                                        TextEntry::make('registration_type')
+                                            ->label('Tipo da inscrição')
+                                            ->state(fn (LancamentoItem $record): ?string => $this->registrationTypeLabel($record))
+                                            ->placeholder('Sem vínculo')
+                                            ->visible(fn (): bool => $this->getRecord()->tipo !== TipoLacamento::Despesa)
+                                            ->columnSpan([
+                                                'default' => 'full',
+                                                'md' => 1,
+                                                'xl' => 3,
+                                            ]),
+
+                                        TextEntry::make('registration_label')
+                                            ->label('Inscrição')
+                                            ->state(fn (LancamentoItem $record): ?string => $this->registrationLabel($record))
+                                            ->suffixAction(fn (LancamentoItem $record): ?Action => $this->registrationAction($record))
+                                            ->placeholder('Sem vínculo')
+                                            ->visible(fn (): bool => $this->getRecord()->tipo !== TipoLacamento::Despesa)
+                                            ->columnSpan([
+                                                'default' => 'full',
+                                                'md' => 2,
+                                                'xl' => 9,
+                                            ]),
+
+                                        TextEntry::make('descricao')
+                                            ->label('Descrição')
+                                            ->placeholder('Sem descrição informada')
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->placeholder('Nenhum item vinculado ao lançamento.'),
+                            ]),
+
                         Section::make('Comprovantes')
-                            ->icon('heroicon-o-paper-clip')
+                            ->description('Recibos, PIX e demais documentos do lançamento.')
+                            ->columnSpan([
+                                'default' => 1,
+                                'lg' => 4,
+                            ])
                             ->schema([
                                 View::make('filament.resources.lancamento-resource.pages.receipt-documents')
                                     ->viewData(fn (Lancamento $record): array => [
@@ -164,58 +260,7 @@ class ViewLancamento extends ViewRecord
                                     ]),
                             ]),
                     ]),
-
-                Section::make('Itens do lançamento')
-                    ->icon('heroicon-o-list-bullet')
-                    ->schema([
-                        RepeatableEntry::make('items')
-                            ->hiddenLabel()
-                            ->table([
-                                TableColumn::make('Item')->width('22%'),
-                                TableColumn::make('Categoria')->width('18%'),
-                                TableColumn::make('Valor')->alignment(Alignment::End)->width('14%'),
-                                TableColumn::make('Vínculo')->width('24%'),
-                                TableColumn::make('Descrição')->wrapHeader(),
-                            ])
-                            ->schema([
-                                TextEntry::make('nome')
-                                    ->label('Item')
-                                    ->weight(FontWeight::SemiBold),
-
-                                TextEntry::make('categoria.nome')
-                                    ->label('Categoria')
-                                    ->badge()
-                                    ->placeholder('Sem categoria'),
-
-                                TextEntry::make('valor')
-                                    ->label('Valor')
-                                    ->formatStateUsing(fn (int $state): string => $this->money($state))
-                                    ->weight(FontWeight::SemiBold)
-                                    ->alignEnd(),
-
-                                TextEntry::make('registration_label')
-                                    ->label('Vínculo')
-                                    ->state(fn (LancamentoItem $record): string => $this->registrationLabel($record))
-                                    ->suffixAction(fn (LancamentoItem $record): ?Action => $this->registrationAction($record))
-                                    ->placeholder('Sem vínculo'),
-
-                                TextEntry::make('descricao')
-                                    ->label('Descrição')
-                                    ->placeholder('Sem descrição informada')
-                                    ->wrap(),
-                            ])
-                            ->placeholder('Nenhum item vinculado ao lançamento.'),
-                    ]),
             ]);
-    }
-
-    private function amountColor(Lancamento $record): string
-    {
-        return match ($record->tipo) {
-            TipoLacamento::Despesa => 'danger',
-            TipoLacamento::Doacao => 'info',
-            default => 'success',
-        };
     }
 
     private function money(int $amount, ?Lancamento $record = null): string
@@ -225,31 +270,23 @@ class ViewLancamento extends ViewRecord
         return $prefix.number_format(abs($amount) / 100, 2, ',', '.');
     }
 
-    /**
-     * @return array<int, string>
-     */
-    private function categoryNames(Lancamento $record): array
+    private function totalPreviewHtml(Lancamento $record): HtmlString
     {
-        $record->loadMissing(['items.categoria']);
-
-        return $record->items
-            ->map(fn (LancamentoItem $item): ?string => $item->categoria?->nome)
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
+        return new HtmlString(
+            '<div role="status" class="flex w-fit min-w-72 flex-col items-start gap-1 rounded-lg bg-white/5 px-5 py-4">'
+                .'<span class="text-sm font-semibold leading-none text-white">Total do lançamento</span>'
+                .'<span class="text-[2.75rem] font-black leading-none tracking-normal" style="color: '.e($this->amountTextColor($record)).'">'.e($this->money((int) $record->valor, $record)).'</span>'
+            .'</div>',
+        );
     }
 
-    /**
-     * @return array<int, string>
-     */
-    private function registrationSummaries(Lancamento $record): array
+    private function amountTextColor(Lancamento $record): string
     {
-        $summary = trim($record->registration_payments_summary);
-
-        return $summary === 'Sem inscrições vinculadas'
-            ? []
-            : explode("\n", $summary);
+        return match ($record->tipo) {
+            TipoLacamento::Despesa => '#f87171',
+            TipoLacamento::Doacao => '#60a5fa',
+            default => '#4ade80',
+        };
     }
 
     private function registrationAction(LancamentoItem $item): ?Action
@@ -290,7 +327,7 @@ class ViewLancamento extends ViewRecord
     private function registrationLabel(LancamentoItem $item): string
     {
         if (blank($item->registration_type) || blank($item->registration_id)) {
-            return 'Sem vínculo';
+            return '';
         }
 
         $registration = $item->registration;
@@ -298,5 +335,16 @@ class ViewLancamento extends ViewRecord
         $name = (string) ($registration?->getAttribute('nome') ?? 'Inscrição removida');
 
         return sprintf('%s #%s - %s', $type, $item->registration_id, $name);
+    }
+
+    private function registrationTypeLabel(LancamentoItem $item): ?string
+    {
+        if (blank($item->registration_type) || blank($item->registration_id)) {
+            return null;
+        }
+
+        return $item->registration_type === EquipeTrabalho::class
+            ? 'Equipe de trabalho'
+            : 'Campista';
     }
 }

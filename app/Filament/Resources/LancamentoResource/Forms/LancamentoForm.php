@@ -113,13 +113,13 @@ abstract class LancamentoForm
                                 ->inline()
                                 ->live()
                                 ->afterStateUpdated(static function (Set $set, Get $get): void {
-                                    $items = $get('items');
-
-                                    if (! is_array($items)) {
+                                    if (! is_array($get('items'))) {
                                         return;
                                     }
 
-                                    $set('items', self::itemsWithoutCategories($items));
+                                    foreach (array_keys($get('items')) as $itemKey) {
+                                        $set("items.{$itemKey}.categoria_lancamento_id", null);
+                                    }
                                 })
                                 ->required()
                                 ->columnSpan([
@@ -728,24 +728,6 @@ abstract class LancamentoForm
         $prefix = $amount < 0 ? '-R$ ' : 'R$ ';
 
         return $prefix.number_format(abs($amount) / 100, 2, ',', '.');
-    }
-
-    /**
-     * @param  array<array-key, mixed>  $items
-     * @return array<array-key, mixed>
-     */
-    private static function itemsWithoutCategories(array $items): array
-    {
-        foreach ($items as $key => $item) {
-            if (! is_array($item)) {
-                continue;
-            }
-
-            $item['categoria_lancamento_id'] = null;
-            $items[$key] = $item;
-        }
-
-        return $items;
     }
 
     /**
