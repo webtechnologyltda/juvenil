@@ -9,6 +9,7 @@ use App\Filament\Resources\LancamentoResource\Pages;
 use App\Filament\Resources\LancamentoResource\Widgets\StatsFinanceiro;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
+use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Models\LancamentoItem;
 use App\Support\IconBadge;
@@ -16,10 +17,15 @@ use Carbon\Carbon;
 use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\Exports\Models\Export;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
@@ -139,6 +145,106 @@ class LancamentoResource extends Resource
             ])
             ->defaultSort('id', 'desc')
             ->filters([
+                SelectFilter::make('tipo')
+                    ->label('Tipo')
+                    ->options(TipoLacamento::class),
+                Filter::make('registration_link')
+                    ->label('Inscrição')
+                    ->form([
+                        Select::make('linked')
+                            ->label('Vínculo com inscrição')
+                            ->options([
+                                'linked' => 'Com inscrição vinculada',
+                                'unlinked' => 'Sem inscrição vinculada',
+                            ])
+                            ->placeholder('Todos')
+                            ->native(false)
+                            ->live(),
+                        Select::make('registration_type')
+                            ->label('Tipo de inscrição')
+                            ->options([
+                                Campista::class => 'Campista',
+                                EquipeTrabalho::class => 'Equipe de trabalho',
+                            ])
+                            ->placeholder('Todos')
+                            ->native(false)
+                            ->visible(fn (Get $get): bool => $get('linked') === 'linked'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $linked = $data['linked'] ?? null;
+                        $registrationType = $data['registration_type'] ?? null;
+
+                        if ($linked === 'linked') {
+                            return $query->whereHas(
+                                'items',
+                                fn (Builder $query): Builder => self::registrationItemQuery($query, $registrationType),
+                            );
+                        }
+
+                        if ($linked === 'unlinked') {
+                            return $query->whereDoesntHave(
+                                'items',
+                                fn (Builder $query): Builder => self::registrationItemQuery($query),
+                            );
+                        }
+
+                        if (filled($registrationType)) {
+                            return $query->whereHas(
+                                'items',
+                                fn (Builder $query): Builder => self::registrationItemQuery($query, $registrationType),
+                            );
+                        }
+
+                        return $query;
+                    }),
+                Filter::make('name_search')
+                    ->label('Nome')
+                    ->form([
+                        TextInput::make('search')
+                            ->label('Nome')
+                            ->placeholder('Lançamento, campista ou equipe'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $search = trim((string) ($data['search'] ?? ''));
+
+                        if ($search === '') {
+                            return $query;
+                        }
+
+                        $like = self::likeSearch($search);
+
+                        return $query->where(function (Builder $query) use ($like): Builder {
+                            return $query
+                                ->where('nome', 'like', $like)
+                                ->orWhereHas(
+                                    'items',
+                                    fn (Builder $query): Builder => $query->whereHasMorph(
+                                        'registration',
+                                        [Campista::class, EquipeTrabalho::class],
+                                        fn (Builder $query): Builder => $query->where('nome', 'like', $like),
+                                    ),
+                                );
+                        });
+                    }),
+                Filter::make('created_at')
+                    ->label('Período de criação')
+                    ->form([
+                        DatePicker::make('created_from')
+                            ->label('Criado desde'),
+                        DatePicker::make('created_until')
+                            ->label('Criado até'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'] ?? null,
+                                fn (Builder $query, string $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'] ?? null,
+                                fn (Builder $query, string $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    }),
                 SelectFilter::make('categoria_lancamento_id')
                     ->label('Categoria')
                     ->options(fn (): array => CategoriaLancamento::query()
@@ -196,6 +302,24 @@ class LancamentoResource extends Resource
         return [
             StatsFinanceiro::class,
         ];
+    }
+
+    private static function registrationItemQuery(Builder $query, ?string $registrationType = null): Builder
+    {
+        $query
+            ->whereNotNull('registration_type')
+            ->whereNotNull('registration_id');
+
+        if (filled($registrationType)) {
+            $query->where('registration_type', $registrationType);
+        }
+
+        return $query;
+    }
+
+    private static function likeSearch(string $search): string
+    {
+        return '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%';
     }
 
     private static function categoryBadges(Lancamento $record): HtmlString

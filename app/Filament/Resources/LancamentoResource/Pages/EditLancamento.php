@@ -4,12 +4,15 @@ namespace App\Filament\Resources\LancamentoResource\Pages;
 
 use App\Filament\Resources\LancamentoResource;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
+use App\Filament\Resources\LancamentoResource\Pages\Concerns\HasLancamentoHelpAction;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditLancamento extends EditRecord
 {
+    use HasLancamentoHelpAction;
+
     protected static string $resource = LancamentoResource::class;
 
     /**
@@ -20,6 +23,7 @@ class EditLancamento extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            $this->lancamentoHelpAction(),
             Actions\DeleteAction::make(),
         ];
     }

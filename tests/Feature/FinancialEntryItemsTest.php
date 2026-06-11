@@ -8,6 +8,7 @@ use App\Enums\TipoLacamento;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages\CreateLancamento;
 use App\Filament\Resources\LancamentoResource\Pages\EditLancamento;
+use App\Filament\Resources\LancamentoResource\Pages\ListLancamentos;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
@@ -18,9 +19,12 @@ use App\Support\EnumOptionBadge;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
 use Carbon\Carbon;
 use Database\Seeders\ShieldSeeder;
+use Filament\Forms\Components\Repeater;
+use Filament\Support\Colors\Color;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 
@@ -351,15 +355,25 @@ it('exposes item links in the financial entry form and table', function () {
         ->not->toContain('->slideOver(false)')
         ->not->toContain("\n                                    Select::make('registration_id')")
         ->not->toContain('getSearchResultsUsing')
-        ->toContain("Money::make('valor')")
+        ->toContain("TextInput::make('valor')")
         ->toContain("RichEditor::make('descricao')")
         ->not->toContain("Repeater::make('registration_payments')")
+        ->not->toContain("Money::make('valor')")
         ->not->toContain("Money::make('amount')")
         ->not->toContain("Textarea::make('descricao')\n                                ->toolbarButtons")
         ->toContain('RegistrationPaymentAllocator::registrationTypeOptions')
         ->toContain('registrationOptions')
         ->not->toContain('registrationSearchResults')
         ->toContain("Textarea::make('observacao')")
+        ->toContain('self::itemsTotalHtml')
+        ->toContain("TextInput::make('valor')")
+        ->toContain("->mask(RawJs::make(<<<'JS'")
+        ->toContain("const digits = \$input.replace(/\\D/g, '')")
+        ->toContain('MoneyAmount::toCents')
+        ->toContain("->visible(fn (Get \$get): bool => ! self::isExpenseType(\$get('../../tipo')))")
+        ->toContain("->dehydrated(fn (Get \$get): bool => ! self::isExpenseType(\$get('../../tipo')))")
+        ->toContain('self::itemsWithoutCategories')
+        ->not->toContain("\$set('items', [])")
         ->not->toContain("Builder::make('comprovante')")
         ->not->toContain('use Filament\Forms\Components\Builder;')
         ->not->toContain('use Filament\Forms\Components\Builder\Block;')
@@ -368,6 +382,14 @@ it('exposes item links in the financial entry form and table', function () {
         ->toContain("TextColumn::make('registration_payments_summary')")
         ->toContain("->with(['items.categoria', 'items.registration'])")
         ->toContain("TextColumn::make('batch_code')")
+        ->toContain("SelectFilter::make('tipo')")
+        ->toContain("Filter::make('registration_link')")
+        ->toContain("Select::make('registration_type')")
+        ->toContain("Filter::make('name_search')")
+        ->toContain('whereHasMorph')
+        ->toContain("Filter::make('created_at')")
+        ->toContain("DatePicker::make('created_from')")
+        ->toContain("DatePicker::make('created_until')")
         ->and($createPage)
         ->toContain('RegistrationPaymentAllocator::class')
         ->toContain('itemData')
@@ -378,14 +400,244 @@ it('exposes item links in the financial entry form and table', function () {
     expect(Schema::getColumnType('lancamentos', 'descricao'))->toBe('text');
 });
 
+it('renders the financial item total with sign and semantic color', function () {
+    $form = file_get_contents(app_path('Filament/Resources/LancamentoResource/Forms/LancamentoForm.php'));
+    $valueFieldBlock = Str::between($form, "TextInput::make('valor')", "Select::make('categoria_lancamento_id')");
+
+    expect((string) LancamentoForm::itemsTotalHtml([], TipoLacamento::Receita->value))
+        ->toContain('Total do lançamento')
+        ->toContain('R$ 0,00')
+        ->toContain('x-data')
+        ->toContain('x-text="formattedTotal"')
+        ->toContain('data-lancamento-total')
+        ->toContain('flex-col')
+        ->toContain('rounded-lg bg-white/5')
+        ->toContain('text-sm font-semibold leading-none text-white')
+        ->toContain('text-[2.75rem] font-black leading-none tracking-normal')
+        ->toContain('x-bind:style="valueStyle"')
+        ->toContain('style="color: '.Color::Green[400].';"')
+        ->not->toContain('border-white')
+        ->and((string) LancamentoForm::itemsTotalHtml([
+            ['valor' => 25000],
+            ['valor' => '100,00'],
+        ], TipoLacamento::Receita->value))
+        ->toContain('R$ 350,00')
+        ->toContain('style="color: '.Color::Green[400].';"')
+        ->not->toContain('text-emerald')
+        ->not->toContain('border-emerald')
+        ->and((string) LancamentoForm::itemsTotalHtml([
+            ['valor' => 25000],
+            ['valor' => '100,00'],
+        ], TipoLacamento::Despesa->value))
+        ->toContain('-R$ 350,00')
+        ->toContain('style="color: '.Color::Red[400].';"')
+        ->not->toContain('text-rose')
+        ->not->toContain('border-rose')
+        ->and((string) LancamentoForm::itemsTotalHtml([
+            ['valor' => 25000],
+            ['valor' => '100,00'],
+        ], TipoLacamento::Doacao->value))
+        ->toContain('R$ 350,00')
+        ->toContain('style="color: '.Color::Blue[400].';"')
+        ->not->toContain('text-sky')
+        ->not->toContain('border-sky')
+        ->and($valueFieldBlock)
+        ->not->toContain('->live()');
+});
+
+it('hides registration linking fields for expense financial items', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $category = CategoriaLancamento::factory()->create([
+        'nome' => 'Despesa filtro',
+        'tipo' => TipoLacamento::Despesa->value,
+    ]);
+
+    Livewire::test(CreateLancamento::class)
+        ->fillForm(financialItemFormPayload([
+            'nome' => 'Despesa sem vínculo',
+            'tipo' => TipoLacamento::Despesa->value,
+            'comprador' => 'Coordenação',
+            'items' => [
+                [
+                    'nome' => 'Compra de materiais',
+                    'valor' => 35000,
+                    'categoria_lancamento_id' => $category->id,
+                    'registration_type' => Campista::class,
+                    'registration_id' => 10,
+                    'descricao' => null,
+                ],
+            ],
+        ]))
+        ->assertSee('-R$ 350,00')
+        ->assertDontSee('Tipo da inscrição');
+});
+
+it('keeps financial items when changing type and only clears item categories', function () {
+    $this->seed(ShieldSeeder::class);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $revenueCategory = CategoriaLancamento::query()
+        ->where('tipo', TipoLacamento::Receita->value)
+        ->firstOrFail();
+
+    $undoRepeaterFake = Repeater::fake();
+
+    try {
+        Livewire::test(CreateLancamento::class)
+            ->fillForm(financialItemFormPayload([
+                'tipo' => TipoLacamento::Receita->value,
+                'items' => [
+                    [
+                        'nome' => 'Primeiro item preservado',
+                        'valor' => 12500,
+                        'categoria_lancamento_id' => $revenueCategory->id,
+                        'registration_type' => null,
+                        'registration_id' => null,
+                        'descricao' => 'Descrição preservada',
+                    ],
+                    [
+                        'nome' => 'Segundo item preservado',
+                        'valor' => 25000,
+                        'categoria_lancamento_id' => $revenueCategory->id,
+                        'registration_type' => null,
+                        'registration_id' => null,
+                        'descricao' => null,
+                    ],
+                ],
+            ]))
+            ->set('data.tipo', TipoLacamento::Despesa->value)
+            ->assertFormSet(function (array $state): array {
+                expect($state['items'])
+                    ->toHaveCount(2)
+                    ->and(data_get($state, 'items.0.nome'))->toBe('Primeiro item preservado')
+                    ->and(data_get($state, 'items.0.valor'))->toBe(12500)
+                    ->and(data_get($state, 'items.0.categoria_lancamento_id'))->toBeNull()
+                    ->and(data_get($state, 'items.0.descricao'))->toBe('Descrição preservada')
+                    ->and(data_get($state, 'items.1.nome'))->toBe('Segundo item preservado')
+                    ->and(data_get($state, 'items.1.valor'))->toBe(25000)
+                    ->and(data_get($state, 'items.1.categoria_lancamento_id'))->toBeNull();
+
+                return [];
+            });
+    } finally {
+        $undoRepeaterFake();
+    }
+});
+
+it('filters financial entries by type registration link name and creation period', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $category = CategoriaLancamento::factory()->create([
+        'nome' => 'Inscrições filtro',
+        'tipo' => TipoLacamento::Receita->value,
+    ]);
+    $campista = financialItemCampista('Alice Filtro Campista');
+    $equipe = EquipeTrabalho::factory()->create([
+        'nome' => 'Bruno Filtro Equipe',
+    ]);
+
+    $campistaLaunch = financialItemEntry([
+        'nome' => 'Recebimento Alice',
+        'created_at' => '2026-06-10 10:00:00',
+    ]);
+    $campistaLaunch->items()->create(financialItemPayload($category, $campista, [
+        'valor' => 35000,
+    ]));
+
+    $equipeLaunch = financialItemEntry([
+        'nome' => 'Recebimento equipe',
+        'created_at' => '2026-06-11 10:00:00',
+    ]);
+    $equipeLaunch->items()->create(financialItemPayload($category, $equipe, [
+        'valor' => 35000,
+    ]));
+
+    $unlinkedLaunch = financialItemEntry([
+        'nome' => 'Despesa avulsa filtro',
+        'tipo' => TipoLacamento::Despesa->value,
+        'created_at' => '2026-05-10 10:00:00',
+    ]);
+    $unlinkedLaunch->items()->create([
+        'nome' => 'Material avulso',
+        'valor' => 12000,
+        'categoria_lancamento_id' => $category->id,
+        'registration_type' => null,
+        'registration_id' => null,
+        'descricao' => null,
+    ]);
+
+    Livewire::test(ListLancamentos::class)
+        ->assertTableFilterExists('tipo')
+        ->assertTableFilterExists('registration_link')
+        ->assertTableFilterExists('name_search')
+        ->assertTableFilterExists('created_at')
+        ->filterTable('tipo', TipoLacamento::Despesa->value)
+        ->assertCanSeeTableRecords([$unlinkedLaunch])
+        ->assertCanNotSeeTableRecords([$campistaLaunch, $equipeLaunch]);
+
+    Livewire::test(ListLancamentos::class)
+        ->filterTable('registration_link', ['linked' => 'linked'])
+        ->assertCanSeeTableRecords([$campistaLaunch, $equipeLaunch])
+        ->assertCanNotSeeTableRecords([$unlinkedLaunch]);
+
+    Livewire::test(ListLancamentos::class)
+        ->filterTable('registration_link', [
+            'linked' => 'linked',
+            'registration_type' => Campista::class,
+        ])
+        ->assertCanSeeTableRecords([$campistaLaunch])
+        ->assertCanNotSeeTableRecords([$equipeLaunch, $unlinkedLaunch]);
+
+    Livewire::test(ListLancamentos::class)
+        ->filterTable('name_search', ['search' => 'Bruno Filtro'])
+        ->assertCanSeeTableRecords([$equipeLaunch])
+        ->assertCanNotSeeTableRecords([$campistaLaunch, $unlinkedLaunch]);
+
+    Livewire::test(ListLancamentos::class)
+        ->filterTable('created_at', [
+            'created_from' => '2026-06-01',
+            'created_until' => '2026-06-30',
+        ])
+        ->assertCanSeeTableRecords([$campistaLaunch, $equipeLaunch])
+        ->assertCanNotSeeTableRecords([$unlinkedLaunch]);
+});
+
 it('uses a spacious responsive layout for financial item fields', function () {
     $form = file_get_contents(app_path('Filament/Resources/LancamentoResource/Forms/LancamentoForm.php'));
+    $totalPreviewPosition = strpos($form, "Html::make(fn (Get \$get): HtmlString => self::itemsTotalHtml(\$get('items') ?? [], \$get('tipo')))");
+    $itemsSectionPosition = strpos($form, "Section::make('Itens do lançamento')");
+    $totalPreviewBlock = Str::between($form, "Html::make(fn (Get \$get): HtmlString => self::itemsTotalHtml(\$get('items') ?? [], \$get('tipo')))", "RichEditor::make('descricao')");
+    $valueFieldBlock = Str::between($form, "TextInput::make('valor')", "Select::make('categoria_lancamento_id')");
 
     expect($form)
         ->toContain("Repeater::make('items')")
         ->toContain("->columns([\n                                    'default' => 1,\n                                    'md' => 2,\n                                    'xl' => 12,\n                                ])")
-        ->toContain("'xl' => 5")
+        ->toContain("'xl' => 4")
         ->toContain("'xl' => 9");
+
+    expect($totalPreviewBlock)
+        ->toContain("->columnStart([\n                                    'md' => 2,\n                                    'xl' => 9,\n                                ])");
+
+    expect($valueFieldBlock)
+        ->toContain("'xl' => 4")
+        ->not->toContain("'xl' => 2");
+
+    expect($totalPreviewPosition)
+        ->not->toBeFalse()
+        ->toBeLessThan($itemsSectionPosition);
 });
 
 it('normalizes legacy receipt names into optional observations', function () {
