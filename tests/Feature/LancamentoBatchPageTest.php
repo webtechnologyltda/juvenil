@@ -27,6 +27,7 @@ it('registers a dedicated batch launch page and list action', function () {
     $pages = LancamentoResource::getPages();
     $listPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/ListLancamentos.php'));
     $batchPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/BatchLancamentos.php'));
+    $equipeTrabalhoBatchTable = file_get_contents(app_path('Filament/Resources/LancamentoResource/Tables/LancamentoBatchEquipeTrabalhoTable.php'));
     $view = file_get_contents(resource_path('views/filament/resources/lancamento-resource/pages/batch-lancamentos.blade.php'));
 
     expect($pages)
@@ -44,6 +45,9 @@ it('registers a dedicated batch launch page and list action', function () {
         ->and(file_get_contents(app_path('Filament/Resources/LancamentoResource/Tables/LancamentoBatchCampistasTable.php')))
         ->toContain('CampistaTable::getListTableColumns()')
         ->toContain('LancamentoBatchCreator::class')
+        ->and($equipeTrabalhoBatchTable)
+        ->toContain('EquipeTrabalhoTable::getColumns()')
+        ->toContain('EquipeTrabalhoTable::getFilters()')
         ->and($view)
         ->toContain('{{ $this->form }}');
 });
