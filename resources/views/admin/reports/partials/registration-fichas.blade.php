@@ -27,6 +27,16 @@
             </div>
 
             <div class="report-registration-ficha__badges">
+                @if (filled($logoSrc ?? null))
+                    <span class="report-registration-ficha__brand-logo">
+                        <img
+                            src="{{ $logoSrc }}"
+                            alt="Logo do acampamento"
+                            data-report-registration-logo
+                        >
+                    </span>
+                @endif
+
                 <span
                     class="report-badge report-badge--tribe"
                     data-report-badge-icon="heroicon-s-flag"

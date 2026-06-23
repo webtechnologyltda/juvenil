@@ -6,6 +6,7 @@ use App\Filament\Resources\EquipeTrabalhoResource;
 use App\Filament\Resources\EquipeTrabalhoResource\EquipeTrabalhoForm;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateEquipeTrabalho extends CreateRecord
 {
@@ -15,7 +16,14 @@ class CreateEquipeTrabalho extends CreateRecord
     {
         return $schema
             ->components(
-                EquipeTrabalhoForm::getFormCreate(),
+                EquipeTrabalhoForm::getAdminFormCreate(),
             );
+    }
+
+    protected function handleRecordCreation(array $data): Model
+    {
+        $data['data_form'] ??= [];
+
+        return static::getModel()::query()->create($data);
     }
 }

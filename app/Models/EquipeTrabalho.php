@@ -21,6 +21,11 @@ class EquipeTrabalho extends Model implements Auditable
         'data_form',
         'status',
         'tribo_id',
+        'descricao',
+    ];
+
+    protected $attributes = [
+        'data_form' => '[]',
     ];
 
     protected $casts = [
