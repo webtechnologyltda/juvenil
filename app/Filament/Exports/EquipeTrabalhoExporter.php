@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
 use Filament\Actions\Exports\Models\Export;
+use Throwable;
 
 class EquipeTrabalhoExporter extends Exporter
 {
@@ -21,8 +22,11 @@ class EquipeTrabalhoExporter extends Exporter
             ExportColumn::make('nome')
                 ->label('Campista'),
 
+            ExportColumn::make('descricao')
+                ->label('Equipe'),
+
             ExportColumn::make('data_form.data_nacimento')
-                ->formatStateUsing(fn ($state) => Carbon::createFromFormat('d/m/Y', $state)->age)
+                ->formatStateUsing(fn (mixed $state): ?int => self::ageFromBirthDate($state))
                 ->label('Idade'),
 
             ExportColumn::make('data_form.telefone')
@@ -36,12 +40,14 @@ class EquipeTrabalhoExporter extends Exporter
 
             ExportColumn::make('data_form.tamanho_camiseta')
                 ->label('Tamanho da Camiseta')
-                ->state(function (EquipeTrabalho $record) {
-                    if ($record->data_form['tamanho_camiseta'] === 'O') {
-                        return $record->data_form['tamanho_camiseta_outro'];
+                ->state(function (EquipeTrabalho $record): ?string {
+                    $shirtSize = data_get($record->data_form, 'tamanho_camiseta');
+
+                    if ($shirtSize === 'O') {
+                        return data_get($record->data_form, 'tamanho_camiseta_outro');
                     }
 
-                    return $record->data_form['tamanho_camiseta'];
+                    return $shirtSize;
                 }),
 
             ExportColumn::make('data_form.servir_no_acampamento')
@@ -79,5 +85,18 @@ class EquipeTrabalhoExporter extends Exporter
     public static function getCompletedNotificationBody(Export $export): string
     {
         return $export->successful_rows.' inscrições da equipe de trabalho exportadas.';
+    }
+
+    private static function ageFromBirthDate(mixed $state): ?int
+    {
+        if (! is_string($state) || trim($state) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('d/m/Y', $state)->age;
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

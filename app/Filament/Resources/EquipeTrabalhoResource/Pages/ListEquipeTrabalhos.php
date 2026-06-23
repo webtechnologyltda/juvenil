@@ -20,7 +20,7 @@ class ListEquipeTrabalhos extends ListRecords
     protected function getHeaderWidgets(): array
     {
         return [
-            EquipeTrabalhoResource\Widgets\EquipeTrabalhoStatsWidget::class
+            EquipeTrabalhoResource\Widgets\EquipeTrabalhoStatsWidget::class,
         ];
     }
 }

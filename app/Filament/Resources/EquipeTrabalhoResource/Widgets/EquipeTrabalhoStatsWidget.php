@@ -28,12 +28,11 @@ class EquipeTrabalhoStatsWidget extends BaseWidget
             'M' => 0,
         ];
 
-        foreach ($data as $value) {
+        foreach ($data as $registration) {
+            $sex = data_get($registration->data_form, 'sexo');
 
-            if ($value->data_form['sexo'] == 'F') {
-                $sexo['F']++;
-            } else {
-                $sexo['M']++;
+            if (array_key_exists($sex, $sexo)) {
+                $sexo[$sex]++;
             }
         }
 

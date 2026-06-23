@@ -3,12 +3,12 @@
 namespace App\Filament\Resources\EquipeTrabalhoResource;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
+use App\Models\EquipeTrabalho as EquipeTrabalhoModel;
 use Carbon\Carbon;
 use Filament\Actions\Action as FormAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Actions;
@@ -32,15 +32,58 @@ abstract class EquipeTrabalhoForm
         ];
     }
 
-    public static function getFormUpdate(): array
+    public static function getAdminFormCreate(): array
     {
         return [
-            ...self::getFormInformacaoInscricao(),
-            ...self::getFormEquipeTrabalho(),
+            Section::make('Dados básicos')
+                ->icon('phosphor-user-list-fill')
+                ->columns([
+                    'default' => 1,
+                    'lg' => 2,
+                ])
+                ->schema([
+                    TextInput::make('nome')
+                        ->required()
+                        ->maxLength(255)
+                        ->columnSpanFull(),
+
+                    TextInput::make('descricao')
+                        ->label('Equipe')
+                        ->placeholder('Ex.: Cozinha, Missão, Ordem e Limpeza')
+                        ->datalist(fn (): array => self::registeredEquipeNames())
+                        ->maxLength(255),
+
+                    Select::make('status')
+                        ->label('Status da Inscrição')
+                        ->searchable()
+                        ->preload()
+                        ->default(StatusInscricaoEquipeTrabalho::Aprovado->value)
+                        ->options(StatusInscricaoEquipeTrabalho::class),
+
+                    Select::make('tribo_id')
+                        ->relationship('tribo', 'cor')
+                        ->searchable()
+                        ->preload()
+                        ->getOptionLabelFromRecordUsing(fn (Model $record): string => $record->cor ?? 'Não há tribos cadastradas')
+                        ->label('Tribo'),
+                ]),
         ];
     }
 
-    public static function getFormEquipeTrabalho(): array
+    public static function getFormUpdate(): array
+    {
+        return self::getAdminFormUpdate();
+    }
+
+    public static function getAdminFormUpdate(): array
+    {
+        return [
+            ...self::getFormInformacaoInscricao(),
+            ...self::getFormEquipeTrabalho(requireDetails: false),
+        ];
+    }
+
+    public static function getFormEquipeTrabalho(bool $requireDetails = true): array
     {
         return [
             Section::make('Dados de Inscrição')
@@ -50,21 +93,21 @@ abstract class EquipeTrabalhoForm
                     'lg' => 5,
                 ])
                 ->schema([
-                    ...self::getFormFoto(),
+                    ...self::getFormFoto($requireDetails),
                     TextInput::make('nome')
                         ->required()
                         ->columnSpan(['default' => 1, 'lg' => 4])
                         ->maxLength(255),
 
                     TextInput::make('data_form.data_nacimento')
-                        ->required()
+                        ->required($requireDetails)
                         ->mask('99/99/9999')
                         ->placeholder('DD/MM/AAAA')
                         ->columnSpan(1)
                         ->label('Data de Nascimento'),
 
                     ToggleButtons::make('data_form.sexo')
-                        ->required()
+                        ->required($requireDetails)
                         ->inline(true)
                         ->inlineLabel(false)
                         ->columnSpan([
@@ -95,7 +138,7 @@ abstract class EquipeTrabalhoForm
 
                     TextInput::make('data_form.telefone')
                         ->mask('(99) 9 9999-9999')
-                        ->required()
+                        ->required($requireDetails)
                         ->columnSpan([
                             'default' => 1,
                             'lg' => 2,
@@ -104,7 +147,7 @@ abstract class EquipeTrabalhoForm
                         ->label('Telefone'),
 
                     TextInput::make('data_form.reponsavel_nome')
-                        ->required()
+                        ->required($requireDetails)
                         ->columnSpan([
                             'default' => 1,
                             'lg' => 3,
@@ -112,7 +155,7 @@ abstract class EquipeTrabalhoForm
                         ->label('Nome do Responsável Fora do Acampamento'),
 
                     TextInput::make('data_form.reponsavel_telefone')
-                        ->required()
+                        ->required($requireDetails)
                         ->mask('(99) 9 9999-9999')
                         ->prefixIcon('heroicon-o-phone')
                         ->columnSpan([
@@ -133,7 +176,7 @@ abstract class EquipeTrabalhoForm
 
                             CepInput::make('data_form.cep')
                                 ->label('CEP')
-                                ->required()
+                                ->required($requireDetails)
                                 ->columnSpan([
                                     'default' => 1,
                                     'lg' => 1,
@@ -148,7 +191,7 @@ abstract class EquipeTrabalhoForm
                                 ->setStateField('data_form.estado'),
 
                             TextInput::make('data_form.rua')
-                                ->required()
+                                ->required($requireDetails)
                                 ->columnSpan([
                                     'default' => 1,
                                     'lg' => 4,
@@ -156,7 +199,7 @@ abstract class EquipeTrabalhoForm
                                 ->label('Rua'),
 
                             TextInput::make('data_form.numero')
-                                ->required()
+                                ->required($requireDetails)
                                 ->numeric()
                                 ->columnSpan([
                                     'default' => 1,
@@ -173,7 +216,7 @@ abstract class EquipeTrabalhoForm
                                 ]),
 
                             TextInput::make('data_form.bairro')
-                                ->required()
+                                ->required($requireDetails)
                                 ->columnSpan([
                                     'default' => 1,
                                     'sm' => 1,
@@ -183,7 +226,7 @@ abstract class EquipeTrabalhoForm
                                 ->label('Bairro'),
 
                             TextInput::make('data_form.cidade')
-                                ->required()
+                                ->required($requireDetails)
                                 ->columnSpan([
                                     'default' => 1,
                                     'sm' => 1,
@@ -194,7 +237,7 @@ abstract class EquipeTrabalhoForm
                                 ->label('Cidade'),
 
                             TextInput::make('data_form.estado')
-                                ->required()
+                                ->required($requireDetails)
                                 ->columnSpan([
                                     'default' => 1,
                                     'sm' => 1,
@@ -209,7 +252,7 @@ abstract class EquipeTrabalhoForm
                         ->label('Já participou de algum acampamento/retiro ?')
                         ->live()
                         ->columnSpanFull()
-                        ->required()
+                        ->required($requireDetails)
                         ->inline()
                         ->inlineLabel(false)
                         ->colors([
@@ -229,13 +272,13 @@ abstract class EquipeTrabalhoForm
                         ->validationMessages([
                             'required' => 'Necessário informar ao menos um acampamento que já tenha participado.',
                         ])
-                        ->required(fn (Get $get) => $get('data_form.ja_participou_retiro'))
+                        ->required(fn (Get $get): bool => $requireDetails && (bool) $get('data_form.ja_participou_retiro'))
                         ->visible(fn (Get $get) => $get('data_form.ja_participou_retiro') ?? false),
 
                     ToggleButtons::make('data_form.pode_missas_diarias')
                         ->label('Pode participar das missas diárias ?')
                         ->columnSpanFull()
-                        ->required()
+                        ->required($requireDetails)
                         ->inline()
                         ->inlineLabel(false)
                         ->colors([
@@ -264,7 +307,7 @@ abstract class EquipeTrabalhoForm
                         ->inline()
                         ->inlineLabel(false)
                         ->live()
-                        ->required(),
+                        ->required($requireDetails),
 
                     TextInput::make('data_form.tamanho_camiseta_outro')
                         ->label('Tamanho da camiseta:')
@@ -272,16 +315,15 @@ abstract class EquipeTrabalhoForm
                             'class' => 'uppercase',
                         ])
                         ->columnSpan(1)
-                        ->required()
+                        ->required(fn (Get $get): bool => $requireDetails && $get('data_form.tamanho_camiseta') === 'O')
                         ->visible(fn (Get $get) => $get('data_form.tamanho_camiseta') == 'O')
-                        ->requiredIf('tamanho_camiseta', fn (Get $get) => $get('data_form.tamanho_camiseta') == 'O')
                         ->minLength(1)
                         ->maxLength(3),
 
                     ToggleButtons::make('data_form.servir_no_acampamento')
                         ->label('Pode servir lá dentro do acampamento ?')
                         ->columnSpanFull()
-                        ->required()
+                        ->required($requireDetails)
                         ->inline()
                         ->inlineLabel(false)
                         ->colors([
@@ -297,7 +339,7 @@ abstract class EquipeTrabalhoForm
         ];
     }
 
-    public static function getFormFoto(): array
+    public static function getFormFoto(bool $required = true): array
     {
         return [
 
@@ -333,7 +375,7 @@ abstract class EquipeTrabalhoForm
                 ->extraAttributes(['class' => 'juvenil-photo-upload'])
                 ->imagePreviewHeight('250')
                 ->panelLayout('integrated')
-                ->required(),
+                ->required($required),
 
             Actions::make([
                 FormAction::make('star')
@@ -383,14 +425,29 @@ abstract class EquipeTrabalhoForm
                             'default' => 1,
                         ]),
 
-                    Textarea::make('observacoes')
-                        ->label('Observações')
-                        ->rows(3)
-                        ->placeholder('Observações sobre a inscricão.')
+                    TextInput::make('descricao')
+                        ->label('Equipe')
+                        ->placeholder('Ex.: Cozinha, Missão, Ordem e Limpeza')
+                        ->datalist(fn (): array => self::registeredEquipeNames())
+                        ->maxLength(255)
                         ->columnSpan([
                             'default' => 1,
                         ]),
                 ]),
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function registeredEquipeNames(): array
+    {
+        return EquipeTrabalhoModel::query()
+            ->whereNotNull('descricao')
+            ->where('descricao', '!=', '')
+            ->distinct()
+            ->orderBy('descricao')
+            ->pluck('descricao')
+            ->all();
     }
 }

@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\EquipeTrabalhoResource;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
+use App\Models\EquipeTrabalho;
 use Carbon\Carbon;
 use Filament\Support\Colors\Color;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Throwable;
 
 abstract class EquipeTrabalhoTable
 {
@@ -39,12 +42,20 @@ abstract class EquipeTrabalhoTable
                 ->sortable()
                 ->searchable(),
 
+            TextColumn::make('descricao')
+                ->label('Equipe')
+                ->badge()
+                ->placeholder('Sem equipe')
+                ->sortable()
+                ->searchable(),
+
             TextColumn::make('data_form.data_nacimento')
                 ->label('Idade')
                 ->numeric()
                 ->sortable()
                 ->alignCenter()
-                ->formatStateUsing(fn($state) => Carbon::createFromFormat('d/m/Y', $state)->age)
+                ->formatStateUsing(fn (mixed $state): ?int => self::ageFromBirthDate($state))
+                ->placeholder('-')
                 ->toggleable(isToggledHiddenByDefault: true)
                 ->visibleFrom('md'),
 
@@ -82,5 +93,35 @@ abstract class EquipeTrabalhoTable
                 ->toggleable(isToggledHiddenByDefault: true)
                 ->visibleFrom('md'),
         ];
+    }
+
+    public static function getFilters(): array
+    {
+        return [
+            SelectFilter::make('descricao')
+                ->label('Equipe')
+                ->options(fn (): array => EquipeTrabalho::query()
+                    ->whereNotNull('descricao')
+                    ->where('descricao', '!=', '')
+                    ->distinct()
+                    ->orderBy('descricao')
+                    ->pluck('descricao', 'descricao')
+                    ->all())
+                ->searchable()
+                ->preload(),
+        ];
+    }
+
+    private static function ageFromBirthDate(mixed $state): ?int
+    {
+        if (! is_string($state) || trim($state) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('d/m/Y', $state)->age;
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

@@ -374,6 +374,8 @@ it('applies ficha visual styling and keeps linked payments hidden by default on 
         ->toContain('report-card--address')
         ->toContain('report-card--community')
         ->toContain('report-card--health')
+        ->toContain('data-report-registration-logo')
+        ->toContain('/img/logo.png')
         ->toContain('data-report-badge-icon="heroicon-s-flag"')
         ->toContain('--report-accent: #123abc')
         ->not->toContain('report-registration-summary')

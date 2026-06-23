@@ -419,9 +419,25 @@
 
         .report-registration-ficha__badges {
             display: flex;
+            align-items: center;
             flex-wrap: wrap;
             justify-content: flex-end;
             gap: .35rem;
+        }
+
+        .report-registration-ficha__brand-logo {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 8.6rem;
+            min-height: 2.55rem;
+        }
+
+        .report-registration-ficha__brand-logo img {
+            display: block;
+            max-width: 100%;
+            max-height: 2.55rem;
+            object-fit: contain;
         }
 
         .report-registration-ficha__sections {

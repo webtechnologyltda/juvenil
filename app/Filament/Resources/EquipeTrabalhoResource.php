@@ -44,7 +44,7 @@ class EquipeTrabalhoResource extends Resource
                 EquipeTrabalhoTable::getColumns()
             )
             ->filters([
-                //
+                ...EquipeTrabalhoTable::getFilters(),
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
