@@ -24,6 +24,7 @@ class LancamentoItemEquipeTrabalhoTable
                 )));
             })
             ->columns(EquipeTrabalhoTable::getColumns())
+            ->filters(EquipeTrabalhoTable::getFilters())
             ->defaultSort('id', 'desc')
             ->paginationPageOptions([5, 10, 30, 50])
             ->extremePaginationLinks()

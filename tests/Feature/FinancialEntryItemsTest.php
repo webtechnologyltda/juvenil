@@ -340,6 +340,7 @@ it('exposes item links in the financial entry form and table', function () {
     $resource = file_get_contents(app_path('Filament/Resources/LancamentoResource.php'));
     $createPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/CreateLancamento.php'));
     $editPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/EditLancamento.php'));
+    $equipeTrabalhoItemTable = file_get_contents(app_path('Filament/Resources/LancamentoResource/Tables/LancamentoItemEquipeTrabalhoTable.php'));
 
     expect($form)
         ->toContain("Repeater::make('items')")
@@ -397,6 +398,10 @@ it('exposes item links in the financial entry form and table', function () {
         ->and($editPage)
         ->toContain('RegistrationPaymentAllocator::class')
         ->toContain('itemsFormState');
+
+    expect($equipeTrabalhoItemTable)
+        ->toContain('EquipeTrabalhoTable::getColumns()')
+        ->toContain('EquipeTrabalhoTable::getFilters()');
 
     expect(Schema::getColumnType('lancamentos', 'descricao'))->toBe('text');
 });
