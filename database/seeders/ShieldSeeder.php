@@ -15,10 +15,17 @@ use Spatie\Permission\PermissionRegistrar;
 class ShieldSeeder extends Seeder
 {
     protected const SENSITIVE_HEALTH_PERMISSION = 'view_sensitive_health_campista';
+
     protected const REPORTS_PAGE_PERMISSION = 'page_reports_page';
+
+    protected const TEAM_WORK_GROUPS_PAGE_PERMISSION = 'page_equipe_trabalho_groups';
+
     protected const REGISTRATION_FICHAS_REPORT_PERMISSION = 'print_registration_fichas_report';
+
     protected const TRIBE_QUADRANT_REPORT_PERMISSION = 'print_tribe_quadrant_report';
+
     protected const MISSION_CONTACTS_REPORT_PERMISSION = 'print_mission_contacts_report';
+
     protected const SENSITIVE_HEALTH_REPORT_PERMISSION = 'print_sensitive_health_report';
 
     public function run(): void
@@ -140,6 +147,9 @@ class ShieldSeeder extends Seeder
             ->reject(fn (string $permission): bool => $permission === self::SENSITIVE_HEALTH_PERMISSION
                 || str_contains($permission, 'financeiro')
                 || str_contains($permission, 'lancamento'))
+            ->merge([
+                self::TEAM_WORK_GROUPS_PAGE_PERMISSION,
+            ])
             ->merge(static::administratorReportPermissionNames())
             ->unique()
             ->values()

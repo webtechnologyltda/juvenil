@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
+use App\Enums\TipoEquipeTrabalho;
 use App\Filament\Resources\EquipeTrabalhoResource\Pages\CreateEquipeTrabalho;
 use App\Filament\Resources\EquipeTrabalhoResource\Widgets\EquipeTrabalhoStatsWidget;
 use App\Models\EquipeTrabalho;
@@ -37,7 +38,13 @@ it('seeds the fixed PDF roster with members linked to their equipes', function (
             ->firstOrFail())
         ->descricao->toBe('Cozinha')
         ->status->toBe(StatusInscricaoEquipeTrabalho::Aprovado)
-        ->data_form->toBe([]);
+        ->tipo_equipe->toBe(TipoEquipeTrabalho::Interna)
+        ->data_form->toBe([])
+        ->and(EquipeTrabalho::query()
+            ->where('nome', 'Eduana Fonseca White')
+            ->firstOrFail())
+        ->descricao->toBe('Externa')
+        ->tipo_equipe->toBe(TipoEquipeTrabalho::Externa);
 
     Queue::assertNothingPushed();
 });
@@ -80,7 +87,8 @@ it('creates an admin work team registration with only the name required', functi
 
     expect($registration)
         ->data_form->toBe([])
-        ->status->toBe(StatusInscricaoEquipeTrabalho::Aprovado);
+        ->status->toBe(StatusInscricaoEquipeTrabalho::Aprovado)
+        ->tipo_equipe->toBe(TipoEquipeTrabalho::Interna);
 });
 
 it('renders equipe de trabalho stats for roster records without sex data', function () {

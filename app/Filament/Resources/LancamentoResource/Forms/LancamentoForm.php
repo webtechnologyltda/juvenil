@@ -32,11 +32,14 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\Support\RawJs;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 
 abstract class LancamentoForm
 {
     private const COMPROVANTE_BLOCK = 'anexar_comprovante';
+
+    private const CATEGORY_SEARCH_LIMIT = 50;
 
     public static function getFormSchema(): array
     {
@@ -205,10 +208,10 @@ abstract class LancamentoForm
 
                                     Select::make('categoria_lancamento_id')
                                         ->label('Categoria')
-                                        ->options(fn (Get $get): array => self::categoryOptions($get('../../tipo')))
                                         ->allowHtml()
                                         ->searchable()
-                                        ->preload()
+                                        ->getSearchResultsUsing(fn (Get $get, string $search): array => self::categorySearchResults($get('../../tipo'), $search))
+                                        ->getOptionLabelUsing(fn (Get $get, mixed $value): ?string => self::categoryOptionLabel($get('../../tipo'), $value))
                                         ->required()
                                         ->disabled(fn (Get $get): bool => blank($get('../../tipo')))
                                         ->columnSpan([
@@ -789,22 +792,74 @@ abstract class LancamentoForm
 
     public static function categoryOptions(mixed $type): array
     {
+        return self::categorySearchResults($type);
+    }
+
+    public static function categorySearchResults(mixed $type, ?string $search = null): array
+    {
+        $query = self::categoryQuery($type);
+
+        if (! $query) {
+            return [];
+        }
+
+        if (filled($search)) {
+            $query->where('nome', 'like', '%'.self::escapeLike((string) $search).'%');
+        }
+
+        return $query
+            ->limit(self::CATEGORY_SEARCH_LIMIT)
+            ->get()
+            ->mapWithKeys(fn (CategoriaLancamento $category): array => [
+                $category->id => self::categoryOptionHtml($category),
+            ])
+            ->all();
+    }
+
+    public static function categoryOptionLabel(mixed $type, mixed $value): ?string
+    {
+        $categoryId = (int) $value;
+
+        if ($categoryId <= 0) {
+            return null;
+        }
+
+        $query = self::categoryQuery($type);
+
+        if (! $query) {
+            return null;
+        }
+
+        $category = $query
+            ->whereKey($categoryId)
+            ->first();
+
+        return $category ? self::categoryOptionHtml($category) : null;
+    }
+
+    private static function categoryQuery(mixed $type): ?Builder
+    {
         if ($type instanceof TipoLacamento) {
             $type = $type->value;
         }
 
         if (blank($type)) {
-            return [];
+            return null;
         }
 
         return CategoriaLancamento::query()
             ->where('ativo', true)
             ->where('tipo', (int) $type)
-            ->orderBy('nome')
-            ->get()
-            ->mapWithKeys(fn (CategoriaLancamento $category): array => [
-                $category->id => (string) IconBadge::tile($category, $category->nome, fallbackIcon: 'heroicon-o-tag'),
-            ])
-            ->all();
+            ->orderBy('nome');
+    }
+
+    private static function categoryOptionHtml(CategoriaLancamento $category): string
+    {
+        return (string) IconBadge::tile($category, $category->nome, fallbackIcon: 'heroicon-o-tag');
+    }
+
+    private static function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 }

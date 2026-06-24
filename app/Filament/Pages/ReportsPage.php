@@ -214,9 +214,9 @@ class ReportsPage extends Page
                     ->footerActions([
                         Action::make('openPreview')
                             ->label('Abrir prévia')
-                            ->icon('heroicon-o-printer')
+                            ->icon('heroicon-o-document-magnifying-glass')
                             ->color('primary')
-                            ->url(fn (): string => route('admin.reports.print', $this->previewQuery()))
+                            ->url(fn (): string => ViewReport::getUrl($this->previewQuery()))
                             ->extraAttributes(['data-report-preview-link' => 'true'])
                             ->disabled(fn (): bool => blank($this->filters['type'] ?? null) || $this->missingSensitiveHealthConfirmation()),
                     ])
@@ -247,7 +247,6 @@ class ReportsPage extends Page
 
         return [
             ...$query,
-            'return' => route('filament.admin.pages.reports-page', $query),
         ];
     }
 

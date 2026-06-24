@@ -4,6 +4,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use App\Enums\StatusLacamento;
+use App\Enums\TipoEquipeTrabalho;
 use App\Enums\TipoLacamento;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages\CreateLancamento;
@@ -92,18 +93,19 @@ it('links one paid financial entry to multiple registration items and marks them
 });
 
 it('supports team work registrations through the same financial item link', function () {
-    seedFinancialItemSettings(25000);
+    seedFinancialItemSettings(25000, teamInternalAmount: 12000);
     CategoriaLancamento::ensureSystemDefaults();
 
     $category = financialItemRegistrationCategory(EquipeTrabalho::class);
     $equipe = EquipeTrabalho::factory()->create([
         'nome' => 'Voluntário Equipe',
         'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Interna->value,
     ]);
     $lancamento = financialItemEntry(['status' => StatusLacamento::Pago->value]);
 
     app(RegistrationPaymentAllocator::class)->syncItems($lancamento, [
-        financialItemPayload($category, $equipe),
+        financialItemPayload($category, $equipe, ['valor' => 12000]),
     ]);
 
     expect($lancamento->fresh()->items)
@@ -112,6 +114,55 @@ it('supports team work registrations through the same financial item link', func
         ->toBeInstanceOf(EquipeTrabalho::class)
         ->and($equipe->fresh()->status)
         ->toBe(StatusInscricaoEquipeTrabalho::Aprovado);
+});
+
+it('uses separate expected amounts for internal and external team work registrations', function () {
+    seedFinancialItemSettings(35000, teamInternalAmount: 12000, teamExternalAmount: 8000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $internal = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Interna Valores',
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Interna->value,
+    ]);
+    $external = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Externa Valores',
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Externa->value,
+    ]);
+
+    $allocator = app(RegistrationPaymentAllocator::class);
+    $options = $allocator->registrationOptions(EquipeTrabalho::class);
+
+    expect($allocator->expectedAmountFor($internal))->toBe(12000)
+        ->and($allocator->expectedAmountFor($external))->toBe(8000)
+        ->and($options[$internal->id])->toContain('valor R$ 120,00')
+        ->and($options[$external->id])->toContain('valor R$ 80,00');
+});
+
+it('requires a configured team work amount before linking a team registration to a launch', function () {
+    seedFinancialItemSettings(35000, teamInternalAmount: 12000, teamExternalAmount: 0);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $category = financialItemRegistrationCategory(EquipeTrabalho::class);
+    $external = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Externa Sem Valor',
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Externa->value,
+    ]);
+
+    try {
+        app(RegistrationPaymentAllocator::class)->syncItems(financialItemEntry(), [
+            financialItemPayload($category, $external, ['valor' => 8000]),
+        ]);
+    } catch (ValidationException $exception) {
+        expect($exception->errors()['items'][0])
+            ->toContain('Configure um valor maior que zero para equipe de trabalho externa');
+
+        return;
+    }
+
+    $this->fail('A equipe externa sem valor configurado deveria falhar na validação.');
 });
 
 it('searches registration item options by registration name and hides already linked registrations', function () {
@@ -355,7 +406,10 @@ it('exposes item links in the financial entry form and table', function () {
         ->toContain('->slideOver()')
         ->not->toContain('->slideOver(false)')
         ->not->toContain("\n                                    Select::make('registration_id')")
-        ->not->toContain('getSearchResultsUsing')
+        ->toContain('self::categorySearchResults')
+        ->toContain('self::categoryOptionLabel')
+        ->not->toContain("->options(fn (Get \$get): array => self::categoryOptions(\$get('../../tipo')))")
+        ->not->toContain('->preload()')
         ->toContain("TextInput::make('valor')")
         ->toContain("RichEditor::make('descricao')")
         ->not->toContain("Repeater::make('registration_payments')")
@@ -679,17 +733,23 @@ it('keeps comprador only for expense financial entries', function () {
         ]))->toHaveKey('comprador', 'Comprador Despesa');
 });
 
-function seedFinancialItemSettings(int $amount): void
+function seedFinancialItemSettings(int $amount, ?int $teamInternalAmount = null, ?int $teamExternalAmount = null): void
 {
-    DB::table('settings')->updateOrInsert(
-        [
-            'group' => 'general',
-            'name' => 'valor_acampamento',
-        ],
-        [
-            'payload' => json_encode($amount),
-        ],
-    );
+    foreach ([
+        'valor_acampamento' => $amount,
+        'valor_equipe_trabalho_interna' => $teamInternalAmount ?? $amount,
+        'valor_equipe_trabalho_externa' => $teamExternalAmount ?? $amount,
+    ] as $name => $value) {
+        DB::table('settings')->updateOrInsert(
+            [
+                'group' => 'general',
+                'name' => $name,
+            ],
+            [
+                'payload' => json_encode($value),
+            ],
+        );
+    }
 }
 
 function financialItemCampista(string $name): Campista

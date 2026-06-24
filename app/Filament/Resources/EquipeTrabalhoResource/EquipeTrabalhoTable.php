@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EquipeTrabalhoResource;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
+use App\Enums\TipoEquipeTrabalho;
 use App\Models\EquipeTrabalho;
 use Carbon\Carbon;
 use Filament\Support\Colors\Color;
@@ -48,6 +49,11 @@ abstract class EquipeTrabalhoTable
                 ->placeholder('Sem equipe')
                 ->sortable()
                 ->searchable(),
+
+            TextColumn::make('tipo_equipe')
+                ->label('Tipo')
+                ->badge()
+                ->sortable(),
 
             TextColumn::make('data_form.data_nacimento')
                 ->label('Idade')
@@ -109,6 +115,10 @@ abstract class EquipeTrabalhoTable
                     ->all())
                 ->searchable()
                 ->preload(),
+
+            SelectFilter::make('tipo_equipe')
+                ->label('Tipo da equipe')
+                ->options(TipoEquipeTrabalho::class),
         ];
     }
 

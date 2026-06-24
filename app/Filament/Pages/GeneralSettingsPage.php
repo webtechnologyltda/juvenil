@@ -87,6 +87,26 @@ class GeneralSettingsPage extends SettingsPage
                                     ->prefixIcon(fn ($state) => self::resolveEquipeTrabalhoStatus($state)?->getIcon())
                                     ->prefixIconColor(fn ($state) => self::resolveEquipeTrabalhoStatus($state)?->getColor())
                                     ->columnSpanFull(),
+
+                                Money::make('valor_equipe_trabalho_interna')
+                                    ->label('Valor equipe interna')
+                                    ->intFormat()
+                                    ->prefix(RawJs::make('R$'))
+                                    ->helperText('Use 0 para bloquear lançamentos vinculados a equipes internas até configurar o valor.')
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => '6',
+                                    ]),
+
+                                Money::make('valor_equipe_trabalho_externa')
+                                    ->label('Valor equipe externa')
+                                    ->intFormat()
+                                    ->prefix(RawJs::make('R$'))
+                                    ->helperText('Use 0 para bloquear lançamentos vinculados a equipes externas até configurar o valor.')
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => '6',
+                                    ]),
                             ])
                             ->columnSpan([
                                 'default' => 'full',

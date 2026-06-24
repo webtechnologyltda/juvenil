@@ -4,8 +4,10 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use App\Enums\StatusLacamento;
+use App\Enums\TipoEquipeTrabalho;
 use App\Enums\TipoLacamento;
 use App\Filament\Resources\LancamentoResource;
+use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages\BatchLancamentos;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
@@ -145,29 +147,72 @@ it('stores Brazilian masked registration item amounts as cents when creating a b
 
 it('creates team work contribution batches with the team contribution category', function () {
     Carbon::setTestNow('2026-06-08 09:00:00');
-    seedLancamentoBatchSettings(12000);
+    seedLancamentoBatchSettings(35000, teamInternalAmount: 12000, teamExternalAmount: 8000);
     CategoriaLancamento::ensureSystemDefaults();
 
-    $member = EquipeTrabalho::factory()->create([
-        'nome' => 'Equipe Lote',
+    $internal = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Lote Interna',
         'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Interna->value,
+    ]);
+    $external = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Lote Externa',
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Externa->value,
     ]);
 
     app(LancamentoBatchCreator::class)->create([
         'mode' => 'registrations',
         'registration_type' => EquipeTrabalho::class,
-        'registration_ids' => [$member->id],
+        'registration_ids' => [$internal->id, $external->id],
         'data' => '2026-07-01',
     ]);
 
     $category = lancamentoBatchSystemCategory(CategoriaLancamento::SYSTEM_CATEGORY_CONTRIBUICAO_EQUIPE_TRABALHO);
+    $items = Lancamento::query()
+        ->with('items')
+        ->orderBy('id')
+        ->get()
+        ->flatMap->items;
 
-    expect(Lancamento::query()->firstOrFail()->items()->firstOrFail())
-        ->categoria_lancamento_id->toBe($category->id)
-        ->registration_type->toBe(EquipeTrabalho::class)
-        ->registration_id->toBe($member->id);
+    expect($items)
+        ->toHaveCount(2)
+        ->and($items->pluck('categoria_lancamento_id')->unique()->values()->all())->toBe([$category->id])
+        ->and($items->pluck('registration_type')->unique()->values()->all())->toBe([EquipeTrabalho::class])
+        ->and($items->pluck('registration_id')->all())->toBe([$internal->id, $external->id])
+        ->and($items->pluck('valor')->all())->toBe([12000, 8000]);
 
     Carbon::setTestNow();
+});
+
+it('fills selected team work batch rows with internal and external configured values', function () {
+    $this->seed(ShieldSeeder::class);
+    seedLancamentoBatchSettings(35000, teamInternalAmount: 12000, teamExternalAmount: 8000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $internal = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Tela Interna',
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Interna->value,
+    ]);
+    $external = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Tela Externa',
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Externa->value,
+    ]);
+
+    Livewire::test(BatchLancamentos::class)
+        ->fillForm([
+            'mode' => LancamentoBatchCreator::MODE_REGISTRATIONS,
+            'registration_type' => EquipeTrabalho::class,
+            'registration_ids' => [$internal->id, $external->id],
+        ])
+        ->assertSet('data.registration_items.0.valor', '120,00')
+        ->assertSet('data.registration_items.1.valor', '80,00');
 });
 
 it('excludes cancelled and already linked registrations from batch options and validation', function () {
@@ -314,6 +359,76 @@ it('keeps manual batch items when changing type and only clears item categories'
     }
 });
 
+it('does not embed every manual category option while rendering batch form', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $selectedCategory = CategoriaLancamento::factory()->create([
+        'nome' => 'Categoria selecionada em lote',
+        'tipo' => TipoLacamento::Receita->value,
+        'ativo' => true,
+    ]);
+
+    CategoriaLancamento::factory()->create([
+        'nome' => 'Categoria pesada 999',
+        'tipo' => TipoLacamento::Receita->value,
+        'ativo' => true,
+    ]);
+
+    foreach (range(1, 80) as $index) {
+        CategoriaLancamento::factory()->create([
+            'nome' => sprintf('Categoria pesada %03d', $index),
+            'tipo' => TipoLacamento::Receita->value,
+            'ativo' => true,
+        ]);
+    }
+
+    Livewire::test(BatchLancamentos::class)
+        ->fillForm([
+            'mode' => LancamentoBatchCreator::MODE_MANUAL,
+            'data' => '2026-07-02',
+            'tipo' => TipoLacamento::Receita->value,
+            'categoria_lancamento_id' => $selectedCategory->id,
+            'manual_items' => [
+                [
+                    'nome' => 'Avulso com categoria selecionada',
+                    'valor' => 10000,
+                    'categoria_lancamento_id' => $selectedCategory->id,
+                    'descricao' => null,
+                ],
+            ],
+        ])
+        ->assertSee('Categoria selecionada em lote')
+        ->assertDontSee('Categoria pesada 999');
+});
+
+it('limits category search results and resolves selected category labels', function () {
+    $selectedCategory = CategoriaLancamento::factory()->create([
+        'nome' => 'Categoria selecionada por label',
+        'tipo' => TipoLacamento::Receita->value,
+        'ativo' => true,
+    ]);
+
+    foreach (range(1, 80) as $index) {
+        CategoriaLancamento::factory()->create([
+            'nome' => sprintf('Categoria busca limitada %03d', $index),
+            'tipo' => TipoLacamento::Receita->value,
+            'ativo' => true,
+        ]);
+    }
+
+    $results = LancamentoForm::categorySearchResults(TipoLacamento::Receita->value, 'Categoria busca limitada');
+    $label = LancamentoForm::categoryOptionLabel(TipoLacamento::Receita->value, $selectedCategory->id);
+
+    expect($results)
+        ->toHaveCount(50)
+        ->and($label)->toContain('Categoria selecionada por label')
+        ->and(LancamentoForm::categoryOptionLabel(TipoLacamento::Despesa->value, $selectedCategory->id))->toBeNull();
+});
+
 it('increments the daily batch code and does not keep partial launches when validation fails', function () {
     Carbon::setTestNow('2026-06-08 09:00:00');
 
@@ -382,17 +497,23 @@ it('creates registration batches from the Filament page', function () {
         ->toBe($campista->id);
 });
 
-function seedLancamentoBatchSettings(int $amount): void
+function seedLancamentoBatchSettings(int $amount, ?int $teamInternalAmount = null, ?int $teamExternalAmount = null): void
 {
-    DB::table('settings')->updateOrInsert(
-        [
-            'group' => 'general',
-            'name' => 'valor_acampamento',
-        ],
-        [
-            'payload' => json_encode($amount),
-        ],
-    );
+    foreach ([
+        'valor_acampamento' => $amount,
+        'valor_equipe_trabalho_interna' => $teamInternalAmount ?? $amount,
+        'valor_equipe_trabalho_externa' => $teamExternalAmount ?? $amount,
+    ] as $name => $value) {
+        DB::table('settings')->updateOrInsert(
+            [
+                'group' => 'general',
+                'name' => $name,
+            ],
+            [
+                'payload' => json_encode($value),
+            ],
+        );
+    }
 }
 
 function lancamentoBatchCampista(string $name, array $overrides = []): Campista

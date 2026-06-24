@@ -990,7 +990,7 @@ test('authenticated reports page uses native Filament filters with help and same
         ), expectedType);
 
         const previewResponsePromise = page.waitForResponse((response) => (
-            response.url().includes('/admin/relatorios/imprimir')
+            response.url().includes('/admin/relatorios/preview')
         ));
 
         await previewLink.click();
@@ -1000,14 +1000,11 @@ test('authenticated reports page uses native Filament filters with help and same
 
         expect(previewResponse.status()).toBe(200);
         expect(previewHeaders['content-type']).toContain('text/html');
-        await page.waitForURL(/\/admin\/relatorios\/imprimir/);
+        await page.waitForURL(/\/admin\/relatorios\/preview/);
         expect(page.url()).toContain(`type=${expectedType}`);
-        await expect(page.locator('.report-print-toolbar')).toBeVisible();
-        await expect(page.locator('.report-print-toolbar [data-report-action-icon]')).toHaveCount(3);
-        await expect(page.locator('.report-print-toolbar .report-print-action__icon')).toHaveCount(3);
         await expect(page.getByText(expectedTitle).first()).toBeVisible();
-        await expect(page.getByRole('button', { name: /salvar pdf/i })).toBeVisible();
-        await expect(page.getByRole('button', { name: /imprimir/i })).toBeVisible();
+        await expect(page.getByText(/na fila|gerando relatório/i).first()).toBeVisible();
+        await expect(page.getByText(/arquivo imprimível/i).first()).toBeVisible();
 
         await page.goBack({ waitUntil: 'domcontentloaded' });
         await page.waitForSelector('.juvenil-report-page');

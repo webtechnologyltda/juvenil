@@ -1,18 +1,23 @@
 <?php
 
+use App\Actions\Reports\EnsureReportExportAction;
+use App\Actions\Reports\ExportCampistaReportHtmlAction;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
+use App\Jobs\GenerateReportExport;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
+use App\Models\ReportExport;
 use App\Models\Tribo;
 use App\Models\User;
-use App\Support\Reports\CampistaReportData;
 use App\Support\Reports\CampistaReportType;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -96,30 +101,47 @@ function reportHtml(string $type, array $filters, User $user): string
         ...$filters,
     ];
 
-    return view('admin.reports.print', [
-        'report' => app(CampistaReportData::class)->payload(
-            CampistaReportType::from($type),
-            $filters,
-            $user,
-        ),
-        'returnUrl' => route('filament.admin.pages.reports-page', $filters),
-        'logoSrc' => asset('img/logo.png'),
-    ])->render();
+    return app(ExportCampistaReportHtmlAction::class)->output(
+        CampistaReportType::from($type),
+        $filters,
+        $user,
+    );
 }
 
 function assertPrintableHtml(TestResponse $response): TestResponse
 {
     $response->assertOk();
 
+    $content = $response->streamedContent();
+
     expect($response->headers->get('content-type'))->toContain('text/html')
-        ->and($response->headers->get('content-disposition'))->toBeNull()
-        ->and($response->getContent())->not->toStartWith('%PDF')
-        ->and($response->getContent())->toContain('Prévia para impressão')
+        ->and($response->headers->get('content-disposition'))->toContain('inline')
+        ->and($content)->not->toStartWith('%PDF')
+        ->and($content)->toContain('Prévia para impressão')
         ->toContain('data-report-print')
         ->toContain('data-report-save-pdf')
         ->toContain('data-report-action-icon="heroicon-s-printer"');
 
     return $response;
+}
+
+function queuedReportExport(User $user, string $type, array $filters = []): ReportExport
+{
+    return app(EnsureReportExportAction::class)->execute(
+        $user,
+        CampistaReportType::from($type),
+        [
+            'type' => $type,
+            ...$filters,
+        ],
+    );
+}
+
+function runReportExport(ReportExport $reportExport): ReportExport
+{
+    app()->call([new GenerateReportExport($reportExport->id), 'handle']);
+
+    return $reportExport->refresh();
 }
 
 it('seeds report permissions with least privilege by role', function () {
@@ -164,6 +186,7 @@ it('renders the reports launcher only for authorized operational users', functio
 it('uses the reports page permission to expose standard operational reports', function () {
     $this->seed(ShieldSeeder::class);
 
+    Queue::fake();
     reportCampista();
 
     $role = Role::query()->create([
@@ -185,11 +208,18 @@ it('uses the reports page permission to expose standard operational reports', fu
         ->assertDontSee('Lista médica da enfermaria');
 
     $this->actingAs($user)
-        ->get(route('admin.reports.print', ['type' => 'registration_fichas']))
-        ->tap(fn (TestResponse $response) => assertPrintableHtml($response));
+        ->get(route('filament.admin.pages.view-report', ['type' => 'registration_fichas']))
+        ->assertOk()
+        ->assertSee('Fichas de inscrição')
+        ->assertSee('Na fila');
+
+    expect(ReportExport::query()
+        ->where('user_id', $user->id)
+        ->where('report_type', 'registration_fichas')
+        ->exists())->toBeTrue();
 
     $this->actingAs($user)
-        ->get(route('admin.reports.print', ['type' => 'sensitive_health']))
+        ->get(route('filament.admin.pages.view-report', ['type' => 'sensitive_health']))
         ->assertForbidden();
 });
 
@@ -264,32 +294,30 @@ it('builds the report filters with native Filament form components', function ()
         ->toContain('Contatos e endereços para missão');
 });
 
-it('renders the printable preview as HTML in the same tab', function () {
+it('renders generated report exports as printable HTML in the same tab', function () {
     $this->seed(ShieldSeeder::class);
 
+    Queue::fake();
+    Storage::fake('local');
     reportCampista();
 
     $administrator = reportUserWithRole('Administrador');
-    $returnUrl = route('filament.admin.pages.reports-page', [
-        'type' => 'registration_fichas',
+    $export = queuedReportExport($administrator, 'registration_fichas', [
         'status' => [StatusInscricao::Pago->value],
         'search' => 'Centro',
     ]);
 
+    $export = runReportExport($export);
+
     $response = $this->actingAs($administrator)
-        ->get(route('admin.reports.print', [
-            'type' => 'registration_fichas',
-            'status' => [StatusInscricao::Pago->value],
-            'search' => 'Centro',
-            'return' => $returnUrl,
+        ->get(route('admin.reports.exports.file', [
+            'reportExport' => $export,
+            'inline' => '1',
         ]));
 
     assertPrintableHtml($response);
 
-    $html = reportHtml('registration_fichas', [
-        'status' => [StatusInscricao::Pago->value],
-        'search' => 'Centro',
-    ], $administrator);
+    $html = $response->streamedContent();
 
     expect($html)
         ->toContain('<title>Fichas de inscrição - '.e(config('app.name')).'</title>')
@@ -309,19 +337,30 @@ it('renders the printable preview as HTML in the same tab', function () {
         ->toContain('data-report-action-icon="heroicon-s-arrow-down-tray"')
         ->toContain('data-report-action-icon="heroicon-s-printer"')
         ->not->toContain('data-report-action-icon="heroicon-o-')
-        ->toContain(e($returnUrl))
+        ->toContain(e(route('filament.admin.pages.reports-page')))
+        ->toContain('type=registration_fichas')
+        ->toContain('search=Centro')
+        ->toContain('status%5B0%5D=1')
         ->toContain('Logo do acampamento')
         ->not->toContain('<dt>Central</dt>');
+
+    expect($export->isReady())->toBeTrue()
+        ->and($export->file_path)->not->toBeNull();
 });
 
-it('keeps printable previews on the HTML rendering path', function () {
-    $controller = file_get_contents(app_path('Http/Controllers/Admin/PrintableReportController.php'));
+it('keeps generated report exports on the HTML rendering path', function () {
+    $exportAction = file_get_contents(app_path('Actions/Reports/ExportCampistaReportHtmlAction.php'));
+    $fileController = file_get_contents(app_path('Http/Controllers/Admin/ReportExportFileController.php'));
     $printView = file_get_contents(resource_path('views/admin/reports/print.blade.php'));
 
-    expect($controller)
+    expect(file_exists(app_path('Http/Controllers/Admin/PrintableReportController.php')))->toBeFalse()
+        ->and($exportAction)
         ->toContain("return view('admin.reports.print'")
         ->not->toContain('Pdf::')
         ->not->toContain('preparePdfRuntime')
+        ->and($fileController)
+        ->toContain("'Content-Type' => 'text/html; charset=UTF-8'")
+        ->not->toContain('Pdf::')
         ->and($printView)
         ->toContain('report-print-toolbar')
         ->toContain('report-print-document')
@@ -528,7 +567,7 @@ it('blocks the medical report for administrators and exposes it only to the infi
     $infirmary = reportUserWithRole('Enfermaria');
 
     $this->actingAs($administrator)
-        ->get(route('admin.reports.print', ['type' => 'sensitive_health']))
+        ->get(route('filament.admin.pages.view-report', ['type' => 'sensitive_health']))
         ->assertForbidden();
 
     expect(reportHtml('sensitive_health', [], $infirmary))

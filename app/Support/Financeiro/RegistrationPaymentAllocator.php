@@ -5,6 +5,7 @@ namespace App\Support\Financeiro;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use App\Enums\StatusLacamento;
+use App\Enums\TipoEquipeTrabalho;
 use App\Enums\TipoLacamento;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
@@ -107,6 +108,13 @@ class RegistrationPaymentAllocator
             $seenRegistrations[$key] = true;
             $registration = $this->registrationFromItem($item);
             $excludingLancamentoId = $lancamento->exists ? (int) $lancamento->getKey() : null;
+            $expected = $this->expectedAmountFor($registration);
+
+            if ($expected === null) {
+                throw ValidationException::withMessages([
+                    'items' => $this->missingConfiguredAmountMessageFor($registration),
+                ]);
+            }
 
             if ($this->registrationHasLinkedItem($registration, $excludingLancamentoId)) {
                 throw ValidationException::withMessages([
@@ -114,7 +122,7 @@ class RegistrationPaymentAllocator
                 ]);
             }
 
-            $remaining = $this->remainingAmountFor($registration, $excludingLancamentoId);
+            $remaining = max(0, $expected - $this->paidAmountFor($registration, $excludingLancamentoId));
 
             if ($item['valor'] > $remaining) {
                 throw ValidationException::withMessages([
@@ -233,9 +241,21 @@ class RegistrationPaymentAllocator
             return null;
         }
 
-        $amount = (int) (app(GeneralSettings::class)->valor_acampamento ?? 0);
+        $amount = $this->configuredAmountFor($registration);
 
         return $amount > 0 ? $amount : null;
+    }
+
+    public function missingConfiguredAmountMessageFor(Model $registration): string
+    {
+        if ($registration instanceof EquipeTrabalho) {
+            return sprintf(
+                'Configure um valor maior que zero para equipe de trabalho %s antes de vincular o lançamento.',
+                mb_strtolower((string) $this->teamTypeFor($registration)->getLabel()),
+            );
+        }
+
+        return 'Configure um valor de acampamento maior que zero antes de vincular o lançamento.';
     }
 
     /**
@@ -528,6 +548,33 @@ class RegistrationPaymentAllocator
     {
         return is_string($registrationType)
             && array_key_exists($registrationType, self::registrationTypeOptions());
+    }
+
+    private function configuredAmountFor(Model $registration): int
+    {
+        $settings = app(GeneralSettings::class);
+
+        if ($registration instanceof Campista) {
+            return (int) ($settings->valor_acampamento ?? 0);
+        }
+
+        if ($registration instanceof EquipeTrabalho) {
+            $field = $this->teamTypeFor($registration)->configuredAmountField();
+
+            return (int) ($settings->{$field} ?? 0);
+        }
+
+        return 0;
+    }
+
+    private function teamTypeFor(EquipeTrabalho $registration): TipoEquipeTrabalho
+    {
+        if ($registration->tipo_equipe instanceof TipoEquipeTrabalho) {
+            return $registration->tipo_equipe;
+        }
+
+        return TipoEquipeTrabalho::tryFrom((int) ($registration->tipo_equipe ?? TipoEquipeTrabalho::Interna->value))
+            ?? TipoEquipeTrabalho::Interna;
     }
 
     private function money(int $amount): string

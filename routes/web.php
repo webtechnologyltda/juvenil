@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\LancamentoReceiptController;
-use App\Http\Controllers\Admin\PrintableReportController;
+use App\Http\Controllers\Admin\ReportExportFileController;
 use App\Settings\GeneralSettings;
 use Illuminate\Support\Facades\Route;
 
@@ -30,7 +30,7 @@ Route::middleware('auth')
     ->prefix('admin/relatorios')
     ->name('admin.reports.')
     ->group(function () {
-        Route::get('/imprimir', PrintableReportController::class)->name('print');
+        Route::get('/exports/{reportExport}/file', ReportExportFileController::class)->name('exports.file');
     });
 
 Route::middleware(['auth', 'signed'])

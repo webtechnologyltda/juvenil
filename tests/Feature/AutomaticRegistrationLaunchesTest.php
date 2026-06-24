@@ -4,6 +4,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use App\Enums\StatusLacamento;
+use App\Enums\TipoEquipeTrabalho;
 use App\Enums\TipoLacamento;
 use App\Jobs\CancelRegistrationLaunchJob;
 use App\Jobs\EnsureRegistrationLaunchJob;
@@ -94,6 +95,31 @@ it('creates one automatic pending launch for a campista without syncing payment 
         ->and($lancamento->items()->firstOrFail()->registration_type)->toBe(Campista::class)
         ->and($lancamento->items()->firstOrFail()->registration_id)->toBe($campista->id)
         ->and($campista->fresh()->status)->toBe(StatusInscricao::Pendente);
+
+    Carbon::setTestNow();
+});
+
+it('creates automatic team work launches with the amount configured for the team type', function () {
+    Carbon::setTestNow('2026-06-11 10:00:00');
+    seedAutomaticRegistrationAmount(35000, teamInternalAmount: 12000, teamExternalAmount: 8000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $equipe = automaticRegistrationEquipe('Automático Equipe Externa', [
+        'tipo_equipe' => TipoEquipeTrabalho::Externa->value,
+    ]);
+    $job = new EnsureRegistrationLaunchJob(EquipeTrabalho::class, $equipe->id);
+
+    $job->handle(app(AutomaticRegistrationLaunchService::class));
+
+    $category = automaticRegistrationCategory(CategoriaLancamento::SYSTEM_CATEGORY_CONTRIBUICAO_EQUIPE_TRABALHO);
+    $lancamento = Lancamento::query()->firstOrFail();
+
+    expect($lancamento->nome)->toBe('Contribuição equipe - Automático Equipe Externa')
+        ->and($lancamento->valor)->toBe(8000)
+        ->and($lancamento->items()->firstOrFail()->valor)->toBe(8000)
+        ->and($lancamento->items()->firstOrFail()->categoria_lancamento_id)->toBe($category->id)
+        ->and($lancamento->items()->firstOrFail()->registration_type)->toBe(EquipeTrabalho::class)
+        ->and($lancamento->items()->firstOrFail()->registration_id)->toBe($equipe->id);
 
     Carbon::setTestNow();
 });
@@ -218,17 +244,23 @@ it('supports dry run and dispatches reconciliation by default', function () {
     Queue::assertPushed(ReconcileRegistrationLaunchesJob::class, fn (ReconcileRegistrationLaunchesJob $job): bool => $job->type === AutomaticRegistrationLaunchService::TYPE_CAMPISTA);
 });
 
-function seedAutomaticRegistrationAmount(int $amount): void
+function seedAutomaticRegistrationAmount(int $amount, ?int $teamInternalAmount = null, ?int $teamExternalAmount = null): void
 {
-    DB::table('settings')->updateOrInsert(
-        [
-            'group' => 'general',
-            'name' => 'valor_acampamento',
-        ],
-        [
-            'payload' => json_encode($amount),
-        ],
-    );
+    foreach ([
+        'valor_acampamento' => $amount,
+        'valor_equipe_trabalho_interna' => $teamInternalAmount ?? $amount,
+        'valor_equipe_trabalho_externa' => $teamExternalAmount ?? $amount,
+    ] as $name => $value) {
+        DB::table('settings')->updateOrInsert(
+            [
+                'group' => 'general',
+                'name' => $name,
+            ],
+            [
+                'payload' => json_encode($value),
+            ],
+        );
+    }
 }
 
 function automaticRegistrationCampista(string $name, array $overrides = []): Campista
