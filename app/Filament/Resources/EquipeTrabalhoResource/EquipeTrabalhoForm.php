@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EquipeTrabalhoResource;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
+use App\Enums\TipoEquipeTrabalho;
 use App\Models\EquipeTrabalho as EquipeTrabalhoModel;
 use Carbon\Carbon;
 use Filament\Actions\Action as FormAction;
@@ -52,6 +53,8 @@ abstract class EquipeTrabalhoForm
                         ->placeholder('Ex.: Cozinha, Missão, Ordem e Limpeza')
                         ->datalist(fn (): array => self::registeredEquipeNames())
                         ->maxLength(255),
+
+                    self::tipoEquipeField(),
 
                     Select::make('status')
                         ->label('Status da Inscrição')
@@ -433,6 +436,11 @@ abstract class EquipeTrabalhoForm
                         ->columnSpan([
                             'default' => 1,
                         ]),
+
+                    self::tipoEquipeField()
+                        ->columnSpan([
+                            'default' => 1,
+                        ]),
                 ]),
         ];
     }
@@ -449,5 +457,15 @@ abstract class EquipeTrabalhoForm
             ->orderBy('descricao')
             ->pluck('descricao')
             ->all();
+    }
+
+    private static function tipoEquipeField(): ToggleButtons
+    {
+        return ToggleButtons::make('tipo_equipe')
+            ->label('Tipo da equipe')
+            ->options(TipoEquipeTrabalho::class)
+            ->default(TipoEquipeTrabalho::Interna->value)
+            ->inline()
+            ->required();
     }
 }

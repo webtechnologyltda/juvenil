@@ -10,6 +10,10 @@ class GeneralSettings extends Settings
 
     public ?int $valor_acampamento;
 
+    public int $valor_equipe_trabalho_interna;
+
+    public int $valor_equipe_trabalho_externa;
+
     public ?int $idade_minima;
 
     public ?int $idade_maxima;

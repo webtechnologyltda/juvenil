@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\StatusInscricaoEquipeTrabalho;
+use App\Enums\TipoEquipeTrabalho;
 use App\Models\EquipeTrabalho;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -17,14 +18,25 @@ class EquipeTrabalhoRosterSeeder extends Seeder
     public function run(): void
     {
         foreach (self::roster() as $team => $names) {
+            $teamType = $team === 'Externa'
+                ? TipoEquipeTrabalho::Externa
+                : TipoEquipeTrabalho::Interna;
+
             foreach ($names as $name) {
-                EquipeTrabalho::query()->firstOrCreate([
+                $registration = EquipeTrabalho::query()->firstOrCreate([
                     'nome' => $name,
                     'descricao' => $team,
                 ], [
                     'data_form' => [],
                     'status' => StatusInscricaoEquipeTrabalho::Aprovado->value,
+                    'tipo_equipe' => $teamType->value,
                 ]);
+
+                if ($registration->tipo_equipe !== $teamType) {
+                    $registration->forceFill([
+                        'tipo_equipe' => $teamType,
+                    ])->save();
+                }
             }
         }
     }

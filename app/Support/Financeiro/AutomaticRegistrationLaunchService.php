@@ -411,11 +411,7 @@ class AutomaticRegistrationLaunchService
         $amount = $this->allocator->expectedAmountFor($registration);
 
         if ($amount === null || $amount <= 0) {
-            throw new RuntimeException(sprintf(
-                'Valor do acampamento não configurado para %s #%s.',
-                $registration::class,
-                $registration->getKey(),
-            ));
+            throw new RuntimeException($this->allocator->missingConfiguredAmountMessageFor($registration));
         }
 
         return $amount;

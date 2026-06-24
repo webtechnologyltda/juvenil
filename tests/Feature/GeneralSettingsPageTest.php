@@ -23,6 +23,8 @@ it('renders the general settings page with registration payment controls', funct
         ->assertOk()
         ->assertSee('Pagamento PIX')
         ->assertSee('Valor do Acampamento')
+        ->assertSee('Valor equipe interna')
+        ->assertSee('Valor equipe externa')
         ->assertSee('PIX copia e cola')
         ->assertSee('Imagem do QR Code PIX')
         ->assertSee('Atendimento e Documentos')
@@ -173,6 +175,8 @@ it('saves registration status settings as scalar values', function () {
         ->fillForm([
             'telefone_atendente' => '(47) 9 9999-9999',
             'valor_acampamento' => 25000,
+            'valor_equipe_trabalho_interna' => 12000,
+            'valor_equipe_trabalho_externa' => 8000,
             'idade_minima' => 12,
             'idade_maxima' => 18,
             'qtd_max_vagas' => 120,
@@ -207,6 +211,14 @@ it('saves registration status settings as scalar values', function () {
         ->where('group', 'general')
         ->where('name', 'liberacao_inscricoes_status')
         ->value('payload'))->toBe((string) LiberacaoInscricoesStatusEnum::ENCERRADO->value)
+        ->and(DB::table('settings')
+            ->where('group', 'general')
+            ->where('name', 'valor_equipe_trabalho_interna')
+            ->value('payload'))->toBe('12000')
+        ->and(DB::table('settings')
+            ->where('group', 'general')
+            ->where('name', 'valor_equipe_trabalho_externa')
+            ->value('payload'))->toBe('8000')
         ->and(DB::table('settings')
             ->where('group', 'general')
             ->where('name', 'liberacao_inscricoes_equipe_trabalho_status')

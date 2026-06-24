@@ -6,7 +6,7 @@
                 <h2>Central de impressão</h2>
                 <p>
                     Gere fichas, quadrantes e listas operacionais com filtros por status, tribo, presença e busca.
-                    A prévia abre na mesma aba e mantém o retorno para esta central.
+                    O arquivo é gerado em segundo plano e abre na mesma aba quando estiver pronto.
                 </p>
             </div>
 
@@ -31,8 +31,8 @@
         <div class="juvenil-report-loading" data-report-preview-loading role="status" aria-live="polite" hidden>
             <div class="juvenil-report-loading__panel">
                 <span class="juvenil-report-loading__spinner" aria-hidden="true"></span>
-                <strong>Abrindo prévia para impressão</strong>
-                <p>Se houver muitos dados, mantenha esta aba aberta até o relatório carregar.</p>
+                <strong>Abrindo geração do relatório</strong>
+                <p>Se houver muitos dados, mantenha a próxima tela aberta até a geração terminar.</p>
             </div>
         </div>
     </div>

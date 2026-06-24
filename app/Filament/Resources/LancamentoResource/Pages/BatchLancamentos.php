@@ -148,6 +148,10 @@ class BatchLancamentos extends Page
                             ->prefix(RawJs::make('R$'))
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set): void {
+                                if ($get('registration_type') === EquipeTrabalho::class) {
+                                    return;
+                                }
+
                                 $amount = MoneyAmount::formatForInput($get('default_value'));
                                 $items = collect($get('registration_items') ?? [])
                                     ->map(fn (array $item): array => [
@@ -193,8 +197,8 @@ class BatchLancamentos extends Page
                                 'lg' => 6,
                             ]),
 
-                        Html::make(fn (): HtmlString => new HtmlString($this->campAmountWarningHtml()))
-                            ->visible(fn (): bool => $this->campAmountNotConfigured())
+                        Html::make(fn (Get $get): HtmlString => new HtmlString($this->registrationAmountWarningHtml($get('registration_type'))))
+                            ->visible(fn (Get $get): bool => $this->registrationAmountNotConfigured($get('registration_type')))
                             ->columnSpanFull(),
 
                         Repeater::make('registration_items')
@@ -270,10 +274,10 @@ class BatchLancamentos extends Page
 
                         Select::make('categoria_lancamento_id')
                             ->label('Categoria padrão')
-                            ->options(fn (Get $get): array => LancamentoForm::categoryOptions($get('tipo')))
                             ->allowHtml()
                             ->searchable()
-                            ->preload()
+                            ->getSearchResultsUsing(fn (Get $get, string $search): array => LancamentoForm::categorySearchResults($get('tipo'), $search))
+                            ->getOptionLabelUsing(fn (Get $get, mixed $value): ?string => LancamentoForm::categoryOptionLabel($get('tipo'), $value))
                             ->live()
                             ->required(fn (Get $get): bool => $get('mode') === LancamentoBatchCreator::MODE_MANUAL)
                             ->afterStateUpdated(function (Get $get, Set $set): void {
@@ -336,10 +340,10 @@ class BatchLancamentos extends Page
 
                                 Select::make('categoria_lancamento_id')
                                     ->label('Categoria')
-                                    ->options(fn (Get $get): array => LancamentoForm::categoryOptions($get('../../tipo')))
                                     ->allowHtml()
                                     ->searchable()
-                                    ->preload()
+                                    ->getSearchResultsUsing(fn (Get $get, string $search): array => LancamentoForm::categorySearchResults($get('../../tipo'), $search))
+                                    ->getOptionLabelUsing(fn (Get $get, mixed $value): ?string => LancamentoForm::categoryOptionLabel($get('../../tipo'), $value))
                                     ->required()
                                     ->columnSpan([
                                         'default' => 'full',
@@ -460,8 +464,6 @@ class BatchLancamentos extends Page
             return [];
         }
 
-        $amount = MoneyAmount::formatForInput($amount);
-
         /** @var class-string<Model> $registrationType */
         return collect($ids)
             ->map(fn (mixed $id): int => (int) $id)
@@ -477,7 +479,7 @@ class BatchLancamentos extends Page
                 return [
                     'registration_id' => $id,
                     'nome' => (string) ($registration->getAttribute('nome') ?? 'Inscrição #'.$id),
-                    'valor' => $amount,
+                    'valor' => $this->defaultAmountForRegistration($registration, $amount),
                     'descricao' => null,
                 ];
             })
@@ -507,17 +509,39 @@ class BatchLancamentos extends Page
         return (int) (app(GeneralSettings::class)->valor_acampamento ?? 0);
     }
 
-    private function campAmountNotConfigured(): bool
+    private function registrationAmountNotConfigured(?string $registrationType): bool
     {
-        return $this->defaultRegistrationAmount() <= 0;
+        $settings = app(GeneralSettings::class);
+
+        return match ($registrationType) {
+            EquipeTrabalho::class => (int) ($settings->valor_equipe_trabalho_interna ?? 0) <= 0
+                || (int) ($settings->valor_equipe_trabalho_externa ?? 0) <= 0,
+            default => $this->defaultRegistrationAmount() <= 0,
+        };
     }
 
-    private function campAmountWarningHtml(): string
+    private function registrationAmountWarningHtml(?string $registrationType): string
     {
+        if ($registrationType === EquipeTrabalho::class) {
+            return '<div role="alert" class="rounded-lg border border-warning-500/55 bg-warning-500/10 p-4 text-sm text-warning-100">'
+                .'<strong class="block text-warning-300">Valores da equipe de trabalho não configurados</strong>'
+                .'<span>Configure valores maiores que zero para equipe interna e equipe externa nas configurações antes de criar lançamentos vinculados.</span>'
+                .'</div>';
+        }
+
         return '<div role="alert" class="rounded-lg border border-warning-500/55 bg-warning-500/10 p-4 text-sm text-warning-100">'
             .'<strong class="block text-warning-300">Valor do acampamento não configurado</strong>'
             .'<span>O campo de inscrições pode ficar sem opções enquanto o valor estiver zerado nas configurações.</span>'
             .'</div>';
+    }
+
+    private function defaultAmountForRegistration(Model $registration, mixed $fallbackAmount): string
+    {
+        $amount = $registration instanceof EquipeTrabalho
+            ? app(RegistrationPaymentAllocator::class)->expectedAmountFor($registration)
+            : MoneyAmount::toCents($fallbackAmount);
+
+        return MoneyAmount::formatForInput($amount ?? 0);
     }
 
     private function summaryHtml(Get $get): string

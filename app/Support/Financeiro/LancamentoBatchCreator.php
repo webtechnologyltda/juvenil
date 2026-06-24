@@ -6,7 +6,6 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
 use App\Models\Campista;
-use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Settings\GeneralSettings;
@@ -191,11 +190,18 @@ class LancamentoBatchCreator
             ->values();
 
         $rows = collect($data['registration_items'] ?? [])
-            ->map(function (array $row) use ($data): array {
+            ->map(function (array $row) use ($data, $registrationType): array {
+                $registrationId = (int) ($row['registration_id'] ?? 0);
+                $registration = $registrationId > 0
+                    ? $registrationType::query()->find($registrationId)
+                    : null;
+
                 return [
-                    'registration_id' => (int) ($row['registration_id'] ?? 0),
+                    'registration_id' => $registrationId,
                     'nome' => $this->nullableText($row['nome'] ?? null),
-                    'valor' => $this->amount($row['valor'] ?? $data['default_value'] ?? $this->defaultRegistrationAmount()),
+                    'valor' => $this->amount(filled($row['valor'] ?? null)
+                        ? $row['valor']
+                        : $this->defaultAmountForRegistration($registration, $data['default_value'] ?? null)),
                     'descricao' => $this->nullableText($row['descricao'] ?? null),
                 ];
             })
@@ -203,12 +209,16 @@ class LancamentoBatchCreator
             ->values();
 
         if ($rows->isEmpty()) {
-            $rows = $selectedIds->map(fn (int $id): array => [
-                'registration_id' => $id,
-                'nome' => null,
-                'valor' => $this->amount($data['default_value'] ?? $this->defaultRegistrationAmount()),
-                'descricao' => null,
-            ]);
+            $rows = $selectedIds->map(function (int $id) use ($data, $registrationType): array {
+                $registration = $registrationType::query()->find($id);
+
+                return [
+                    'registration_id' => $id,
+                    'nome' => null,
+                    'valor' => $this->amount($this->defaultAmountForRegistration($registration, $data['default_value'] ?? null)),
+                    'descricao' => null,
+                ];
+            });
         }
 
         $duplicates = $rows
@@ -265,6 +275,23 @@ class LancamentoBatchCreator
     private function defaultRegistrationAmount(): int
     {
         return (int) (app(GeneralSettings::class)->valor_acampamento ?? 0);
+    }
+
+    private function defaultAmountForRegistration(?Model $registration, mixed $fallbackAmount): int
+    {
+        if ($registration instanceof EquipeTrabalho) {
+            $amount = $this->allocator->expectedAmountFor($registration);
+
+            if ($amount === null) {
+                throw ValidationException::withMessages([
+                    'registration_ids' => $this->allocator->missingConfiguredAmountMessageFor($registration),
+                ]);
+            }
+
+            return $amount;
+        }
+
+        return $this->amount($fallbackAmount ?? $this->defaultRegistrationAmount());
     }
 
     private function amount(mixed $value): int

@@ -5,6 +5,7 @@ namespace Database\Seeders\Support;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusInscricaoEquipeTrabalho;
+use App\Enums\TipoEquipeTrabalho;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 
@@ -112,6 +113,7 @@ class DemoRegistrationData
             'status' => self::equipeTrabalhoStatus($index)->value,
             'tribo_id' => $triboId,
             'descricao' => self::DEMO_OBSERVATION,
+            'tipo_equipe' => self::equipeTrabalhoType($index)->value,
             'created_at' => $createdAt,
             'updated_at' => $createdAt,
         ];
@@ -208,6 +210,13 @@ class DemoRegistrationData
             1, 2 => StatusInscricaoEquipeTrabalho::Pendente,
             default => StatusInscricaoEquipeTrabalho::Aprovado,
         };
+    }
+
+    private static function equipeTrabalhoType(int $index): TipoEquipeTrabalho
+    {
+        return ($index % 4) === 0
+            ? TipoEquipeTrabalho::Externa
+            : TipoEquipeTrabalho::Interna;
     }
 
     private static function campistaPaymentMethod(int $index, StatusInscricao $status): ?FormaPagamento
