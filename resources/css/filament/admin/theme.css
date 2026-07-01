@@ -779,7 +779,7 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-table {
-    min-width: 92rem;
+    min-width: 84rem;
     table-layout: fixed;
 }
 

@@ -71,6 +71,8 @@ it('renders a readable financial launch view page', function () {
         ->assertSee('Pix')
         ->assertSee('Receita')
         ->assertSee('Inscrições do Acampamento')
+        ->assertSee('heroicon-o-ticket', false)
+        ->assertSee('background-color: #f46b12', false)
         ->assertSee('Parcela única João View')
         ->assertSee('Item de inscrição vinculado à categoria')
         ->assertSee('04/07/2026')
@@ -88,6 +90,7 @@ it('configures the launch table to open view pages by default while keeping edit
         ->toContain('->recordUrl(')
         ->toContain("static::getUrl('view'")
         ->toContain('->recordActions(')
+        ->not->toContain('RecordActionsPosition::BeforeColumns')
         ->toContain('EditAction::make()');
 });
 
@@ -101,6 +104,8 @@ it('uses an edit-like read-only layout on the launch view page', function () {
         ->toContain("->description('Classifique valores, categorias e vínculos financeiros.')")
         ->toContain("Section::make('Comprovantes')")
         ->toContain("RepeatableEntry::make('items')")
+        ->toContain("TextEntry::make('categoria_label')")
+        ->toContain('IconBadge::tile($item->categoria')
         ->toContain('->contained()')
         ->not->toContain('->table([');
 });
@@ -115,6 +120,9 @@ it('uses a compact readable layout for the launch table columns', function () {
         ->toContain("->label('Tipo')")
         ->toContain("->label('Data')")
         ->toContain("->label('Itens lançados')")
+        ->toContain("->width('18rem')")
+        ->toContain("->width('9.5rem')")
+        ->toContain("->width('7.5rem')")
         ->toContain("->headerTooltip('Data do lançamento')")
         ->toContain('->lineClamp(1)')
         ->toContain('self::registrationPaymentBadges($record)')
@@ -126,7 +134,7 @@ it('uses a compact readable layout for the launch table columns', function () {
         ->toContain('Itens deste lançamento')
         ->and($theme)
         ->toContain('.juvenil-lancamento-table .fi-ta-table')
-        ->toContain('min-width: 92rem;')
+        ->toContain('min-width: 84rem;')
         ->toContain('.juvenil-lancamento-table__category-stack')
         ->toContain('.juvenil-lancamento-table__category-stack-extra')
         ->toContain('margin-inline-start: -0.35rem;')

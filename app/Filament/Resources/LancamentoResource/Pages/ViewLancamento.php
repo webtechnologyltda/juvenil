@@ -14,6 +14,7 @@ use App\Models\Lancamento;
 use App\Models\LancamentoItem;
 use App\Support\Financeiro\LancamentoReceiptDocuments;
 use App\Support\Financeiro\LancamentoRegistrationCard;
+use App\Support\IconBadge;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -207,9 +208,10 @@ class ViewLancamento extends ViewRecord
                                                 'xl' => 4,
                                             ]),
 
-                                        TextEntry::make('categoria.nome')
+                                        TextEntry::make('categoria_label')
                                             ->label('Categoria')
-                                            ->badge()
+                                            ->state(fn (LancamentoItem $record): HtmlString => $this->categoryLabel($record))
+                                            ->html()
                                             ->placeholder('Sem categoria')
                                             ->columnSpan([
                                                 'default' => 'full',
@@ -324,6 +326,15 @@ class ViewLancamento extends ViewRecord
         }
 
         return null;
+    }
+
+    private function categoryLabel(LancamentoItem $item): HtmlString
+    {
+        if (! $item->categoria) {
+            return new HtmlString('<span class="text-sm text-gray-400">Sem categoria</span>');
+        }
+
+        return IconBadge::tile($item->categoria, $item->categoria->nome, fallbackIcon: 'heroicon-o-tag');
     }
 
     private function registrationLabel(LancamentoItem $item): string|HtmlString

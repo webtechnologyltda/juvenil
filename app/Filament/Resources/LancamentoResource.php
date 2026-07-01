@@ -70,7 +70,7 @@ class LancamentoResource extends Resource
                     ->searchable()
                     ->lineClamp(1)
                     ->tooltip(fn (Lancamento $record): string => $record->nome)
-                    ->width('20rem'),
+                    ->width('18rem'),
 
                 TextColumn::make('valor')
                     ->prefix(fn (Lancamento $record) => ($record->tipo == TipoLacamento::Despesa ? '-' : '').'R$ ')
@@ -109,7 +109,8 @@ class LancamentoResource extends Resource
                     ->formatStateUsing(fn (mixed $state, Lancamento $record): HtmlString => self::registrationPaymentBadges($record))
                     ->html()
                     ->placeholder('Sem vínculos')
-                    ->width('18.5rem'),
+                    ->width('9.5rem')
+                    ->grow(false),
 
                 TextColumn::make('status')
                     ->badge()
@@ -123,7 +124,7 @@ class LancamentoResource extends Resource
                     ->badge()
                     ->placeholder('Sem lote')
                     ->searchable()
-                    ->width('10.5rem')
+                    ->width('7.5rem')
                     ->grow(false),
 
                 TextColumn::make('data')
