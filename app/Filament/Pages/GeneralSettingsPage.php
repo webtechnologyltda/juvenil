@@ -165,6 +165,19 @@ class GeneralSettingsPage extends SettingsPage
                                         'lg' => '3',
                                     ]),
 
+                                TextInput::make('waitlist_invitation_hours')
+                                    ->label('Validade do convite da fila')
+                                    ->integer()
+                                    ->minValue(1)
+                                    ->required()
+                                    ->suffix('horas')
+                                    ->helperText('Tempo padrão para a pessoa convocada finalizar a ficha pelo link único.')
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => '6',
+                                        'lg' => '3',
+                                    ]),
+
                             ])
                             ->columnSpan([
                                 'default' => 'full',

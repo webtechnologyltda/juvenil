@@ -24,6 +24,8 @@ class GeneralSettings extends Settings
 
     public ?int $qtd_max_vagas_masculino;
 
+    public int $waitlist_invitation_hours;
+
     public ?\DateTime $data_inicio_inscricoes;
 
     public ?\DateTime $data_final_inscricoes;

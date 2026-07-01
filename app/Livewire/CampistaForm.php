@@ -4,8 +4,10 @@ namespace App\Livewire;
 
 use App\Models\Campista;
 use App\Models\User;
+use App\Models\WaitlistEntry;
 use App\Settings\GeneralSettings;
 use App\Support\CampistaRegistrationAvailability;
+use App\Support\Campistas\WaitlistManager;
 use App\Support\FilamentUploadState;
 use App\Support\RegistrationAgeLimits;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -48,16 +50,22 @@ class CampistaForm extends Component implements HasActions, HasForms
     #[Session]
     public $comprado = false;
 
+    public ?WaitlistEntry $waitlistEntry = null;
+
+    public ?string $waitlistToken = null;
+
     public function render()
     {
         return view('livewire.campista-form');
     }
 
-    public function mount()
+    public function mount(?WaitlistEntry $waitlistEntry = null, ?string $token = null)
     {
         $this->settings = app(GeneralSettings::class)->toArray();
+        $this->waitlistEntry = $waitlistEntry;
+        $this->waitlistToken = $token;
         // pega o valor de comprado do localstorage
-        $this->getForm('form')->fill();
+        $this->getForm('form')->fill($this->waitlistFormDefaults());
     }
 
     #[Computed]
@@ -131,6 +139,8 @@ class CampistaForm extends Component implements HasActions, HasForms
                         TextInput::make('nome')
                             ->label('Nome Completo')
                             ->required()
+                            ->disabled(fn (): bool => $this->hasWaitlistInvitation())
+                            ->dehydrated()
                             ->columnSpan([
                                 'default' => 1,
                                 'sm' => 3,
@@ -151,6 +161,8 @@ class CampistaForm extends Component implements HasActions, HasForms
 
                         ToggleButtons::make('form_data.sexo')
                             ->required()
+                            ->disabled(fn (): bool => $this->hasWaitlistInvitation())
+                            ->dehydrated()
                             ->columnSpan([
                                 'default' => 1,
                                 'sm' => 1,
@@ -171,7 +183,7 @@ class CampistaForm extends Component implements HasActions, HasForms
                                 'M' => 'eos-male',
                                 'F' => 'eos-female',
                             ])
-                            ->disableOptionWhen(fn (string $value): bool => ! $this->availability->sexHasVacancy($value))
+                            ->disableOptionWhen(fn (string $value): bool => ! $this->hasWaitlistInvitation() && ! $this->availability->sexHasVacancy($value))
                             ->label('Sexo'),
 
                         TextInput::make('form_data.altura')
@@ -216,6 +228,8 @@ class CampistaForm extends Component implements HasActions, HasForms
                         TextInput::make('form_data.telefone_campista')
                             ->mask('(99) 9 9999-9999')
                             ->required()
+                            ->disabled(fn (): bool => $this->hasWaitlistInvitation())
+                            ->dehydrated()
                             ->columnSpan([
                                 'default' => 1,
                                 'sm' => 1,
@@ -590,7 +604,7 @@ class CampistaForm extends Component implements HasActions, HasForms
     {
         $availability = CampistaRegistrationAvailability::fromSettings(app(GeneralSettings::class));
 
-        if (! $availability->registrationOpen()) {
+        if (! $this->hasWaitlistInvitation() && ! $availability->registrationOpen()) {
             Notification::make()
                 ->title('Inscrições encerradas')
                 ->body($availability->unavailableRegistrationMessage())
@@ -603,7 +617,7 @@ class CampistaForm extends Component implements HasActions, HasForms
 
         $selectedSex = data_get($this->data, 'form_data.sexo');
 
-        if ($selectedSex !== null && $selectedSex !== '' && ! $availability->sexHasVacancy($selectedSex)) {
+        if (! $this->hasWaitlistInvitation() && $selectedSex !== null && $selectedSex !== '' && ! $availability->sexHasVacancy($selectedSex)) {
             Notification::make()
                 ->title('Vagas indisponíveis')
                 ->body($availability->unavailableSelectedSexMessage($selectedSex))
@@ -618,7 +632,7 @@ class CampistaForm extends Component implements HasActions, HasForms
 
         $availability = CampistaRegistrationAvailability::fromSettings(app(GeneralSettings::class));
 
-        if (! $availability->registrationOpen()) {
+        if (! $this->hasWaitlistInvitation() && ! $availability->registrationOpen()) {
             Notification::make()
                 ->title('Inscrições encerradas')
                 ->body($availability->unavailableRegistrationMessage())
@@ -629,7 +643,7 @@ class CampistaForm extends Component implements HasActions, HasForms
             return;
         }
 
-        if (! $availability->sexHasVacancy($selectedSex)) {
+        if (! $this->hasWaitlistInvitation() && ! $availability->sexHasVacancy($selectedSex)) {
             Notification::make()
                 ->title('Vagas indisponíveis')
                 ->body($availability->unavailableSelectedSexMessage($selectedSex))
@@ -686,9 +700,29 @@ class CampistaForm extends Component implements HasActions, HasForms
 
             $this->data = Arr::only($this->data, ['nome', 'avatar_url', 'form_data']);
 
+            if ($this->hasWaitlistInvitation()) {
+                if (! app(WaitlistManager::class)->invitationCanBeUsed($this->waitlistEntry, (string) $this->waitlistToken)) {
+                    Notification::make()
+                        ->title('Convite indisponível')
+                        ->body('Este link da fila de espera expirou ou já foi usado.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                $this->data['nome'] = $this->waitlistEntry->nome;
+                data_set($this->data, 'form_data.sexo', $this->waitlistEntry->sexo);
+                data_set($this->data, 'form_data.telefone_campista', $this->waitlistEntry->telefone);
+            }
+
             $this->data['avatar_url'] = FilamentUploadState::storedPath($this->data['avatar_url'] ?? null, 'foto-formulario');
 
             $campista = Campista::create($this->data);
+
+            if ($this->hasWaitlistInvitation()) {
+                app(WaitlistManager::class)->markInscribed($this->waitlistEntry, $campista);
+            }
 
             $this->comprado = true;
             $this->dispatch('inscricao-realizada');
@@ -709,6 +743,8 @@ class CampistaForm extends Component implements HasActions, HasForms
                 ->sendToDatabase($recipient);
 
         } catch (\Exception $exception) {
+            report($exception);
+
             Notification::make()
                 ->title('Ops! Algo deu errado')
                 ->body('Por favor, tente novamente mais tarde.')
@@ -722,5 +758,25 @@ class CampistaForm extends Component implements HasActions, HasForms
     {
         $this->comprado = false;
         $this->reset(['data']);
+    }
+
+    public function hasWaitlistInvitation(): bool
+    {
+        return $this->waitlistEntry !== null && filled($this->waitlistToken);
+    }
+
+    private function waitlistFormDefaults(): array
+    {
+        if (! $this->hasWaitlistInvitation()) {
+            return [];
+        }
+
+        return [
+            'nome' => $this->waitlistEntry->nome,
+            'form_data' => [
+                'sexo' => $this->waitlistEntry->sexo,
+                'telefone_campista' => $this->waitlistEntry->telefone,
+            ],
+        ];
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\LancamentoReceiptController;
 use App\Http\Controllers\Admin\ReportExportFileController;
+use App\Models\WaitlistEntry;
 use App\Settings\GeneralSettings;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,14 @@ $campistaRegistrationPage = function () {
 
 Route::get('/', $campistaRegistrationPage)->name('welcome');
 Route::get('/campista', $campistaRegistrationPage)->name('campista');
+
+Route::get('/campista/fila/{waitlistEntry}/{token}', function (WaitlistEntry $waitlistEntry, string $token) {
+    $settings = app(GeneralSettings::class);
+
+    return view('waitlist-invitation', compact('settings', 'waitlistEntry', 'token'));
+})
+    ->middleware('signed')
+    ->name('waitlist.invitation.show');
 
 Route::get('/politica-privacidade', function () {
     return view('politica-privacidade');

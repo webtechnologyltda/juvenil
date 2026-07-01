@@ -401,7 +401,9 @@ it('alerts and disables a sex option when its campista vacancies are full', func
         ->assertDontSee('As inscrições foram encerradas pelo número de vagas preenchidas.');
 
     expect(campistaSexOptionIsDisabled($html, 'F'))->toBeTrue()
-        ->and(campistaSexOptionIsDisabled($html, 'M'))->toBeFalse();
+        ->and(campistaSexOptionIsDisabled($html, 'M'))->toBeFalse()
+        ->and($html)->toContain('role="alert"')
+        ->and($html)->toContain('text-[#052f35]');
 });
 
 it('closes campista registration when all sex-specific vacancies are full', function () {
@@ -502,6 +504,7 @@ function seedGeneralRegistrationSettings(array $overrides = []): void
         'qtd_max_vagas' => null,
         'qtd_max_vagas_feminino' => null,
         'qtd_max_vagas_masculino' => null,
+        'waitlist_invitation_hours' => 24,
         'data_inicio_inscricoes' => null,
         'data_final_inscricoes' => null,
         'pix_copia_cola' => null,

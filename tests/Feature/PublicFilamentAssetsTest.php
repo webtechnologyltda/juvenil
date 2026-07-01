@@ -31,6 +31,9 @@ it('keeps Filament modals viewport scoped across public registration surfaces', 
         ->toContain('.fi-modal > .fi-modal-window-ctn {')
         ->toContain('min-height: 100dvh;')
         ->toContain('grid-template-rows: minmax(1rem, 1fr) auto minmax(1rem, 1fr);')
+        ->toContain('body.has-mobile-bottom-nav .fi-modal:not(.fi-modal-slide-over) > .fi-modal-window-ctn {')
+        ->toContain('bottom: var(--juvenil-mobile-bottom-nav-space);')
+        ->toContain('max-height: calc(100dvh - var(--juvenil-mobile-bottom-nav-space) - 1.5rem);')
         ->toContain('body:has(.fi-modal.fi-modal-open) :is([data-motion-card], .out, .filament-registration-shell, .fi-section, .fi-ta, .fi-wi-stats-overview-stat, .fi-in-entry-wrp) {')
         ->toContain('transform: none !important;')
         ->toContain('backdrop-filter: none;');
@@ -279,6 +282,8 @@ it('ships the public GSAP motion layer and custom loader asset', function () {
         ->toContain('.juvenil-page-loader')
         ->toContain('.juvenil-mobile-bottom-nav')
         ->toContain('env(safe-area-inset-bottom)')
+        ->toContain('--juvenil-mobile-bottom-nav-space: calc(5.9rem + env(safe-area-inset-bottom));')
+        ->toContain('padding-bottom: var(--juvenil-mobile-bottom-nav-space);')
         ->toContain('@media (min-width: 1024px)')
         ->toContain('.campfire-loader-progress')
         ->toContain('html.gsap-scrolling')
