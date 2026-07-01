@@ -274,7 +274,7 @@ it('renders the administrative waitlist page with queue entries', function () {
     $this->actingAs($user)
         ->get(route('filament.admin.resources.waitlist-entries.index'))
         ->assertOk()
-        ->assertSee('Fila de espera')
+        ->assertSee('Adicionar na Fila de Espera')
         ->assertSee('Primeira Mulher')
         ->assertSee('Primeiro Homem');
 });
