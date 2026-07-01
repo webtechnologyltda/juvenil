@@ -33,6 +33,7 @@ it('renders the general settings page with registration payment controls', funct
         ->assertSee('Documento do termo')
         ->assertSee('Limite de Campistas Homens')
         ->assertSee('Limite de Campistas Mulheres')
+        ->assertSee('Validade do convite da fila')
         ->assertSee('Início das Inscrições')
         ->assertSee('Fim das Inscrições')
         ->assertDontSee('Mensagem de Bloqueio')
@@ -182,6 +183,7 @@ it('saves registration status settings as scalar values', function () {
             'qtd_max_vagas' => 120,
             'qtd_max_vagas_feminino' => 60,
             'qtd_max_vagas_masculino' => 60,
+            'waitlist_invitation_hours' => 36,
             'data_inicio_inscricoes' => '2026-06-10 19:00:00',
             'data_final_inscricoes' => '2026-06-20 19:30:00',
             'pix_copia_cola' => null,
@@ -219,6 +221,10 @@ it('saves registration status settings as scalar values', function () {
             ->where('group', 'general')
             ->where('name', 'valor_equipe_trabalho_externa')
             ->value('payload'))->toBe('8000')
+        ->and(DB::table('settings')
+            ->where('group', 'general')
+            ->where('name', 'waitlist_invitation_hours')
+            ->value('payload'))->toBe('36')
         ->and(DB::table('settings')
             ->where('group', 'general')
             ->where('name', 'liberacao_inscricoes_equipe_trabalho_status')

@@ -6,6 +6,7 @@ use App\Enums\LiberacaoInscricoesStatusEnum;
 use App\Enums\StatusInscricao;
 use App\Models\Campista;
 use App\Settings\GeneralSettings;
+use App\Support\Campistas\WaitlistManager;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 
@@ -24,6 +25,13 @@ class CampistaRegistrationAvailability
      * @var array<string, int>
      */
     private array $activeSexCounts = [];
+
+    private ?int $activeReservations = null;
+
+    /**
+     * @var array<string, int>
+     */
+    private array $activeSexReservations = [];
 
     /**
      * @param  array<string, mixed>  $settings
@@ -128,7 +136,7 @@ class CampistaRegistrationAvailability
             return null;
         }
 
-        return max(0, $capacity - $this->activeCount());
+        return max(0, $capacity - $this->activeCount() - $this->activeReservationCount());
     }
 
     public function activeRegistrations(): int
@@ -195,13 +203,27 @@ class CampistaRegistrationAvailability
 
     public function unavailableSexMessage(): ?string
     {
-        $labels = $this->unavailableSexLabels();
+        $labels = collect($this->unavailableSexes())
+            ->map(fn (string $sex): string => self::SEX_LABELS[$sex])
+            ->values()
+            ->all();
 
         if ($labels === []) {
             return null;
         }
 
         return 'Não há vagas disponíveis para o sexo '.$this->formatSexLabels($labels).'.';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function unavailableSexes(): array
+    {
+        return collect(array_keys(self::SEX_LABELS))
+            ->filter(fn (string $sex): bool => $this->sexLimitReached($sex))
+            ->values()
+            ->all();
     }
 
     public function unavailableSelectedSexMessage(?string $sex): string
@@ -221,26 +243,16 @@ class CampistaRegistrationAvailability
 
         $limit = $this->totalLimit();
 
-        return $limit !== null && $this->activeCount() >= $limit;
+        return ($limit !== null && ($this->activeCount() + $this->activeReservationCount()) >= $limit)
+            || app(WaitlistManager::class)->activeDemand() > 0;
     }
 
     public function sexLimitReached(string $sex): bool
     {
         $limit = $this->sexLimit($sex);
 
-        return $limit !== null && $this->activeCountForSex($sex) >= $limit;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function unavailableSexLabels(): array
-    {
-        return collect(array_keys(self::SEX_LABELS))
-            ->filter(fn (string $sex): bool => $this->sexLimitReached($sex))
-            ->map(fn (string $sex): string => self::SEX_LABELS[$sex])
-            ->values()
-            ->all();
+        return ($limit !== null && ($this->activeCountForSex($sex) + $this->activeReservationCountForSex($sex)) >= $limit)
+            || app(WaitlistManager::class)->activeDemandForSex($sex) > 0;
     }
 
     private function activeCount(): int
@@ -261,6 +273,20 @@ class CampistaRegistrationAvailability
             ->get(['form_data'])
             ->filter(fn (Campista $campista): bool => data_get($campista->form_data, 'sexo') === $sex)
             ->count();
+    }
+
+    private function activeReservationCount(): int
+    {
+        return $this->activeReservations ??= app(WaitlistManager::class)->activeReservations();
+    }
+
+    private function activeReservationCountForSex(string $sex): int
+    {
+        if (array_key_exists($sex, $this->activeSexReservations)) {
+            return $this->activeSexReservations[$sex];
+        }
+
+        return $this->activeSexReservations[$sex] = app(WaitlistManager::class)->activeReservationsForSex($sex);
     }
 
     private function manualStatus(): LiberacaoInscricoesStatusEnum

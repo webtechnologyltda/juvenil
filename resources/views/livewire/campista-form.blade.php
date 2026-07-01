@@ -21,7 +21,10 @@
     $registrationEndedByDate = $registrationStatus === App\Enums\LiberacaoInscricoesStatusEnum::LIBERADO
         && $registrationAvailability->registrationEnded();
     $registrationOpen = $registrationAvailability->registrationOpen();
+    $hasWaitlistInvitation = $this->hasWaitlistInvitation();
     $unavailableSexMessage = $registrationAvailability->unavailableSexMessage();
+    $unavailableSexes = $registrationAvailability->unavailableSexes();
+    $waitlistSex = count($unavailableSexes) === 1 ? $unavailableSexes[0] : null;
 @endphp
 
 <div>
@@ -159,7 +162,7 @@
                     </div>
                 </div>
             </section>
-        @elseif($registrationClosedByCapacity)
+        @elseif($registrationClosedByCapacity && ! $hasWaitlistInvitation)
             <section class="relative flex min-h-[34rem] flex-col items-center justify-center bg-[#052f35] p-6 text-white sm:p-10">
                 <div class="mx-auto max-w-screen-md text-center lg:px-2">
                     <p class="mb-0 text-2xl font-black uppercase tracking-[0.16em] text-[#f46b12]">Inscrições encerradas</p>
@@ -167,6 +170,7 @@
                     <p class="mx-4 mt-4 text-center text-sm text-[#d8f2fa] xl:text-xl">
                         As inscrições foram encerradas pelo número de vagas preenchidas.
                     </p>
+                    @livewire('campista-waitlist-form', ['sex' => $waitlistSex])
                     <div class="mt-10 flex justify-center">
                         <figure class="flex items-center justify-center rounded">
                             <img src="{{ asset('img/Campfire-bro.svg') }}" alt="" class="h-80 w-full rounded-2xl animate-spin-slow">
@@ -174,51 +178,60 @@
                     </div>
                 </div>
             </section>
-        @elseif($registrationOpen)
-            <form wire:submit.prevent="submitForm" class="space-y-6">
-                <div class="border border-[#9ddbef]/25 bg-[#052f35] p-4 text-[#d8f2fa]" data-registration-slots>
-                    <p class="text-sm font-black uppercase tracking-[0.14em] text-[#f46b12]">Inscrições abertas</p>
-                    @if($registrationAvailability->endsAtDisplay())
-                        <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">Falta para encerrar</p>
-                        <p class="mt-1 text-sm font-semibold text-[#9ddbef]">
-                            As inscrições encerram em {{ $registrationAvailability->endsAtDisplay() }}.
-                        </p>
-                        <div
-                            class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
-                            data-registration-countdown
-                            data-target="{{ $registrationAvailability->endsAtIso() }}"
-                        >
-                            <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
-                                <span class="block text-3xl font-black text-[#f46b12]" data-countdown-days>--</span>
-                                <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Dias</span>
+        @elseif($registrationOpen || $hasWaitlistInvitation)
+            <form
+                wire:submit.prevent="submitForm"
+                @class([
+                    'space-y-6',
+                    'light filament-registration-shell mx-auto max-w-5xl bg-white p-4 text-gray-950 shadow-[0_28px_90px_rgba(0,0,0,0.32)] ring-1 ring-[#f46b12]/35 sm:p-6 lg:p-8' => $hasWaitlistInvitation,
+                ])
+            >
+                @unless($hasWaitlistInvitation)
+                    <div class="border border-[#9ddbef]/25 bg-[#052f35] p-4 text-[#d8f2fa]" data-registration-slots>
+                        <p class="text-sm font-black uppercase tracking-[0.14em] text-[#f46b12]">Inscrições abertas</p>
+                        @if($registrationAvailability->endsAtDisplay())
+                            <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">Falta para encerrar</p>
+                            <p class="mt-1 text-sm font-semibold text-[#9ddbef]">
+                                As inscrições encerram em {{ $registrationAvailability->endsAtDisplay() }}.
+                            </p>
+                            <div
+                                class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
+                                data-registration-countdown
+                                data-target="{{ $registrationAvailability->endsAtIso() }}"
+                            >
+                                <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
+                                    <span class="block text-3xl font-black text-[#f46b12]" data-countdown-days>--</span>
+                                    <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Dias</span>
+                                </div>
+                                <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
+                                    <span class="block text-3xl font-black text-[#f46b12]" data-countdown-hours>--</span>
+                                    <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Horas</span>
+                                </div>
+                                <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
+                                    <span class="block text-3xl font-black text-[#f46b12]" data-countdown-minutes>--</span>
+                                    <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Minutos</span>
+                                </div>
+                                <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
+                                    <span class="block text-3xl font-black text-[#f46b12]" data-countdown-seconds>--</span>
+                                    <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Segundos</span>
+                                </div>
                             </div>
-                            <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
-                                <span class="block text-3xl font-black text-[#f46b12]" data-countdown-hours>--</span>
-                                <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Horas</span>
-                            </div>
-                            <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
-                                <span class="block text-3xl font-black text-[#f46b12]" data-countdown-minutes>--</span>
-                                <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Minutos</span>
-                            </div>
-                            <div class="border border-[#9ddbef]/25 bg-[#03272c]/80 p-3 text-center">
-                                <span class="block text-3xl font-black text-[#f46b12]" data-countdown-seconds>--</span>
-                                <span class="mt-1 block text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#9ddbef]">Segundos</span>
-                            </div>
-                        </div>
-                    @else
-                        <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">Inscrições abertas</p>
-                    @endif
-                    @if($registrationAvailability->availableSlotsMessage())
-                        <p class="mt-2 text-sm font-semibold text-[#9ddbef]">
-                            {{ $registrationAvailability->availableSlotsMessage() }} · {{ $registrationAvailability->activeRegistrationsMessage() }}
-                        </p>
-                    @endif
-                </div>
+                        @else
+                            <p class="mt-2 text-2xl font-black uppercase tracking-normal text-white">Inscrições abertas</p>
+                        @endif
+                        @if($registrationAvailability->availableSlotsMessage())
+                            <p class="mt-2 text-sm font-semibold text-[#9ddbef]">
+                                {{ $registrationAvailability->availableSlotsMessage() }} · {{ $registrationAvailability->activeRegistrationsMessage() }}
+                            </p>
+                        @endif
+                    </div>
+                @endunless
 
-                @if($unavailableSexMessage)
-                    <div class="border border-[#f46b12]/45 bg-[#f46b12]/10 p-4 text-[#d8f2fa]" role="alert">
+                @if(! $hasWaitlistInvitation && $unavailableSexMessage)
+                    <div class="border border-[#f46b12]/45 bg-[#f46b12]/10 p-4 text-[#052f35]" role="alert">
                         <p class="text-sm font-black uppercase tracking-[0.14em] text-[#f46b12]">Vagas indisponíveis</p>
                         <p class="mt-2 text-sm font-semibold">{{ $unavailableSexMessage }}</p>
+                        @livewire('campista-waitlist-form', ['sex' => $waitlistSex])
                     </div>
                 @endif
 

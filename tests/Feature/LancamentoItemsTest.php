@@ -22,7 +22,49 @@ it('moves financial classification from lancamentos to lancamento items', functi
         ->and(Schema::hasColumn('lancamento_items', 'registration_id'))->toBeTrue()
         ->and(Schema::hasColumn('lancamentos', 'batch_code'))->toBeTrue()
         ->and(Schema::hasColumn('lancamentos', 'categoria_lancamento_id'))->toBeFalse()
-        ->and(Schema::hasTable('financial_entry_registrations'))->toBeFalse();
+        ->and(Schema::hasTable('financial_entry_registrations'))->toBeFalse()
+        ->and(lancamentoItemIndexColumns('lancamento_items_registration_category_unique'))->toBe([
+            'lancamento_id',
+            'registration_type',
+            'registration_id',
+            'categoria_lancamento_id',
+        ])
+        ->and(lancamentoItemIndexColumns('lancamento_items_lancamento_id_index'))->toBe([]);
+});
+
+it('allows the same registration to be linked to different launch item categories', function () {
+    $campista = Campista::factory()->create([
+        'tribo_id' => null,
+        'user_id' => null,
+    ]);
+
+    $lancamento = lancamentoItemEntry();
+
+    $inscricao = CategoriaLancamento::factory()->create([
+        'tipo' => TipoLacamento::Receita->value,
+    ]);
+
+    $contribuicao = CategoriaLancamento::factory()->create([
+        'tipo' => TipoLacamento::Receita->value,
+    ]);
+
+    $lancamento->items()->create([
+        'nome' => 'Inscrição',
+        'valor' => 10000,
+        'categoria_lancamento_id' => $inscricao->id,
+        'registration_type' => $campista::class,
+        'registration_id' => $campista->id,
+    ]);
+
+    $lancamento->items()->create([
+        'nome' => 'Contribuição',
+        'valor' => 5000,
+        'categoria_lancamento_id' => $contribuicao->id,
+        'registration_type' => $campista::class,
+        'registration_id' => $campista->id,
+    ]);
+
+    expect($lancamento->items()->count())->toBe(2);
 });
 
 it('syncs launch totals from items and marks paid registrations from paid item values', function () {
@@ -117,4 +159,13 @@ function lancamentoItemEntry(array $overrides = []): Lancamento
         'comprovante' => [],
         'user_id' => null,
     ], $overrides));
+}
+
+/**
+ * @return list<string>
+ */
+function lancamentoItemIndexColumns(string $indexName): array
+{
+    return collect(Schema::getIndexes('lancamento_items'))
+        ->firstWhere('name', $indexName)['columns'] ?? [];
 }

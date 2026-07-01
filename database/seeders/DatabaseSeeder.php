@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
                 UserSeeder::class,
                 TriboSeeder::class,
                 CampistaSeeder::class,
+                WaitlistEntrySeeder::class,
                 EquipeTrabalhoSeeder::class,
                 LancamentoSeeder::class,
             ]);
