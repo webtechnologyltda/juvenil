@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\FormaPagamento;
+use App\Enums\StatusInscricao;
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoEquipeTrabalho;
@@ -244,6 +245,8 @@ it('links linked registrations from launch items', function () {
 
     $campista = Campista::factory()->create([
         'nome' => 'Vitória Costa 119',
+        'avatar_url' => 'foto-formulario/vitoria-view.png',
+        'status' => StatusInscricao::Pago,
     ]);
 
     $category = CategoriaLancamento::factory()->create([
@@ -272,7 +275,12 @@ it('links linked registrations from launch items', function () {
     $this->actingAs($user)
         ->get(route('filament.admin.resources.lancamentos.view', ['record' => $lancamento]))
         ->assertOk()
-        ->assertSee('Campista #'.$campista->id.' - Vitória Costa 119')
+        ->assertSee('<div class="juvenil-launch-registration-card">', false)
+        ->assertSee('Campista #'.$campista->id)
+        ->assertSee('Vitória Costa 119')
+        ->assertSee('Pago')
+        ->assertSee('/storage/foto-formulario/vitoria-view.png', false)
+        ->assertDontSee('Campista #'.$campista->id.' - Vitória Costa 119')
         ->assertSee('Visualizar inscrição')
         ->assertSee(route('filament.admin.resources.campistas.view', ['record' => $campista]), false);
 });
@@ -317,7 +325,7 @@ it('links team work registrations from launch items to a view page', function ()
     $this->actingAs($user)
         ->get(route('filament.admin.resources.lancamentos.view', ['record' => $lancamento]))
         ->assertOk()
-        ->assertSee('juvenil-launch-registration-card', false)
+        ->assertSee('<div class="juvenil-launch-registration-card">', false)
         ->assertSee('Equipe #'.$member->id)
         ->assertSee('Servo Equipe View')
         ->assertSee('Cozinha')

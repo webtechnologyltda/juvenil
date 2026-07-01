@@ -8,6 +8,7 @@ use App\Enums\TipoEquipeTrabalho;
 use App\Enums\TipoLacamento;
 use App\Filament\Resources\LancamentoResource\Tables\LancamentoItemCampistasTable;
 use App\Filament\Resources\LancamentoResource\Tables\LancamentoItemEquipeTrabalhoTable;
+use App\Models\Campista;
 use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
@@ -824,6 +825,16 @@ abstract class LancamentoForm
 
             return $registration
                 ? LancamentoRegistrationCard::forTeam($registration)
+                : self::registrationName($registrationType, $registrationId);
+        }
+
+        if ($registrationType === Campista::class) {
+            $registration = Campista::query()
+                ->with('tribo')
+                ->find($registrationId);
+
+            return $registration
+                ? LancamentoRegistrationCard::forCampista($registration)
                 : self::registrationName($registrationType, $registrationId);
         }
 

@@ -349,6 +349,10 @@ class ViewLancamento extends ViewRecord
             return LancamentoRegistrationCard::forTeam($registration);
         }
 
+        if ($registration instanceof Campista) {
+            return LancamentoRegistrationCard::forCampista($registration);
+        }
+
         $type = class_basename((string) $item->registration_type);
         $name = (string) ($registration?->getAttribute('nome') ?? 'Inscrição removida');
 

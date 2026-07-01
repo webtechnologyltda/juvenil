@@ -512,6 +512,7 @@ it('exposes item links in the financial entry form and table', function () {
         ->not->toContain("Textarea::make('descricao')\n                                ->toolbarButtons")
         ->toContain('RegistrationPaymentAllocator::registrationTypeOptions')
         ->toContain('registrationOptions')
+        ->toContain('LancamentoRegistrationCard::forCampista')
         ->toContain('LancamentoRegistrationCard::forTeam')
         ->not->toContain('registrationSearchResults')
         ->toContain("Textarea::make('observacao')")
@@ -562,6 +563,43 @@ it('exposes item links in the financial entry form and table', function () {
     expect(Schema::getColumnType('lancamentos', 'descricao'))->toBe('text');
 });
 
+it('renders selected campista registration as a compact card on the edit form', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+
+    $campista = Campista::factory()->create([
+        'nome' => 'Maria Selecionada Edit',
+        'avatar_url' => 'foto-formulario/maria-edit.png',
+        'status' => StatusInscricao::Pago,
+    ]);
+
+    $category = CategoriaLancamento::factory()->create([
+        'nome' => 'Inscrição Edit',
+        'tipo' => TipoLacamento::Receita,
+        'ativo' => true,
+    ]);
+
+    $lancamento = financialItemEntry([
+        'nome' => 'Lançamento campista selecionada',
+        'tipo' => TipoLacamento::Receita,
+    ]);
+    $lancamento->items()->create(financialItemPayload($category, $campista, [
+        'valor' => 35000,
+    ]));
+
+    $this->actingAs($user)
+        ->get(route('filament.admin.resources.lancamentos.edit', ['record' => $lancamento]))
+        ->assertOk()
+        ->assertSee('<div class="juvenil-launch-registration-card">', false)
+        ->assertSee('Campista #'.$campista->id)
+        ->assertSee('Maria Selecionada Edit')
+        ->assertSee('Pago')
+        ->assertSee('/storage/foto-formulario/maria-edit.png', false)
+        ->assertDontSee('Campista #'.$campista->id.' - Maria Selecionada Edit');
+});
+
 it('renders selected team work registration as a compact card on the edit form', function () {
     $this->seed(ShieldSeeder::class);
 
@@ -593,8 +631,7 @@ it('renders selected team work registration as a compact card on the edit form',
     $this->actingAs($user)
         ->get(route('filament.admin.resources.lancamentos.edit', ['record' => $lancamento]))
         ->assertOk()
-        ->assertSee('juvenil-launch-registration-card', false)
-        ->assertDontSee('&lt;div class=&quot;juvenil-launch-registration-card&quot;', false)
+        ->assertSee('<div class="juvenil-launch-registration-card">', false)
         ->assertSee('Equipe #'.$member->id)
         ->assertSee('Servo Selecionado Edit')
         ->assertSee('Liturgia')
