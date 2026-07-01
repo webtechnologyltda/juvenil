@@ -245,11 +245,13 @@ abstract class LancamentoForm
                                         ->tableArguments(fn (Get $get, ?Lancamento $record): array => [
                                             'excluding_lancamento_id' => $record?->id,
                                             'current_registration_id' => filled($get('registration_id')) ? (int) $get('registration_id') : null,
+                                            'categoria_lancamento_id' => filled($get('categoria_lancamento_id')) ? (int) $get('categoria_lancamento_id') : null,
                                         ])
                                         ->getOptionLabelUsing(fn (Get $get, ?Lancamento $record, mixed $value): ?string => self::registrationOptionLabel(
                                             $get('registration_type'),
                                             $value,
                                             $record?->id,
+                                            filled($get('categoria_lancamento_id')) ? (int) $get('categoria_lancamento_id') : null,
                                         ))
                                         ->selectAction(fn (Action $action): Action => $action
                                             ->label('Selecionar inscrição')
@@ -773,7 +775,7 @@ abstract class LancamentoForm
         return $registration?->getAttribute('nome');
     }
 
-    private static function registrationOptionLabel(?string $registrationType, mixed $registrationId, ?int $excludingLancamentoId = null): ?string
+    private static function registrationOptionLabel(?string $registrationType, mixed $registrationId, ?int $excludingLancamentoId = null, ?int $categoryId = null): ?string
     {
         if (blank($registrationType) || blank($registrationId)) {
             return null;
@@ -786,7 +788,7 @@ abstract class LancamentoForm
         }
 
         return app(RegistrationPaymentAllocator::class)
-            ->registrationOptions($registrationType, $excludingLancamentoId, $registrationId)[$registrationId]
+            ->registrationOptions($registrationType, $excludingLancamentoId, $registrationId, $categoryId)[$registrationId]
             ?? self::registrationName($registrationType, $registrationId);
     }
 

@@ -5,13 +5,16 @@ namespace App\Filament\Resources\LancamentoResource\Pages;
 use App\Filament\Resources\LancamentoResource;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages\Concerns\HasLancamentoHelpAction;
+use App\Filament\Resources\LancamentoResource\Pages\Concerns\NotifiesLancamentoValidation;
 use App\Models\Lancamento;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Validation\ValidationException;
 
 class CreateLancamento extends CreateRecord
 {
     use HasLancamentoHelpAction;
+    use NotifiesLancamentoValidation;
 
     protected static string $resource = LancamentoResource::class;
 
@@ -36,10 +39,16 @@ class CreateLancamento extends CreateRecord
         $data['valor'] = app(RegistrationPaymentAllocator::class)->signedTotalForItems($data['tipo'] ?? null, $this->itemData);
         $data['comprovante'] = LancamentoForm::normalizeComprovanteState($data['comprovante'] ?? null);
 
-        app(RegistrationPaymentAllocator::class)->validateItems(
-            new Lancamento($data),
-            $this->itemData,
-        );
+        try {
+            app(RegistrationPaymentAllocator::class)->validateItems(
+                new Lancamento($data),
+                $this->itemData,
+            );
+        } catch (ValidationException $exception) {
+            $this->notifyLancamentoValidationException($exception);
+
+            throw $exception;
+        }
 
         return parent::mutateFormDataBeforeCreate($data);
     }

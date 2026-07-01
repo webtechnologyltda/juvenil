@@ -35,7 +35,7 @@ class RegistrationPaymentAllocator
     /**
      * @return array<int, string>
      */
-    public function registrationOptions(?string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null): array
+    public function registrationOptions(?string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null): array
     {
         if (! $this->isSupportedRegistrationType($registrationType)) {
             return [];
@@ -46,13 +46,14 @@ class RegistrationPaymentAllocator
             registrationType: $registrationType,
             excludingLancamentoId: $excludingLancamentoId,
             currentRegistrationId: $currentRegistrationId,
+            categoryId: $categoryId,
         );
     }
 
     /**
      * @return array<int, string>
      */
-    public function registrationSearchResults(?string $registrationType, ?string $search, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null): array
+    public function registrationSearchResults(?string $registrationType, ?string $search, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null): array
     {
         if (! $this->isSupportedRegistrationType($registrationType) || blank($search)) {
             return [];
@@ -63,6 +64,7 @@ class RegistrationPaymentAllocator
             registrationType: $registrationType,
             excludingLancamentoId: $excludingLancamentoId,
             currentRegistrationId: $currentRegistrationId,
+            categoryId: $categoryId,
             search: $search,
             limit: self::REGISTRATION_SEARCH_LIMIT,
         );
@@ -97,16 +99,27 @@ class RegistrationPaymentAllocator
                 continue;
             }
 
-            $key = $item['registration_type'].'#'.$item['registration_id'];
+            $key = $item['registration_type'].'#'.$item['registration_id'].'#'.$item['categoria_lancamento_id'];
 
             if (array_key_exists($key, $seenRegistrations)) {
                 throw ValidationException::withMessages([
-                    'items' => 'A mesma inscrição não pode ser vinculada duas vezes ao mesmo lançamento.',
+                    'items' => 'A mesma inscrição não pode ser vinculada duas vezes à mesma categoria no lançamento.',
                 ]);
             }
 
             $seenRegistrations[$key] = true;
             $registration = $this->registrationFromItem($item);
+
+            if ($this->registrationIsCancelled($registration)) {
+                throw ValidationException::withMessages([
+                    'items' => sprintf('%s está com inscrição cancelada.', $this->registrationName($registration)),
+                ]);
+            }
+
+            if (! $this->itemCategoryCountsTowardRegistrationPayment($item['registration_type'], $item['categoria_lancamento_id'])) {
+                continue;
+            }
+
             $excludingLancamentoId = $lancamento->exists ? (int) $lancamento->getKey() : null;
             $expected = $this->expectedAmountFor($registration);
 
@@ -116,7 +129,7 @@ class RegistrationPaymentAllocator
                 ]);
             }
 
-            if ($this->registrationHasLinkedItem($registration, $excludingLancamentoId)) {
+            if ($this->registrationHasPaymentLinkedItem($registration, $excludingLancamentoId)) {
                 throw ValidationException::withMessages([
                     'items' => sprintf('%s já possui lançamento vinculado.', $this->registrationName($registration)),
                 ]);
@@ -215,6 +228,7 @@ class RegistrationPaymentAllocator
         $query = LancamentoItem::query()
             ->where('registration_type', $registration::class)
             ->where('registration_id', $registration->getKey())
+            ->where('categoria_lancamento_id', $this->categoryForRegistrationType($registration::class)?->id)
             ->whereHas('lancamento', fn ($query) => $query->where('status', StatusLacamento::Pago->value));
 
         if ($excludingLancamentoId !== null) {
@@ -419,7 +433,8 @@ class RegistrationPaymentAllocator
         return Lancamento::query()
             ->whereHas('items', fn ($query) => $query
                 ->where('registration_type', $registration::class)
-                ->where('registration_id', $registration->getKey()))
+                ->where('registration_id', $registration->getKey())
+                ->where('categoria_lancamento_id', $this->categoryForRegistrationType($registration::class)?->id))
             ->where('status', StatusLacamento::Pago->value)
             ->orderByDesc('data')
             ->orderByDesc('id')
@@ -447,7 +462,7 @@ class RegistrationPaymentAllocator
      * @param  class-string<Model>  $registrationType
      * @return array<int, string>
      */
-    private function registrationOptionResults(string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?string $search = null, ?int $limit = null): array
+    private function registrationOptionResults(string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null, ?string $search = null, ?int $limit = null): array
     {
         return $registrationType::query()
             ->when(filled($search), fn ($query) => $query->where('nome', 'like', '%'.str_replace(['%', '_'], ['\\%', '\\_'], trim((string) $search)).'%'))
@@ -462,6 +477,7 @@ class RegistrationPaymentAllocator
                 registration: $registration,
                 excludingLancamentoId: $excludingLancamentoId,
                 currentRegistrationId: $currentRegistrationId,
+                categoryId: $categoryId,
             ))
             ->take($limit ?? PHP_INT_MAX)
             ->mapWithKeys(fn (Model $registration): array => [
@@ -470,7 +486,7 @@ class RegistrationPaymentAllocator
             ->all();
     }
 
-    private function registrationCanReceivePayment(Model $registration, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null): bool
+    private function registrationCanReceivePayment(Model $registration, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null): bool
     {
         if ($this->registrationIsCancelled($registration)) {
             return false;
@@ -480,17 +496,36 @@ class RegistrationPaymentAllocator
             return true;
         }
 
-        return ! $this->registrationHasLinkedItem($registration, $excludingLancamentoId)
+        if (! $this->categoryCountsTowardRegistrationPayment($registration::class, $categoryId)) {
+            return true;
+        }
+
+        return ! $this->registrationHasPaymentLinkedItem($registration, $excludingLancamentoId)
             && $this->remainingAmountFor($registration, $excludingLancamentoId) > 0;
     }
 
-    private function registrationHasLinkedItem(Model $registration, ?int $excludingLancamentoId = null): bool
+    private function registrationHasPaymentLinkedItem(Model $registration, ?int $excludingLancamentoId = null): bool
     {
         return LancamentoItem::query()
             ->where('registration_type', $registration::class)
             ->where('registration_id', $registration->getKey())
+            ->where('categoria_lancamento_id', $this->categoryForRegistrationType($registration::class)?->id)
             ->when($excludingLancamentoId !== null, fn ($query) => $query->where('lancamento_id', '<>', $excludingLancamentoId))
             ->exists();
+    }
+
+    private function itemCategoryCountsTowardRegistrationPayment(string $registrationType, int $categoryId): bool
+    {
+        return $this->categoryCountsTowardRegistrationPayment($registrationType, $categoryId);
+    }
+
+    private function categoryCountsTowardRegistrationPayment(string $registrationType, ?int $categoryId): bool
+    {
+        if ($categoryId === null) {
+            return true;
+        }
+
+        return $this->categoryForRegistrationType($registrationType)?->id === $categoryId;
     }
 
     public function categoryForRegistrationType(string $registrationType): ?CategoriaLancamento

@@ -21,6 +21,7 @@ class LancamentoItemCampistasTable
                     Campista::class,
                     $arguments['excluding_lancamento_id'] ?? null,
                     $arguments['current_registration_id'] ?? null,
+                    $arguments['categoria_lancamento_id'] ?? null,
                 )));
             })
             ->columns(CampistaTable::getListTableColumns())

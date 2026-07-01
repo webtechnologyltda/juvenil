@@ -186,6 +186,63 @@ it('searches registration item options by registration name and hides already li
         ->and($results)->not->toHaveKey($maria->id);
 });
 
+it('allows linking the same registration to different item categories without consuming registration balance twice', function () {
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $registrationCategory = financialItemRegistrationCategory(Campista::class);
+    $extraCategory = CategoriaLancamento::query()->create([
+        'nome' => 'Camiseta do acampamento',
+        'tipo' => TipoLacamento::Receita,
+        'cor' => '#14b8a6',
+        'icone' => 'heroicon-o-shopping-bag',
+        'ativo' => true,
+    ]);
+    $campista = financialItemCampista('Camila Multicategoria');
+    $lancamento = financialItemEntry(['status' => StatusLacamento::Pago->value]);
+
+    app(RegistrationPaymentAllocator::class)->syncItems($lancamento, [
+        financialItemPayload($registrationCategory, $campista),
+        financialItemPayload($extraCategory, $campista, [
+            'nome' => 'Camiseta Camila Multicategoria',
+            'valor' => 5000,
+        ]),
+    ]);
+
+    expect($lancamento->fresh()->items)
+        ->toHaveCount(2)
+        ->and($lancamento->fresh()->valor)->toBe(30000)
+        ->and(app(RegistrationPaymentAllocator::class)->paidAmountFor($campista->fresh()))->toBe(25000)
+        ->and(app(RegistrationPaymentAllocator::class)->remainingAmountFor($campista->fresh()))->toBe(0)
+        ->and($campista->fresh()->status)->toBe(StatusInscricao::Pago);
+});
+
+it('keeps paid registrations selectable for non registration item categories', function () {
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $registrationCategory = financialItemRegistrationCategory(Campista::class);
+    $extraCategory = CategoriaLancamento::query()->create([
+        'nome' => 'Transporte do campista',
+        'tipo' => TipoLacamento::Receita,
+        'cor' => '#0ea5e9',
+        'icone' => 'heroicon-o-truck',
+        'ativo' => true,
+    ]);
+    $campista = financialItemCampista('Bruna Categoria Extra');
+
+    app(RegistrationPaymentAllocator::class)->syncItems(financialItemEntry(), [
+        financialItemPayload($registrationCategory, $campista),
+    ]);
+
+    $allocator = app(RegistrationPaymentAllocator::class);
+
+    expect($allocator->registrationOptions(Campista::class))
+        ->not->toHaveKey($campista->id)
+        ->and($allocator->registrationOptions(Campista::class, categoryId: $extraCategory->id))
+        ->toHaveKey($campista->id);
+});
+
 it('creates a financial entry with multiple items from the Filament create page', function () {
     $this->seed(ShieldSeeder::class);
     seedFinancialItemSettings(25000);
@@ -384,6 +441,38 @@ it('rejects item values above the remaining registration balance and duplicate l
     expect(fn () => app(RegistrationPaymentAllocator::class)->syncItems(financialItemEntry(), [
         financialItemPayload($category, $joao, ['valor' => 10000]),
     ]))->toThrow(ValidationException::class);
+});
+
+it('notifies the user when duplicate registration category links are submitted from the form', function () {
+    $this->seed(ShieldSeeder::class);
+    seedFinancialItemSettings(25000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $category = financialItemRegistrationCategory(Campista::class);
+    $campista = financialItemCampista('Vitória Costa 119');
+
+    Livewire::test(CreateLancamento::class)
+        ->fillForm(financialItemFormPayload([
+            'nome' => 'Pagamento duplicado Vitória',
+            'items' => [
+                financialItemPayload($category, $campista, ['valor' => 3000]),
+                financialItemPayload($category, $campista, ['valor' => 6000]),
+            ],
+            'comprovante' => [
+                [
+                    'observacao' => 'Comprovante duplicado',
+                    'url' => ['comprovantes/pix-vitoria.pdf'],
+                ],
+            ],
+        ]))
+        ->call('create')
+        ->assertNotified('Não foi possível salvar o lançamento');
+
+    expect(Lancamento::query()->where('nome', 'Pagamento duplicado Vitória')->exists())->toBeFalse();
 });
 
 it('exposes item links in the financial entry form and table', function () {
