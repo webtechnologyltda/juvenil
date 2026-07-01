@@ -64,6 +64,9 @@ class CampistaWaitlistForm extends Component implements HasActions, HasForms
             ->modalHeading('Entrar na fila de espera')
             ->modalDescription('Deixe seu contato para ser chamado caso uma vaga compatível seja liberada por desistência.')
             ->modalSubmitActionLabel('Cadastrar na fila')
+            ->extraAttributes([
+                'class' => 'relative z-20',
+            ], merge: true)
             ->extraModalWindowAttributes(['class' => 'waitlist-entry-modal'], merge: true)
             ->fillForm(fn (): array => $this->sex === null ? [] : ['sexo' => $this->sex])
             ->schema($this->waitlistSchema())

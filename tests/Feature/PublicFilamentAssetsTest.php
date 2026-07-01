@@ -278,6 +278,8 @@ it('ships the public GSAP motion layer and custom loader asset', function () {
         ->toContain('data-mobile-nav-item')
         ->toContain('gsap-scrolling')
         ->toContain('scrollToTarget')
+        ->toContain('window.jQuery')
+        ->not->toContain("\n    jQuery(")
         ->and($css)
         ->toContain('.juvenil-page-loader')
         ->toContain('.juvenil-mobile-bottom-nav')
