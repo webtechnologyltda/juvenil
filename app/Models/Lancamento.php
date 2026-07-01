@@ -68,7 +68,7 @@ class Lancamento extends Model
         $registrationItems = $items->filter(fn (LancamentoItem $item): bool => filled($item->registration_type) && filled($item->registration_id));
 
         if ($registrationItems->isEmpty()) {
-            return 'Sem inscrições vinculadas';
+            return 'Sem vínculos';
         }
 
         return $registrationItems

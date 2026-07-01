@@ -13,6 +13,7 @@ use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Models\LancamentoItem;
 use App\Support\Financeiro\LancamentoReceiptDocuments;
+use App\Support\Financeiro\LancamentoRegistrationCard;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -229,7 +230,8 @@ class ViewLancamento extends ViewRecord
 
                                         TextEntry::make('registration_label')
                                             ->label('Inscrição')
-                                            ->state(fn (LancamentoItem $record): ?string => $this->registrationLabel($record))
+                                            ->state(fn (LancamentoItem $record): string|HtmlString|null => $this->registrationLabel($record))
+                                            ->html()
                                             ->suffixAction(fn (LancamentoItem $record): ?Action => $this->registrationAction($record))
                                             ->placeholder('Sem vínculo')
                                             ->visible(fn (): bool => $this->getRecord()->tipo !== TipoLacamento::Despesa)
@@ -324,13 +326,18 @@ class ViewLancamento extends ViewRecord
         return null;
     }
 
-    private function registrationLabel(LancamentoItem $item): string
+    private function registrationLabel(LancamentoItem $item): string|HtmlString
     {
         if (blank($item->registration_type) || blank($item->registration_id)) {
             return '';
         }
 
         $registration = $item->registration;
+
+        if ($registration instanceof EquipeTrabalho) {
+            return LancamentoRegistrationCard::forTeam($registration);
+        }
+
         $type = class_basename((string) $item->registration_type);
         $name = (string) ($registration?->getAttribute('nome') ?? 'Inscrição removida');
 

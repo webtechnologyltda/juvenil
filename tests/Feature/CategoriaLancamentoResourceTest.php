@@ -3,6 +3,7 @@
 use App\Enums\TipoLacamento;
 use App\Filament\Forms\Components\IconPicker;
 use App\Filament\Resources\CategoriaLancamentoResource;
+use App\Filament\Resources\CategoriaLancamentoResource\Pages\EditCategoriaLancamento;
 use App\Filament\Tables\Columns\ColoredIconColumn;
 use App\Livewire\IconPickerModal;
 use App\Models\CategoriaLancamento;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Support\IconBadge;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
@@ -34,13 +36,15 @@ it('renders the category registration in the financial panel', function () {
         ->assertOk()
         ->assertSee('Identificação')
         ->assertSee('Visual')
+        ->assertSee('Valor padrão')
         ->assertSee('Categoria ativa');
 });
 
-it('stores categories with type color icon and active flag', function () {
+it('stores categories with type default value color icon and active flag', function () {
     $category = CategoriaLancamento::query()->create([
         'nome' => 'Inscrições',
         'tipo' => TipoLacamento::Receita,
+        'valor_padrao' => 12500,
         'cor' => '#f46b12',
         'icone' => 'heroicon-o-ticket',
         'ativo' => true,
@@ -49,6 +53,7 @@ it('stores categories with type color icon and active flag', function () {
     expect($category->fresh())
         ->nome->toBe('Inscrições')
         ->tipo->toBe(TipoLacamento::Receita)
+        ->valor_padrao->toBe(12500)
         ->cor->toBe('#f46b12')
         ->icone->toBe('heroicon-o-ticket')
         ->ativo->toBeTrue();
@@ -91,6 +96,7 @@ it('only allows color and icon changes on system launch categories', function ()
     $category->fill([
         'nome' => 'Outro nome',
         'tipo' => TipoLacamento::Despesa,
+        'valor_padrao' => 99999,
         'ativo' => false,
         'cor' => '#123456',
         'icone' => 'heroicon-o-fire',
@@ -102,9 +108,69 @@ it('only allows color and icon changes on system launch categories', function ()
     expect($category)
         ->nome->toBe('Inscrição')
         ->tipo->toBe(TipoLacamento::Receita)
+        ->valor_padrao->toBe(0)
         ->ativo->toBeTrue()
         ->cor->toBe('#123456')
         ->icone->toBe('heroicon-o-fire');
+});
+
+it('shows configured default values for system launch categories', function () {
+    $this->seed(ShieldSeeder::class);
+
+    foreach ([
+        'valor_acampamento' => 32550,
+        'valor_equipe_trabalho_interna' => 12000,
+        'valor_equipe_trabalho_externa' => 8000,
+    ] as $name => $payload) {
+        DB::table('settings')->updateOrInsert(
+            [
+                'group' => 'general',
+                'name' => $name,
+            ],
+            [
+                'payload' => json_encode($payload),
+            ],
+        );
+    }
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+
+    $this->actingAs($user)
+        ->get(CategoriaLancamentoResource::getUrl('index'))
+        ->assertOk()
+        ->assertSee('R$ 325,50')
+        ->assertSee('Interna: R$ 120,00 | Externa: R$ 80,00');
+});
+
+it('notifies when a launch category is saved from the edit page', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $category = CategoriaLancamento::factory()->create([
+        'nome' => 'Camiseta Equipe de Trabalho',
+        'tipo' => TipoLacamento::Receita,
+        'valor_padrao' => 3800,
+        'cor' => '#7500d6',
+        'icone' => 'iconpark-tshirt',
+        'ativo' => true,
+    ]);
+
+    Livewire\Livewire::test(EditCategoriaLancamento::class, ['record' => $category->getKey()])
+        ->fillForm([
+            'nome' => 'Camiseta Equipe de Trabalho',
+            'tipo' => TipoLacamento::Receita->value,
+            'valor_padrao' => 3800,
+            'cor' => '#7500d6',
+            'icone' => 'iconpark-tshirt',
+            'ativo' => true,
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors()
+        ->assertNotified('Categoria de lançamento salva');
 });
 
 it('does not allow deleting system launch categories', function () {
@@ -136,7 +202,10 @@ it('locks the system category identity in the Filament resource', function () {
         ->toContain('isSystemDefault')
         ->toContain("TextInput::make('nome')")
         ->toContain("ToggleButtons::make('tipo')")
+        ->toContain("Money::make('valor_padrao')")
         ->toContain("Toggle::make('ativo')")
+        ->toContain('->disabled(fn (?CategoriaLancamento $record): bool => $record?->isSystemDefault() ?? false)')
+        ->toContain('->dehydrated(fn (?CategoriaLancamento $record): bool => ! ($record?->isSystemDefault() ?? false))')
         ->toContain('checkIfRecordIsSelectableUsing')
         ->and($editPage)
         ->toContain('isSystemDefault')
@@ -241,6 +310,8 @@ it('renders category tiles in launch tables and select options', function () {
     expect(file_get_contents(app_path('Filament/Resources/LancamentoResource.php')))
         ->toContain('use App\Support\IconBadge;')
         ->toContain('IconBadge::tileIcon')
+        ->toContain('juvenil-lancamento-table__category-stack')
+        ->toContain('juvenil-lancamento-table__category-stack-extra')
         ->toContain('->html()')
         ->toContain('->tooltip(fn (Lancamento $record): string => $record->categories_summary)')
         ->toContain('$extra = $categories->count() - 2')
@@ -287,6 +358,10 @@ it('exposes the category field on the financial entry form and table', function 
     expect(file_get_contents(app_path('Filament/Resources/LancamentoResource.php')))
         ->toContain("TextColumn::make('categories_summary')")
         ->toContain("SelectFilter::make('categoria_lancamento_id')")
+        ->toContain('categoryFilterOptions')
+        ->toContain('IconBadge::tile($category')
+        ->toContain('->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())')
+        ->toContain('->native(false)')
         ->toContain("whereHas('items'")
         ->toContain("Group::make('batch_code')");
 });

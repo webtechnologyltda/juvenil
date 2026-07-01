@@ -4,13 +4,16 @@ namespace App\Filament\Resources\LancamentoResource\Forms;
 
 use App\Enums\FormaPagamento;
 use App\Enums\StatusLacamento;
+use App\Enums\TipoEquipeTrabalho;
 use App\Enums\TipoLacamento;
 use App\Filament\Resources\LancamentoResource\Tables\LancamentoItemCampistasTable;
 use App\Filament\Resources\LancamentoResource\Tables\LancamentoItemEquipeTrabalhoTable;
 use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
+use App\Settings\GeneralSettings;
 use App\Support\EnumOptionBadge;
+use App\Support\Financeiro\LancamentoRegistrationCard;
 use App\Support\Financeiro\MoneyAmount;
 use App\Support\Financeiro\RegistrationPaymentAllocator;
 use App\Support\IconBadge;
@@ -33,6 +36,7 @@ use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 
 abstract class LancamentoForm
@@ -210,8 +214,23 @@ abstract class LancamentoForm
                                         ->label('Categoria')
                                         ->allowHtml()
                                         ->searchable()
+                                        ->live()
+                                        ->preload()
+                                        ->options(fn (Get $get): array => self::categoryOptions($get('../../tipo')))
                                         ->getSearchResultsUsing(fn (Get $get, string $search): array => self::categorySearchResults($get('../../tipo'), $search))
                                         ->getOptionLabelUsing(fn (Get $get, mixed $value): ?string => self::categoryOptionLabel($get('../../tipo'), $value))
+                                        ->afterStateUpdated(function (Get $get, Set $set, mixed $state): void {
+                                            $defaultValue = self::categoryDefaultValueForInput(
+                                                $get('../../tipo'),
+                                                $state,
+                                                $get('registration_type'),
+                                                $get('registration_id'),
+                                            );
+
+                                            if ($defaultValue !== null) {
+                                                $set('valor', $defaultValue);
+                                            }
+                                        })
                                         ->required()
                                         ->disabled(fn (Get $get): bool => blank($get('../../tipo')))
                                         ->columnSpan([
@@ -247,7 +266,7 @@ abstract class LancamentoForm
                                             'current_registration_id' => filled($get('registration_id')) ? (int) $get('registration_id') : null,
                                             'categoria_lancamento_id' => filled($get('categoria_lancamento_id')) ? (int) $get('categoria_lancamento_id') : null,
                                         ])
-                                        ->getOptionLabelUsing(fn (Get $get, ?Lancamento $record, mixed $value): ?string => self::registrationOptionLabel(
+                                        ->getOptionLabelUsing(fn (Get $get, ?Lancamento $record, mixed $value): string|HtmlString|null => self::registrationOptionLabel(
                                             $get('registration_type'),
                                             $value,
                                             $record?->id,
@@ -266,6 +285,17 @@ abstract class LancamentoForm
 
                                             if ($name !== null) {
                                                 $set('nome', $name);
+                                            }
+
+                                            $defaultValue = self::categoryDefaultValueForInput(
+                                                $get('../../tipo'),
+                                                $get('categoria_lancamento_id'),
+                                                $get('registration_type'),
+                                                $state,
+                                            );
+
+                                            if ($defaultValue !== null) {
+                                                $set('valor', $defaultValue);
                                             }
                                         })
                                         ->visible(fn (Get $get): bool => ! self::isExpenseType($get('../../tipo')))
@@ -775,7 +805,7 @@ abstract class LancamentoForm
         return $registration?->getAttribute('nome');
     }
 
-    private static function registrationOptionLabel(?string $registrationType, mixed $registrationId, ?int $excludingLancamentoId = null, ?int $categoryId = null): ?string
+    private static function registrationOptionLabel(?string $registrationType, mixed $registrationId, ?int $excludingLancamentoId = null, ?int $categoryId = null): string|HtmlString|null
     {
         if (blank($registrationType) || blank($registrationId)) {
             return null;
@@ -785,6 +815,16 @@ abstract class LancamentoForm
 
         if ($registrationId <= 0) {
             return null;
+        }
+
+        if ($registrationType === EquipeTrabalho::class) {
+            $registration = EquipeTrabalho::query()
+                ->with('tribo')
+                ->find($registrationId);
+
+            return $registration
+                ? LancamentoRegistrationCard::forTeam($registration)
+                : self::registrationName($registrationType, $registrationId);
         }
 
         return app(RegistrationPaymentAllocator::class)
@@ -839,6 +879,84 @@ abstract class LancamentoForm
         return $category ? self::categoryOptionHtml($category) : null;
     }
 
+    public static function categoryDefaultValueForInput(
+        mixed $type,
+        mixed $value,
+        ?string $registrationType = null,
+        mixed $registrationId = null,
+    ): ?string {
+        $categoryId = (int) $value;
+
+        if ($categoryId <= 0) {
+            return null;
+        }
+
+        if (! self::categoryQuery($type)) {
+            return null;
+        }
+
+        $category = CategoriaLancamento::query()
+            ->whereKey($categoryId)
+            ->first(['id', 'system_key', 'tipo', 'valor_padrao']);
+
+        if (! $category || ! self::categoryMatchesType($category, $type)) {
+            return null;
+        }
+
+        $defaultValue = match ($category->system_key) {
+            CategoriaLancamento::SYSTEM_CATEGORY_INSCRICAO => self::configuredCampistaRegistrationAmount(),
+            CategoriaLancamento::SYSTEM_CATEGORY_CONTRIBUICAO_EQUIPE_TRABALHO => self::configuredTeamRegistrationAmount($registrationType, $registrationId),
+            default => (int) $category->valor_padrao,
+        };
+
+        return $defaultValue > 0 ? MoneyAmount::formatForInput($defaultValue) : null;
+    }
+
+    private static function configuredCampistaRegistrationAmount(): int
+    {
+        return (int) (app(GeneralSettings::class)->valor_acampamento ?? 0);
+    }
+
+    private static function configuredTeamRegistrationAmount(?string $registrationType, mixed $registrationId): ?int
+    {
+        if (filled($registrationType) && $registrationType !== EquipeTrabalho::class) {
+            return null;
+        }
+
+        if (blank($registrationId)) {
+            return null;
+        }
+
+        $registration = EquipeTrabalho::query()->find((int) $registrationId);
+
+        if (! $registration) {
+            return null;
+        }
+
+        $teamType = self::teamTypeForDefaultValue($registration);
+
+        if (! $teamType) {
+            return null;
+        }
+
+        $field = $teamType->configuredAmountField();
+
+        return (int) (app(GeneralSettings::class)->{$field} ?? 0);
+    }
+
+    private static function teamTypeForDefaultValue(EquipeTrabalho $registration): ?TipoEquipeTrabalho
+    {
+        $rawType = DB::table($registration->getTable())
+            ->where($registration->getKeyName(), $registration->getKey())
+            ->value('tipo_equipe');
+
+        if ($rawType === null || $rawType === '') {
+            return null;
+        }
+
+        return TipoEquipeTrabalho::tryFrom((int) $rawType);
+    }
+
     private static function categoryQuery(mixed $type): ?Builder
     {
         if ($type instanceof TipoLacamento) {
@@ -853,6 +971,19 @@ abstract class LancamentoForm
             ->where('ativo', true)
             ->where('tipo', (int) $type)
             ->orderBy('nome');
+    }
+
+    private static function categoryMatchesType(CategoriaLancamento $category, mixed $type): bool
+    {
+        if ($type instanceof TipoLacamento) {
+            return $category->tipo === $type;
+        }
+
+        if (blank($type)) {
+            return false;
+        }
+
+        return (int) $category->tipo->value === (int) $type;
     }
 
     private static function categoryOptionHtml(CategoriaLancamento $category): string

@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Enums\TipoLacamento;
+use App\Models\CategoriaLancamento;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\CategoriaLancamento>
+ * @extends Factory<CategoriaLancamento>
  */
 class CategoriaLancamentoFactory extends Factory
 {
@@ -19,6 +20,7 @@ class CategoriaLancamentoFactory extends Factory
                 TipoLacamento::Despesa->value,
                 TipoLacamento::Doacao->value,
             ]),
+            'valor_padrao' => 0,
             'cor' => $this->faker->hexColor(),
             'icone' => 'heroicon-o-tag',
             'ativo' => true,

@@ -7,6 +7,8 @@ use App\Filament\Forms\Components\IconPicker;
 use App\Filament\Resources\CategoriaLancamentoResource\Pages;
 use App\Filament\Tables\Columns\ColoredIconColumn;
 use App\Models\CategoriaLancamento;
+use App\Settings\GeneralSettings;
+use App\Support\Financeiro\MoneyAmount;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -21,11 +23,13 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Leandrocfe\FilamentPtbrFormFields\Money;
 
 class CategoriaLancamentoResource extends Resource implements HasShieldPermissions
 {
@@ -77,6 +81,15 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
                             ->dehydrated(fn (?CategoriaLancamento $record): bool => ! ($record?->isSystemDefault() ?? false))
                             ->required()
                             ->default(TipoLacamento::Receita),
+
+                        Money::make('valor_padrao')
+                            ->label('Valor padrão')
+                            ->helperText('Use 0,00 para não preencher automaticamente o valor dos itens.')
+                            ->intFormat()
+                            ->prefix(RawJs::make('R$'))
+                            ->disabled(fn (?CategoriaLancamento $record): bool => $record?->isSystemDefault() ?? false)
+                            ->dehydrated(fn (?CategoriaLancamento $record): bool => ! ($record?->isSystemDefault() ?? false))
+                            ->default(0),
 
                         Toggle::make('ativo')
                             ->label('Categoria ativa')
@@ -135,6 +148,11 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
                 TextColumn::make('tipo')
                     ->label('Tipo')
                     ->badge()
+                    ->sortable(),
+
+                TextColumn::make('valor_padrao')
+                    ->label('Valor padrão')
+                    ->state(fn (CategoriaLancamento $record): string => self::defaultValueColumnState($record))
                     ->sortable(),
 
                 TextColumn::make('lancamentos_count')
@@ -201,5 +219,20 @@ class CategoriaLancamentoResource extends Resource implements HasShieldPermissio
             'delete',
             'delete_any',
         ];
+    }
+
+    private static function defaultValueColumnState(CategoriaLancamento $record): string
+    {
+        $settings = app(GeneralSettings::class);
+
+        return match ($record->system_key) {
+            CategoriaLancamento::SYSTEM_CATEGORY_INSCRICAO => 'R$ '.MoneyAmount::formatForInput($settings->valor_acampamento ?? 0),
+            CategoriaLancamento::SYSTEM_CATEGORY_CONTRIBUICAO_EQUIPE_TRABALHO => sprintf(
+                'Interna: R$ %s | Externa: R$ %s',
+                MoneyAmount::formatForInput($settings->valor_equipe_trabalho_interna ?? 0),
+                MoneyAmount::formatForInput($settings->valor_equipe_trabalho_externa ?? 0),
+            ),
+            default => 'R$ '.MoneyAmount::formatForInput($record->valor_padrao),
+        };
     }
 }
