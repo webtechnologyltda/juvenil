@@ -9,8 +9,7 @@
     "packages": [
         "filament/filament",
         "filament/blueprint",
-        "jeffersongoncalves/filament-cep-field",
-        "webtechnologyltda/tracefy-sdk"
+        "jeffersongoncalves/filament-cep-field"
     ],
     "sail": false,
     "skills": [

@@ -38,8 +38,7 @@
         "spatie/laravel-cookie-consent": "^3.4",
         "stechstudio/filament-impersonate": "^5.5",
         "tapp/filament-auditing": "^4.0",
-        "troccoli/blade-health-icons": "^6.0",
-        "webtechnologyltda/tracefy-sdk": "^1.1"
+        "troccoli/blade-health-icons": "^6.0"
     },
     "require-dev": {
         "filament/blueprint": "^2.2",

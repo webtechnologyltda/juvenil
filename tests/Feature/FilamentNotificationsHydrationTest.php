@@ -58,3 +58,12 @@ it('registers the safe wireable synthesizer before Livewire hydrates Filament no
 
     expect($synth)->toBeInstanceOf(FilamentNotificationsWireableSynth::class);
 });
+
+it('keeps danger notifications visible for fifteen seconds by default', function () {
+    expect(Notification::make()->danger()->getDuration())
+        ->toBe(15000)
+        ->and(Notification::make()->success()->getDuration())
+        ->toBe(6000)
+        ->and(Notification::make()->success()->seconds(10)->getDuration())
+        ->toBe(10000);
+});
