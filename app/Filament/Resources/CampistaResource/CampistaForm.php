@@ -206,6 +206,9 @@ abstract class CampistaForm
                     'image/webp',
                 ])
                 ->rules(['mimes:jpg,jpeg,png,webp'])
+                ->preventFilePathTampering(
+                    allowFilePathUsing: fn (string $file): bool => str_starts_with($file, 'foto-formulario/'),
+                )
                 ->directory('foto-formulario')
                 ->imagePreviewHeight('250')
                 ->previewable(true)

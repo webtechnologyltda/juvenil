@@ -302,10 +302,11 @@ abstract class LancamentoForm
                                         ->visible(fn (Get $get): bool => ! self::isExpenseType($get('../../tipo')))
                                         ->dehydrated(fn (Get $get): bool => ! self::isExpenseType($get('../../tipo')))
                                         ->disabled(fn (Get $get): bool => blank($get('registration_type')))
+                                        ->extraAttributes(['class' => 'juvenil-launch-registration-select'], merge: true)
                                         ->columnSpan([
                                             'default' => 'full',
                                             'md' => 2,
-                                            'xl' => 9,
+                                            'xl' => 12,
                                         ]),
 
                                     Textarea::make('descricao')
@@ -354,6 +355,9 @@ abstract class LancamentoForm
                                         ->multiple()
                                         ->maxSize(2048)
                                         ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                        ->preventFilePathTampering(
+                                            allowFilePathUsing: fn (string $file): bool => str_starts_with($file, 'comprovantes/'),
+                                        )
                                         ->previewable(true)
                                         ->columnSpanFull(),
                                     Textarea::make('observacao')

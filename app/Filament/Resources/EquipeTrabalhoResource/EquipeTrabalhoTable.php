@@ -68,6 +68,7 @@ abstract class EquipeTrabalhoTable
             SelectColumn::make('status')
                 ->alignCenter()
                 ->options(StatusInscricaoEquipeTrabalho::class)
+                ->disabled(fn (EquipeTrabalho $record): bool => ! auth()->user()?->can('update', $record))
                 ->label('Status')
                 ->visibleFrom('md'),
 

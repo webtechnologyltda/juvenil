@@ -1075,6 +1075,16 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-c
     color: var(--juvenil-camp-text);
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-select > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-select .juvenil-launch-registration-card {
+    width: 100%;
+    max-width: 42rem;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__photo {
     display: grid;
     width: 3.4rem;

@@ -28,6 +28,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Concerns\RestrictsFileUploadsToSchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Illuminate\Support\Arr;
@@ -41,6 +42,7 @@ class CampistaForm extends Component implements HasActions, HasForms
 {
     use InteractsWithActions;
     use InteractsWithForms;
+    use RestrictsFileUploadsToSchemaComponents;
 
     public ?array $data = [];
 
@@ -108,6 +110,9 @@ class CampistaForm extends Component implements HasActions, HasForms
                                 'image/webp',
                             ])
                             ->rules(['mimes:jpg,jpeg,png,webp'])
+                            ->preventFilePathTampering(
+                                allowFilePathUsing: fn (string $file): bool => str_starts_with($file, 'foto-formulario/'),
+                            )
                             ->loadingIndicatorPosition('center')
                             ->panelAspectRatio('1:1')
                             ->itemPanelAspectRatio('1:1')

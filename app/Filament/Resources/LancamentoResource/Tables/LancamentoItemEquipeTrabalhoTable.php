@@ -17,12 +17,15 @@ class LancamentoItemEquipeTrabalhoTable
             ->modifyQueryUsing(function (Builder $query) use ($table): Builder {
                 $arguments = $table->getArguments();
 
-                return $query->whereKey(array_keys(app(RegistrationPaymentAllocator::class)->registrationOptions(
-                    EquipeTrabalho::class,
-                    $arguments['excluding_lancamento_id'] ?? null,
-                    $arguments['current_registration_id'] ?? null,
-                    $arguments['categoria_lancamento_id'] ?? null,
-                )));
+                return app(RegistrationPaymentAllocator::class)->applyPaymentEligibilityQuery(
+                    query: $query
+                        ->select(['id', 'nome', 'avatar_url', 'data_form', 'status', 'tribo_id', 'descricao', 'tipo_equipe'])
+                        ->with('tribo:id,cor,cor_hex'),
+                    registrationType: EquipeTrabalho::class,
+                    excludingLancamentoId: $arguments['excluding_lancamento_id'] ?? null,
+                    currentRegistrationId: $arguments['current_registration_id'] ?? null,
+                    categoryId: $arguments['categoria_lancamento_id'] ?? null,
+                );
             })
             ->columns(EquipeTrabalhoTable::getColumns())
             ->filters(EquipeTrabalhoTable::getFilters())

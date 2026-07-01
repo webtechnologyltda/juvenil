@@ -364,6 +364,9 @@ abstract class EquipeTrabalhoForm
                     'image/webp',
                 ])
                 ->rules(['mimes:jpg,jpeg,png,webp'])
+                ->preventFilePathTampering(
+                    allowFilePathUsing: fn (string $file): bool => str_starts_with($file, 'foto-formulario-equipe-trabalho/'),
+                )
                 ->loadingIndicatorPosition('center')
                 ->panelAspectRatio('1:1')
                 ->itemPanelAspectRatio('1:1')

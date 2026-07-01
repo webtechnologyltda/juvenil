@@ -2,23 +2,17 @@
 
 namespace App\Filament\Resources\CampistaResource;
 
-use App\Enums\FormaPagamento;
-use App\Enums\StatusInscricao;
 use App\Models\Campista;
 use App\Models\Tribo;
 use App\Support\Tribes\TribeColor;
 use Carbon\Carbon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\Layout\Split;
-use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Database\Eloquent\Model;
 
 abstract class CampistaTable
 {
-
     public static function getListTableColumns(): array
     {
         return [
@@ -51,8 +45,9 @@ abstract class CampistaTable
                 ->label('Cor da Tribo')
                 ->placeholder('Selecione uma tribo')
                 ->options(Tribo::all()->pluck('cor', 'id'))
+                ->disabled(fn (Campista $record): bool => ! auth()->user()?->can('update', $record))
                 ->sortable()
-                ->visible( fn() => auth()->user()->can('update_campista', Campista::class ))
+                ->visible(fn () => auth()->user()->can('update_campista', Campista::class))
                 ->searchable(true)
                 ->visibleFrom('md'),
 
@@ -61,7 +56,7 @@ abstract class CampistaTable
                 ->formatStateUsing(fn (?string $state, Campista $record) => TribeColor::badge($record->tribo))
                 ->html()
                 ->sortable()
-                ->hidden( fn() => auth()->user()->can('update_campista', Campista::class))
+                ->hidden(fn () => auth()->user()->can('update_campista', Campista::class))
                 ->searchable(true)
                 ->visibleFrom('md'),
 
@@ -70,7 +65,7 @@ abstract class CampistaTable
                 ->numeric()
                 ->sortable()
                 ->alignCenter()
-                ->formatStateUsing(fn($state) => Carbon::createFromFormat('d/m/Y', $state)->age)
+                ->formatStateUsing(fn ($state) => Carbon::createFromFormat('d/m/Y', $state)->age)
                 ->toggleable(isToggledHiddenByDefault: true),
 
             TextColumn::make('status')
@@ -88,14 +83,14 @@ abstract class CampistaTable
             IconColumn::make('presenca')
                 ->label('Presença')
                 ->alignCenter()
-                ->icon(fn($state) => $state ? 'heroicon-o-hand-thumb-up' : 'heroicon-o-hand-thumb-down')
-                ->tooltip(fn($state) => $state ? 'Presença Confirmada' : 'Não Compareceu')
+                ->icon(fn ($state) => $state ? 'heroicon-o-hand-thumb-up' : 'heroicon-o-hand-thumb-down')
+                ->tooltip(fn ($state) => $state ? 'Presença Confirmada' : 'Não Compareceu')
                 ->boolean()
                 ->visibleFrom('md'),
 
             TextColumn::make('dia_pagamento')
                 ->label('Dia de Pagamento')
-                ->formatStateUsing(fn($state) => Carbon::parse($state)->format('d/m/Y'))
+                ->formatStateUsing(fn ($state) => Carbon::parse($state)->format('d/m/Y'))
                 ->toggleable(isToggledHiddenByDefault: true),
 
             TextColumn::make('form_data.tamanho_camiseta')
@@ -155,5 +150,4 @@ abstract class CampistaTable
                 ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
-
 }

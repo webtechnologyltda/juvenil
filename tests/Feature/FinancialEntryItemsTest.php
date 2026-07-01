@@ -484,6 +484,7 @@ it('exposes item links in the financial entry form and table', function () {
     $resource = file_get_contents(app_path('Filament/Resources/LancamentoResource.php'));
     $createPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/CreateLancamento.php'));
     $editPage = file_get_contents(app_path('Filament/Resources/LancamentoResource/Pages/EditLancamento.php'));
+    $campistasItemTable = file_get_contents(app_path('Filament/Resources/LancamentoResource/Tables/LancamentoItemCampistasTable.php'));
     $equipeTrabalhoItemTable = file_get_contents(app_path('Filament/Resources/LancamentoResource/Tables/LancamentoItemEquipeTrabalhoTable.php'));
 
     expect($form)
@@ -496,6 +497,7 @@ it('exposes item links in the financial entry form and table', function () {
         ->toContain('LancamentoItemCampistasTable::class')
         ->toContain('LancamentoItemEquipeTrabalhoTable::class')
         ->toContain('tableArguments')
+        ->toContain("->extraAttributes(['class' => 'juvenil-launch-registration-select'], merge: true)")
         ->toContain('->modalWidth(Width::SevenExtraLarge)')
         ->toContain('->slideOver()')
         ->not->toContain('->slideOver(false)')
@@ -556,11 +558,45 @@ it('exposes item links in the financial entry form and table', function () {
         ->toContain('RegistrationPaymentAllocator::class')
         ->toContain('itemsFormState');
 
-    expect($equipeTrabalhoItemTable)
+    expect($campistasItemTable)
+        ->toContain('applyPaymentEligibilityQuery')
+        ->toContain("->select(['id', 'nome', 'avatar_url', 'form_data', 'status', 'forma_pagamento', 'dia_pagamento', 'presenca', 'tribo_id'])")
+        ->not->toContain('array_keys(app(RegistrationPaymentAllocator::class)->registrationOptions')
+        ->and($equipeTrabalhoItemTable)
+        ->toContain('applyPaymentEligibilityQuery')
+        ->toContain("->select(['id', 'nome', 'avatar_url', 'data_form', 'status', 'tribo_id', 'descricao', 'tipo_equipe'])")
+        ->not->toContain('array_keys(app(RegistrationPaymentAllocator::class)->registrationOptions')
         ->toContain('EquipeTrabalhoTable::getColumns()')
         ->toContain('EquipeTrabalhoTable::getFilters()');
 
     expect(Schema::getColumnType('lancamentos', 'descricao'))->toBe('text');
+});
+
+it('filters registration options in sql instead of checking each registration individually', function () {
+    seedFinancialItemSettings(25000, teamInternalAmount: 12000, teamExternalAmount: 8000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $category = financialItemRegistrationCategory(Campista::class);
+    $available = collect(range(1, 30))
+        ->map(fn (int $number): Campista => financialItemCampista("Disponível {$number}"));
+    $linked = financialItemCampista('Já vinculado SQL');
+
+    app(RegistrationPaymentAllocator::class)->syncItems(financialItemEntry(), [
+        financialItemPayload($category, $linked),
+    ]);
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $results = app(RegistrationPaymentAllocator::class)->registrationOptions(Campista::class);
+
+    $queryCount = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($results)
+        ->toHaveKey($available->first()->id)
+        ->not->toHaveKey($linked->id)
+        ->and($queryCount)->toBeLessThan(20);
 });
 
 it('renders selected campista registration as a compact card on the edit form', function () {
@@ -1013,7 +1049,7 @@ it('uses a spacious responsive layout for financial item fields', function () {
         ->toContain("Repeater::make('items')")
         ->toContain("->columns([\n                                    'default' => 1,\n                                    'md' => 2,\n                                    'xl' => 12,\n                                ])")
         ->toContain("'xl' => 4")
-        ->toContain("'xl' => 9");
+        ->toContain("'xl' => 12");
 
     expect($totalPreviewBlock)
         ->toContain("->columnStart([\n                                    'md' => 2,\n                                    'xl' => 9,\n                                ])");

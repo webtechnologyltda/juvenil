@@ -241,6 +241,9 @@ class GeneralSettingsPage extends SettingsPage
                                         'image/webp',
                                     ])
                                     ->rules(['mimes:jpg,jpeg,png,webp'])
+                                    ->preventFilePathTampering(
+                                        allowFilePathUsing: fn (string $file): bool => str_starts_with($file, 'settings/pix/'),
+                                    )
                                     ->maxSize(2048)
                                     ->downloadable()
                                     ->openable()
@@ -338,6 +341,9 @@ class GeneralSettingsPage extends SettingsPage
                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                     ])
                                     ->rules(['mimes:pdf,doc,docx'])
+                                    ->preventFilePathTampering(
+                                        allowFilePathUsing: fn (string $file): bool => str_starts_with($file, 'settings/termos/'),
+                                    )
                                     ->maxSize(5120)
                                     ->downloadable()
                                     ->openable()

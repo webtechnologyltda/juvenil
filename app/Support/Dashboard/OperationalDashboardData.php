@@ -54,7 +54,8 @@ class OperationalDashboardData
             ->when($paroquia !== null, fn (Builder $query): Builder => $query->where('form_data->paroquia', $paroquia))
             ->when($communityValues !== [], fn (Builder $query): Builder => $this->whereFormDataValueIn($query, 'form_data->comunidade', $communityValues))
             ->when($communityText !== null, fn (Builder $query): Builder => $query->where('form_data->comunidade', 'like', '%'.$communityText.'%'))
-            ->when($presenca !== null, fn (Builder $query): Builder => $query->where('presenca', $presenca));
+            ->when($presenca !== null, fn (Builder $query): Builder => $query->where('presenca', $presenca))
+            ->orderBy('id');
     }
 
     private function whereFormDataValueIn(Builder $query, string $path, array $values): Builder
