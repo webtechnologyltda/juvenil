@@ -38,10 +38,13 @@ it('shows the waitlist form when campista capacity is full', function () {
 
 it('centers the public waitlist action across viewports', function () {
     $view = file_get_contents(resource_path('views/livewire/campista-waitlist-form.blade.php'));
+    $component = file_get_contents(app_path('Livewire/CampistaWaitlistForm.php'));
 
     expect($view)
         ->toContain('<div class="flex justify-center">')
-        ->not->toContain('<div class="mt-4 text-left">');
+        ->not->toContain('<div class="mt-4 text-left">')
+        ->and($component)
+        ->toContain("'class' => 'relative z-20'");
 });
 
 it('stores public waitlist entries with general and sex positions', function () {
