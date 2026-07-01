@@ -22,6 +22,7 @@ class CategoriaLancamento extends Model
         'system_key',
         'nome',
         'tipo',
+        'valor_padrao',
         'cor',
         'icone',
         'ativo',
@@ -29,6 +30,7 @@ class CategoriaLancamento extends Model
 
     protected $casts = [
         'tipo' => TipoLacamento::class,
+        'valor_padrao' => 'integer',
         'ativo' => 'boolean',
     ];
 
@@ -39,7 +41,7 @@ class CategoriaLancamento extends Model
                 return;
             }
 
-            foreach (['system_key', 'nome', 'tipo', 'ativo'] as $attribute) {
+            foreach (['system_key', 'nome', 'tipo', 'valor_padrao', 'ativo'] as $attribute) {
                 if ($categoriaLancamento->isDirty($attribute)) {
                     $categoriaLancamento->setAttribute($attribute, $categoriaLancamento->getOriginal($attribute));
                 }

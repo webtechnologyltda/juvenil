@@ -276,17 +276,32 @@ class BatchLancamentos extends Page
                             ->label('Categoria padrão')
                             ->allowHtml()
                             ->searchable()
+                            ->live()
+                            ->preload()
+                            ->options(fn (Get $get): array => LancamentoForm::categoryOptions($get('tipo')))
                             ->getSearchResultsUsing(fn (Get $get, string $search): array => LancamentoForm::categorySearchResults($get('tipo'), $search))
                             ->getOptionLabelUsing(fn (Get $get, mixed $value): ?string => LancamentoForm::categoryOptionLabel($get('tipo'), $value))
-                            ->live()
                             ->required(fn (Get $get): bool => $get('mode') === LancamentoBatchCreator::MODE_MANUAL)
                             ->afterStateUpdated(function (Get $get, Set $set): void {
+                                $defaultValue = LancamentoForm::categoryDefaultValueForInput($get('tipo'), $get('categoria_lancamento_id'));
                                 $items = collect($get('manual_items') ?? [])
-                                    ->map(fn (array $item): array => [
-                                        ...$item,
-                                        'categoria_lancamento_id' => $get('categoria_lancamento_id'),
-                                    ])
+                                    ->map(function (array $item) use ($defaultValue, $get): array {
+                                        $item = [
+                                            ...$item,
+                                            'categoria_lancamento_id' => $get('categoria_lancamento_id'),
+                                        ];
+
+                                        if ($defaultValue !== null) {
+                                            $item['valor'] = $defaultValue;
+                                        }
+
+                                        return $item;
+                                    })
                                     ->all();
+
+                                if ($defaultValue !== null) {
+                                    $set('manual_default_value', $defaultValue);
+                                }
 
                                 $set('manual_items', $items);
                             })
@@ -342,8 +357,18 @@ class BatchLancamentos extends Page
                                     ->label('Categoria')
                                     ->allowHtml()
                                     ->searchable()
+                                    ->live()
+                                    ->preload()
+                                    ->options(fn (Get $get): array => LancamentoForm::categoryOptions($get('../../tipo')))
                                     ->getSearchResultsUsing(fn (Get $get, string $search): array => LancamentoForm::categorySearchResults($get('../../tipo'), $search))
                                     ->getOptionLabelUsing(fn (Get $get, mixed $value): ?string => LancamentoForm::categoryOptionLabel($get('../../tipo'), $value))
+                                    ->afterStateUpdated(function (Get $get, Set $set, mixed $state): void {
+                                        $defaultValue = LancamentoForm::categoryDefaultValueForInput($get('../../tipo'), $state);
+
+                                        if ($defaultValue !== null) {
+                                            $set('valor', $defaultValue);
+                                        }
+                                    })
                                     ->required()
                                     ->columnSpan([
                                         'default' => 'full',

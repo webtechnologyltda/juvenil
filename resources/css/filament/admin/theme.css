@@ -779,7 +779,7 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-table {
-    min-width: 92rem;
+    min-width: 84rem;
     table-layout: fixed;
 }
 
@@ -791,6 +791,16 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-
     vertical-align: middle;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell-registration-payments-summary {
+    position: relative;
+    overflow: visible;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-row:has(.fi-ta-cell-registration-payments-summary .juvenil-lancamento-table__registrations:is(:hover, :focus-within)) {
+    position: relative;
+    z-index: 1100;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell-nome .fi-ta-text,
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell-registration-payments-summary .fi-ta-text,
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell-batch-code .fi-ta-text {
@@ -798,10 +808,61 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-
     min-width: 0;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-cell-registration-payments-summary :is(.fi-ta-text, .fi-ta-text-item, .fi-ta-col-wrp, .fi-ta-text-item-label) {
+    overflow: visible;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__category-stack {
+    display: inline-flex;
+    align-items: center;
+    min-width: 3.2rem;
+    padding-inline-start: 0.35rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__category-stack-item,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__category-stack-extra {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-inline-start: -0.35rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__category-stack-item {
+    z-index: 1;
+    filter: drop-shadow(0 0 0.35rem rgba(3, 24, 28, 0.5));
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__category-stack-item + .juvenil-lancamento-table__category-stack-item {
+    z-index: 2;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__category-stack-extra {
+    z-index: 3;
+    width: 1.65rem;
+    height: 1.65rem;
+    border: 1px solid rgba(244, 251, 253, 0.12);
+    background:
+        linear-gradient(135deg, rgba(157, 219, 239, 0.2), transparent 60%),
+        rgba(30, 41, 59, 0.92);
+    color: rgba(244, 251, 253, 0.92);
+    font-size: 0.68rem;
+    font-weight: 950;
+    line-height: 1;
+    box-shadow: 0 0 0 2px rgba(3, 24, 28, 0.76);
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registrations {
+    position: relative;
     display: grid;
     gap: 0.35rem;
     min-width: 0;
+    outline: none;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registrations:focus-visible {
+    outline: 2px solid rgba(157, 219, 239, 0.48);
+    outline-offset: 3px;
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registration {
@@ -839,9 +900,268 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__reg
     font-weight: 900;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registration-count {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    border: 1px solid rgba(157, 219, 239, 0.22);
+    background:
+        linear-gradient(135deg, rgba(157, 219, 239, 0.13), transparent 62%),
+        rgba(3, 24, 28, 0.72);
+    padding: 0.18rem 0.5rem;
+    color: var(--juvenil-camp-sky);
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover {
+    position: absolute;
+    top: calc(100% + 0.65rem);
+    right: 0;
+    z-index: 1110;
+    display: grid;
+    width: min(30rem, calc(100vw - 3rem));
+    max-height: 22rem;
+    gap: 0.5rem;
+    overflow-y: auto;
+    border: 1px solid rgba(157, 219, 239, 0.26);
+    background:
+        linear-gradient(135deg, rgba(157, 219, 239, 0.1), transparent 42%),
+        rgba(3, 24, 28, 0.98);
+    box-shadow:
+        0 22px 70px rgba(0, 0, 0, 0.42),
+        inset 0 1px 0 rgba(244, 251, 253, 0.06);
+    padding: 0.75rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(0.35rem) scale(0.98);
+    transform-origin: top right;
+    transition:
+        opacity 140ms ease,
+        transform 140ms ease;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover::after {
+    position: absolute;
+    top: -0.42rem;
+    right: 1.2rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-top: 1px solid rgba(157, 219, 239, 0.26);
+    border-left: 1px solid rgba(157, 219, 239, 0.26);
+    background: rgba(3, 24, 28, 0.98);
+    content: "";
+    transform: rotate(45deg);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__registrations:is(:hover, :focus-within) .juvenil-lancamento-table__popover {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-title {
+    color: var(--juvenil-camp-orange);
+    font-size: 0.68rem;
+    font-weight: 950;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.72rem;
+    align-items: center;
+    border: 1px solid rgba(157, 219, 239, 0.14);
+    background: rgba(157, 219, 239, 0.06);
+    padding: 0.62rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-main,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-side {
+    display: grid;
+    min-width: 0;
+    gap: 0.16rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-main strong,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-side strong {
+    color: var(--juvenil-camp-text);
+    font-size: 0.86rem;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-main span:not(.juvenil-lancamento-table__popover-kicker),
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-side span {
+    overflow: hidden;
+    color: rgba(216, 242, 250, 0.7);
+    font-size: 0.72rem;
+    font-weight: 750;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-kicker {
+    color: var(--juvenil-camp-sky);
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-side {
+    justify-items: end;
+    text-align: right;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-category {
+    display: grid;
+    width: 2.65rem;
+    height: 2.65rem;
+    place-items: center;
+    border: 1px solid rgba(157, 219, 239, 0.14);
+    background:
+        linear-gradient(135deg, rgba(244, 251, 253, 0.07), transparent 58%),
+        rgba(3, 24, 28, 0.42);
+    box-shadow: inset 0 1px 0 rgba(244, 251, 253, 0.05);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-category-icon {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-category-icon > span {
+    transform: scale(0.86);
+    transform-origin: center;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__popover-category-name {
+    max-width: 14rem;
+    overflow: hidden;
+    color: rgba(216, 242, 250, 0.74);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table__empty {
     color: rgba(216, 242, 250, 0.62);
     font-size: 0.78rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    width: min(100%, 34rem);
+    align-items: center;
+    gap: 0.78rem;
+    border: 1px solid rgba(157, 219, 239, 0.18);
+    background:
+        linear-gradient(135deg, rgba(157, 219, 239, 0.08), transparent 48%),
+        rgba(3, 24, 28, 0.66);
+    padding: 0.58rem;
+    color: var(--juvenil-camp-text);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__photo {
+    display: grid;
+    width: 3.4rem;
+    aspect-ratio: 1;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(157, 219, 239, 0.28);
+    background:
+        radial-gradient(circle at 50% 20%, rgba(244, 107, 18, 0.2), transparent 3rem),
+        rgba(3, 24, 28, 0.9);
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__photo span {
+    color: var(--juvenil-camp-orange);
+    font-size: 0.92rem;
+    font-weight: 950;
+    letter-spacing: 0.04em;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__body {
+    min-width: 0;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__topline,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__meta {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.38rem;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__id,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__status,
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__meta span {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    align-items: center;
+    border: 1px solid rgba(157, 219, 239, 0.16);
+    background: rgba(157, 219, 239, 0.07);
+    padding: 0.1rem 0.42rem;
+    color: rgba(216, 242, 250, 0.78);
+    font-size: 0.68rem;
+    font-weight: 850;
+    line-height: 1.25;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__status--success {
+    border-color: rgba(34, 197, 94, 0.32);
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__status--warning {
+    border-color: rgba(250, 204, 21, 0.34);
+    background: rgba(250, 204, 21, 0.12);
+    color: #fde047;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__status--danger {
+    border-color: rgba(251, 113, 133, 0.36);
+    background: rgba(251, 113, 133, 0.13);
+    color: #fda4af;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__name {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    margin-block: 0.23rem;
+    color: var(--juvenil-camp-text);
+    font-size: 0.95rem;
+    font-weight: 900;
+    line-height: 1.18;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-launch-registration-card__meta span:first-child {
+    color: var(--juvenil-camp-sky);
 }
 
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .fi-ta-empty-state {

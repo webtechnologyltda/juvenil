@@ -12,6 +12,7 @@ use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Models\LancamentoItem;
+use App\Support\EnumOptionBadge;
 use App\Support\IconBadge;
 use Carbon\Carbon;
 use Filament\Actions\EditAction;
@@ -69,7 +70,7 @@ class LancamentoResource extends Resource
                     ->searchable()
                     ->lineClamp(1)
                     ->tooltip(fn (Lancamento $record): string => $record->nome)
-                    ->width('20rem'),
+                    ->width('18rem'),
 
                 TextColumn::make('valor')
                     ->prefix(fn (Lancamento $record) => ($record->tipo == TipoLacamento::Despesa ? '-' : '').'R$ ')
@@ -104,12 +105,12 @@ class LancamentoResource extends Resource
                     ->grow(false),
 
                 TextColumn::make('registration_payments_summary')
-                    ->label('Inscrições')
+                    ->label('Itens lançados')
                     ->formatStateUsing(fn (mixed $state, Lancamento $record): HtmlString => self::registrationPaymentBadges($record))
                     ->html()
-                    ->tooltip(fn (Lancamento $record): string => $record->registration_payments_summary)
-                    ->placeholder('Sem inscrições vinculadas')
-                    ->width('18.5rem'),
+                    ->placeholder('Sem vínculos')
+                    ->width('9.5rem')
+                    ->grow(false),
 
                 TextColumn::make('status')
                     ->badge()
@@ -123,7 +124,7 @@ class LancamentoResource extends Resource
                     ->badge()
                     ->placeholder('Sem lote')
                     ->searchable()
-                    ->width('10.5rem')
+                    ->width('7.5rem')
                     ->grow(false),
 
                 TextColumn::make('data')
@@ -147,21 +148,26 @@ class LancamentoResource extends Resource
             ->filters([
                 SelectFilter::make('tipo')
                     ->label('Tipo')
-                    ->options(TipoLacamento::class),
+                    ->options(fn (): array => EnumOptionBadge::options(TipoLacamento::class))
+                    ->native(false)
+                    ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
+                    ->indicateUsing(fn (array $state): array => blank($state['value'] ?? null)
+                        ? []
+                        : ['Tipo: '.(TipoLacamento::tryFrom((int) $state['value'])?->getLabel() ?? $state['value'])]),
                 Filter::make('registration_link')
-                    ->label('Inscrição')
+                    ->label('Cadastro vinculado')
                     ->form([
                         Select::make('linked')
-                            ->label('Vínculo com inscrição')
+                            ->label('Vínculo com cadastro')
                             ->options([
-                                'linked' => 'Com inscrição vinculada',
-                                'unlinked' => 'Sem inscrição vinculada',
+                                'linked' => 'Com cadastro vinculado',
+                                'unlinked' => 'Sem cadastro vinculado',
                             ])
                             ->placeholder('Todos')
                             ->native(false)
                             ->live(),
                         Select::make('registration_type')
-                            ->label('Tipo de inscrição')
+                            ->label('Tipo de cadastro')
                             ->options([
                                 Campista::class => 'Campista',
                                 EquipeTrabalho::class => 'Equipe de trabalho',
@@ -247,14 +253,16 @@ class LancamentoResource extends Resource
                     }),
                 SelectFilter::make('categoria_lancamento_id')
                     ->label('Categoria')
-                    ->options(fn (): array => CategoriaLancamento::query()
-                        ->orderBy('nome')
-                        ->pluck('nome', 'id')
-                        ->all())
+                    ->options(fn (): array => self::categoryFilterOptions())
                     ->query(fn (Builder $query, array $data): Builder => blank($data['value'] ?? null)
                         ? $query
                         : $query->whereHas('items', fn (Builder $query): Builder => $query->where('categoria_lancamento_id', $data['value'])))
                     ->searchable()
+                    ->native(false)
+                    ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
+                    ->indicateUsing(fn (array $state): array => blank($state['value'] ?? null)
+                        ? []
+                        : ['Categoria: '.(CategoriaLancamento::query()->whereKey($state['value'])->value('nome') ?? $state['value'])])
                     ->preload(),
                 SelectFilter::make('batch_code')
                     ->label('Lote')
@@ -322,6 +330,17 @@ class LancamentoResource extends Resource
         return '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%';
     }
 
+    private static function categoryFilterOptions(): array
+    {
+        return CategoriaLancamento::query()
+            ->orderBy('nome')
+            ->get()
+            ->mapWithKeys(fn (CategoriaLancamento $category): array => [
+                $category->id => (string) IconBadge::tile($category, $category->nome, fallbackIcon: 'heroicon-o-tag'),
+            ])
+            ->all();
+    }
+
     private static function categoryBadges(Lancamento $record): HtmlString
     {
         $items = $record->relationLoaded('items')
@@ -340,57 +359,78 @@ class LancamentoResource extends Resource
 
         $visible = $categories
             ->take(2)
-            ->map(fn (CategoriaLancamento $category): string => (string) IconBadge::tileIcon(
-                $category,
-                $category->nome,
-                fallbackIcon: 'heroicon-o-tag',
-            ))
+            ->map(fn (CategoriaLancamento $category): string => '<span class="juvenil-lancamento-table__category-stack-item">'
+                .(string) IconBadge::tileIcon(
+                    $category,
+                    $category->nome,
+                    fallbackIcon: 'heroicon-o-tag',
+                )
+                .'</span>')
             ->implode('');
 
         $extra = $categories->count() - 2;
         $extraBadge = $extra > 0
-            ? '<span title="'.e($categories->skip(2)->pluck('nome')->implode(', ')).'" style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:999px;background:rgba(148,163,184,.26);color:#f4fbfd;font-size:.75rem;font-weight:900;">+'.e((string) $extra).'</span>'
+            ? '<span class="juvenil-lancamento-table__category-stack-extra" title="'.e($categories->skip(2)->pluck('nome')->implode(', ')).'">+'.e((string) $extra).'</span>'
             : '';
 
-        return new HtmlString('<span style="display:inline-flex;align-items:center;gap:.25rem;">'.$visible.$extraBadge.'</span>');
+        return new HtmlString('<span class="juvenil-lancamento-table__category-stack">'.$visible.$extraBadge.'</span>');
     }
 
     private static function registrationPaymentBadges(Lancamento $record): HtmlString
     {
         $items = $record->relationLoaded('items')
             ? $record->items
-            : $record->items()->with('registration')->get();
+            : $record->items()->with(['categoria', 'registration'])->get();
 
         $registrationItems = $items
             ->filter(fn (LancamentoItem $item): bool => filled($item->registration_type) && filled($item->registration_id))
             ->values();
 
         if ($registrationItems->isEmpty()) {
-            return new HtmlString('<span class="juvenil-lancamento-table__empty">Sem inscrições vinculadas</span>');
+            return new HtmlString('<span class="juvenil-lancamento-table__empty">Sem vínculos</span>');
         }
 
-        $visibleItems = $registrationItems
-            ->take(2)
+        $itemCount = $registrationItems->count();
+        $visibleItems = '<span class="juvenil-lancamento-table__registration-count">'
+            .e((string) $itemCount).' '.e($itemCount === 1 ? 'item lançado' : 'itens lançados')
+            .'</span>';
+
+        $popoverItems = $registrationItems
             ->map(function (LancamentoItem $item): string {
                 $registration = $item->registration;
                 $type = $registration instanceof Campista ? 'Campista' : 'Equipe';
                 $name = (string) ($registration?->getAttribute('nome') ?? 'Inscrição removida');
                 $amount = 'R$ '.number_format($item->valor / 100, 2, ',', '.');
-                $title = "{$type} #{$item->registration_id} - {$name} ({$amount})";
+                $category = (string) ($item->categoria?->nome ?? 'Sem categoria');
+                $itemName = (string) ($item->nome ?: $name);
+                $categoryIcon = (string) IconBadge::tileIcon(
+                    $item->categoria,
+                    $category,
+                    fallbackIcon: 'heroicon-o-tag',
+                );
 
-                return '<span class="juvenil-lancamento-table__registration" title="'.e($title).'">'
-                    .'<span class="juvenil-lancamento-table__registration-meta">'.e($type).' #'.e((string) $item->registration_id).'</span>'
-                    .'<span class="juvenil-lancamento-table__registration-name">'.e($name).'</span>'
-                    .'<span class="juvenil-lancamento-table__registration-amount">'.e($amount).'</span>'
-                    .'</span>';
+                return '<div class="juvenil-lancamento-table__popover-item">'
+                    .'<span class="juvenil-lancamento-table__popover-category" aria-label="Categoria: '.e($category).'">'
+                        .'<span class="juvenil-lancamento-table__popover-category-icon">'.$categoryIcon.'</span>'
+                    .'</span>'
+                    .'<div class="juvenil-lancamento-table__popover-main">'
+                        .'<span class="juvenil-lancamento-table__popover-kicker">'.e($type).' #'.e((string) $item->registration_id).'</span>'
+                        .'<strong>'.e($name).'</strong>'
+                        .'<span>'.e($itemName).'</span>'
+                    .'</div>'
+                    .'<div class="juvenil-lancamento-table__popover-side">'
+                        .'<span class="juvenil-lancamento-table__popover-category-name">'.e($category).'</span>'
+                        .'<strong>'.e($amount).'</strong>'
+                    .'</div>'
+                .'</div>';
             })
             ->implode('');
 
-        $extra = $registrationItems->count() - 2;
-        $extraBadge = $extra > 0
-            ? '<span class="juvenil-lancamento-table__registration-extra">+'.e((string) $extra).'</span>'
-            : '';
+        $popover = '<span class="juvenil-lancamento-table__popover" role="tooltip">'
+            .'<span class="juvenil-lancamento-table__popover-title">Itens deste lançamento</span>'
+            .$popoverItems
+        .'</span>';
 
-        return new HtmlString('<span class="juvenil-lancamento-table__registrations">'.$visibleItems.$extraBadge.'</span>');
+        return new HtmlString('<span class="juvenil-lancamento-table__registrations" tabindex="0">'.$visibleItems.$popover.'</span>');
     }
 }

@@ -1,7 +1,9 @@
 <?php
 
 use App\Enums\FormaPagamento;
+use App\Enums\StatusInscricaoEquipeTrabalho;
 use App\Enums\StatusLacamento;
+use App\Enums\TipoEquipeTrabalho;
 use App\Enums\TipoLacamento;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
@@ -69,6 +71,8 @@ it('renders a readable financial launch view page', function () {
         ->assertSee('Pix')
         ->assertSee('Receita')
         ->assertSee('Inscrições do Acampamento')
+        ->assertSee('heroicon-o-ticket', false)
+        ->assertSee('background-color: #f46b12', false)
         ->assertSee('Parcela única João View')
         ->assertSee('Item de inscrição vinculado à categoria')
         ->assertSee('04/07/2026')
@@ -86,6 +90,7 @@ it('configures the launch table to open view pages by default while keeping edit
         ->toContain('->recordUrl(')
         ->toContain("static::getUrl('view'")
         ->toContain('->recordActions(')
+        ->not->toContain('RecordActionsPosition::BeforeColumns')
         ->toContain('EditAction::make()');
 });
 
@@ -99,6 +104,8 @@ it('uses an edit-like read-only layout on the launch view page', function () {
         ->toContain("->description('Classifique valores, categorias e vínculos financeiros.')")
         ->toContain("Section::make('Comprovantes')")
         ->toContain("RepeatableEntry::make('items')")
+        ->toContain("TextEntry::make('categoria_label')")
+        ->toContain('IconBadge::tile($item->categoria')
         ->toContain('->contained()')
         ->not->toContain('->table([');
 });
@@ -112,17 +119,46 @@ it('uses a compact readable layout for the launch table columns', function () {
         ->toContain("->label('Cód.')")
         ->toContain("->label('Tipo')")
         ->toContain("->label('Data')")
+        ->toContain("->label('Itens lançados')")
+        ->toContain("->width('18rem')")
+        ->toContain("->width('9.5rem')")
+        ->toContain("->width('7.5rem')")
         ->toContain("->headerTooltip('Data do lançamento')")
         ->toContain('->lineClamp(1)')
         ->toContain('self::registrationPaymentBadges($record)')
-        ->toContain('class="juvenil-lancamento-table__registration"')
+        ->not->toContain('->tooltip(fn (Lancamento $record): string => $record->registration_payments_summary)')
+        ->toContain('juvenil-lancamento-table__registration-count')
+        ->toContain('juvenil-lancamento-table__popover')
+        ->toContain('juvenil-lancamento-table__popover-category-icon')
+        ->toContain('juvenil-lancamento-table__popover-category-name')
+        ->toContain('Itens deste lançamento')
         ->and($theme)
         ->toContain('.juvenil-lancamento-table .fi-ta-table')
-        ->toContain('min-width: 92rem;')
-        ->toContain('.juvenil-lancamento-table__registration')
+        ->toContain('min-width: 84rem;')
+        ->toContain('.juvenil-lancamento-table__category-stack')
+        ->toContain('.juvenil-lancamento-table__category-stack-extra')
+        ->toContain('margin-inline-start: -0.35rem;')
+        ->toContain('.juvenil-lancamento-table__registration-count')
         ->toContain('grid-template-columns: auto minmax(0, 1fr) auto;')
         ->toContain('.juvenil-lancamento-table__registration-name')
-        ->toContain('text-overflow: ellipsis;');
+        ->toContain('text-overflow: ellipsis;')
+        ->toContain('.juvenil-lancamento-table__popover')
+        ->toContain('.fi-ta-cell-registration-payments-summary')
+        ->toContain('overflow: visible;')
+        ->toContain('top: calc(100% + 0.65rem);')
+        ->toContain('transform-origin: top right;')
+        ->toContain('z-index: 1100;')
+        ->toContain('z-index: 1110;')
+        ->toContain(':has(.fi-ta-cell-registration-payments-summary .juvenil-lancamento-table__registrations:is(:hover, :focus-within))')
+        ->toContain('transform: translateY(0) scale(1);')
+        ->toContain('.juvenil-lancamento-table__popover-item')
+        ->toContain('.juvenil-lancamento-table__popover-category')
+        ->toContain('.juvenil-lancamento-table__popover-category-icon')
+        ->toContain('.juvenil-lancamento-table__popover-category-name')
+        ->toContain('.juvenil-launch-registration-card')
+        ->toContain('grid-template-columns: auto minmax(0, 1fr);')
+        ->toContain('.juvenil-launch-registration-card__photo')
+        ->toContain('.juvenil-launch-registration-card__status--success');
 });
 
 it('renders receipt documents as preview cards for images and pdfs', function () {
@@ -249,6 +285,10 @@ it('links team work registrations from launch items to a view page', function ()
 
     $member = EquipeTrabalho::factory()->create([
         'nome' => 'Servo Equipe View',
+        'avatar_url' => 'foto-formulario-equipe-trabalho/servo-view.png',
+        'descricao' => 'Cozinha',
+        'status' => StatusInscricaoEquipeTrabalho::Aprovado,
+        'tipo_equipe' => TipoEquipeTrabalho::Externa,
     ]);
 
     $category = CategoriaLancamento::factory()->create([
@@ -277,7 +317,14 @@ it('links team work registrations from launch items to a view page', function ()
     $this->actingAs($user)
         ->get(route('filament.admin.resources.lancamentos.view', ['record' => $lancamento]))
         ->assertOk()
-        ->assertSee('EquipeTrabalho #'.$member->id.' - Servo Equipe View')
+        ->assertSee('juvenil-launch-registration-card', false)
+        ->assertSee('Equipe #'.$member->id)
+        ->assertSee('Servo Equipe View')
+        ->assertSee('Cozinha')
+        ->assertSee('Externa')
+        ->assertSee('Aprovado')
+        ->assertSee('/storage/foto-formulario-equipe-trabalho/servo-view.png', false)
+        ->assertDontSee('EquipeTrabalho #'.$member->id.' - Servo Equipe View')
         ->assertSee(route('filament.admin.resources.equipe-trabalhos.view', ['record' => $member]), false);
 
     $this->actingAs($user)

@@ -49,7 +49,7 @@ it('defaults financial entry date to the application current date', function () 
     Carbon::setTestNow();
 });
 
-it('renders financial status and payment select options with enum icons and colors', function () {
+it('renders financial enum select options with icons and colors', function () {
     expect((string) EnumOptionBadge::option(StatusLacamento::Pago))
         ->toContain('Pago')
         ->toContain('polaris-payment-icon')
@@ -57,7 +57,11 @@ it('renders financial status and payment select options with enum icons and colo
         ->and((string) EnumOptionBadge::option(FormaPagamento::Pix))
         ->toContain('Pix')
         ->toContain('fab-pix')
-        ->toContain('data-enum-color="teal"');
+        ->toContain('data-enum-color="teal"')
+        ->and((string) EnumOptionBadge::option(TipoLacamento::Receita))
+        ->toContain('Receita')
+        ->toContain('heroicon-m-arrow-trending-up')
+        ->toContain('data-enum-color="success"');
 
     expect(file_get_contents(app_path('Filament/Resources/LancamentoResource/Forms/LancamentoForm.php')))
         ->toContain('use App\Support\EnumOptionBadge;')
@@ -488,6 +492,7 @@ it('exposes item links in the financial entry form and table', function () {
         ->toContain("Select::make('categoria_lancamento_id')")
         ->toContain("Select::make('registration_type')")
         ->toContain("ModalTableSelect::make('registration_id')")
+        ->toContain('string|HtmlString|null => self::registrationOptionLabel')
         ->toContain('LancamentoItemCampistasTable::class')
         ->toContain('LancamentoItemEquipeTrabalhoTable::class')
         ->toContain('tableArguments')
@@ -497,8 +502,8 @@ it('exposes item links in the financial entry form and table', function () {
         ->not->toContain("\n                                    Select::make('registration_id')")
         ->toContain('self::categorySearchResults')
         ->toContain('self::categoryOptionLabel')
-        ->not->toContain("->options(fn (Get \$get): array => self::categoryOptions(\$get('../../tipo')))")
-        ->not->toContain('->preload()')
+        ->toContain("->options(fn (Get \$get): array => self::categoryOptions(\$get('../../tipo')))")
+        ->toContain('->preload()')
         ->toContain("TextInput::make('valor')")
         ->toContain("RichEditor::make('descricao')")
         ->not->toContain("Repeater::make('registration_payments')")
@@ -507,6 +512,7 @@ it('exposes item links in the financial entry form and table', function () {
         ->not->toContain("Textarea::make('descricao')\n                                ->toolbarButtons")
         ->toContain('RegistrationPaymentAllocator::registrationTypeOptions')
         ->toContain('registrationOptions')
+        ->toContain('LancamentoRegistrationCard::forTeam')
         ->not->toContain('registrationSearchResults')
         ->toContain("Textarea::make('observacao')")
         ->toContain('self::itemsTotalHtml')
@@ -528,7 +534,14 @@ it('exposes item links in the financial entry form and table', function () {
         ->toContain("->with(['items.categoria', 'items.registration'])")
         ->toContain("TextColumn::make('batch_code')")
         ->toContain("SelectFilter::make('tipo')")
+        ->toContain('EnumOptionBadge::options(TipoLacamento::class)')
+        ->toContain("Tipo: '.(TipoLacamento::tryFrom((int) \$state['value'])?->getLabel() ?? \$state['value'])")
         ->toContain("Filter::make('registration_link')")
+        ->toContain("->label('Cadastro vinculado')")
+        ->toContain("->label('Vínculo com cadastro')")
+        ->toContain("'linked' => 'Com cadastro vinculado'")
+        ->toContain("'unlinked' => 'Sem cadastro vinculado'")
+        ->toContain("->label('Tipo de cadastro')")
         ->toContain("Select::make('registration_type')")
         ->toContain("Filter::make('name_search')")
         ->toContain('whereHasMorph')
@@ -547,6 +560,48 @@ it('exposes item links in the financial entry form and table', function () {
         ->toContain('EquipeTrabalhoTable::getFilters()');
 
     expect(Schema::getColumnType('lancamentos', 'descricao'))->toBe('text');
+});
+
+it('renders selected team work registration as a compact card on the edit form', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+
+    $member = EquipeTrabalho::factory()->create([
+        'nome' => 'Servo Selecionado Edit',
+        'avatar_url' => 'foto-formulario-equipe-trabalho/servo-edit.png',
+        'descricao' => 'Liturgia',
+        'status' => StatusInscricaoEquipeTrabalho::Aprovado,
+        'tipo_equipe' => TipoEquipeTrabalho::Interna,
+    ]);
+
+    $category = CategoriaLancamento::factory()->create([
+        'nome' => 'Contribuição Edit',
+        'tipo' => TipoLacamento::Receita,
+        'ativo' => true,
+    ]);
+
+    $lancamento = financialItemEntry([
+        'nome' => 'Lançamento equipe selecionada',
+        'tipo' => TipoLacamento::Receita,
+    ]);
+    $lancamento->items()->create(financialItemPayload($category, $member, [
+        'valor' => 4400,
+    ]));
+
+    $this->actingAs($user)
+        ->get(route('filament.admin.resources.lancamentos.edit', ['record' => $lancamento]))
+        ->assertOk()
+        ->assertSee('juvenil-launch-registration-card', false)
+        ->assertDontSee('&lt;div class=&quot;juvenil-launch-registration-card&quot;', false)
+        ->assertSee('Equipe #'.$member->id)
+        ->assertSee('Servo Selecionado Edit')
+        ->assertSee('Liturgia')
+        ->assertSee('Interna')
+        ->assertSee('Aprovado')
+        ->assertSee('/storage/foto-formulario-equipe-trabalho/servo-edit.png', false)
+        ->assertDontSee('valor R$ 44,00');
 });
 
 it('renders the financial item total with sign and semantic color', function () {
@@ -624,6 +679,152 @@ it('hides registration linking fields for expense financial items', function () 
         ]))
         ->assertSee('-R$ 350,00')
         ->assertDontSee('Tipo da inscrição');
+});
+
+it('fills the item amount from the selected category default value only when configured', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    $categoryWithDefault = CategoriaLancamento::factory()->create([
+        'nome' => 'Camiseta com valor padrão',
+        'tipo' => TipoLacamento::Receita->value,
+        'valor_padrao' => 4500,
+    ]);
+
+    $categoryWithoutDefault = CategoriaLancamento::factory()->create([
+        'nome' => 'Categoria sem valor padrão',
+        'tipo' => TipoLacamento::Receita->value,
+        'valor_padrao' => 0,
+    ]);
+
+    Livewire::test(CreateLancamento::class)
+        ->fillForm(financialItemFormPayload([
+            'tipo' => TipoLacamento::Receita->value,
+            'items' => [
+                [
+                    'nome' => 'Camiseta',
+                    'valor' => 1000,
+                    'categoria_lancamento_id' => null,
+                    'registration_type' => null,
+                    'registration_id' => null,
+                    'descricao' => null,
+                ],
+            ],
+        ]))
+        ->set('data.items.0.categoria_lancamento_id', $categoryWithDefault->id)
+        ->assertFormSet(fn (array $state): array => tap([], function () use ($state): void {
+            expect(data_get($state, 'items.0.valor'))->toBe('45,00');
+        }))
+        ->set('data.items.0.valor', '12,34')
+        ->set('data.items.0.categoria_lancamento_id', $categoryWithoutDefault->id)
+        ->assertFormSet(fn (array $state): array => tap([], function () use ($state): void {
+            expect(data_get($state, 'items.0.valor'))->toBe('12,34');
+        }));
+});
+
+it('fills system category amounts from configured registration values', function () {
+    $this->seed(ShieldSeeder::class);
+    seedFinancialItemSettings(32550, 4400, 3500);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $campista = financialItemCampista('Campista Valor Configurado');
+    $internalTeam = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Interna Valor',
+        'tipo_equipe' => TipoEquipeTrabalho::Interna->value,
+    ]);
+    $externalTeam = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Externa Valor',
+        'tipo_equipe' => TipoEquipeTrabalho::Externa->value,
+    ]);
+    $campistaCategory = financialItemRegistrationCategory(Campista::class);
+    $teamCategory = financialItemRegistrationCategory(EquipeTrabalho::class);
+
+    expect(LancamentoForm::categoryDefaultValueForInput(
+        TipoLacamento::Receita->value,
+        $teamCategory->id,
+        EquipeTrabalho::class,
+        $internalTeam->id,
+    ))->toBe('44,00');
+
+    Livewire::test(CreateLancamento::class)
+        ->fillForm(financialItemFormPayload([
+            'tipo' => TipoLacamento::Receita->value,
+            'items' => [
+                [
+                    'nome' => 'Vínculo configurado',
+                    'valor' => 0,
+                    'categoria_lancamento_id' => null,
+                    'registration_type' => Campista::class,
+                    'registration_id' => $campista->id,
+                    'descricao' => null,
+                ],
+            ],
+        ]))
+        ->set('data.items.0.categoria_lancamento_id', $campistaCategory->id)
+        ->assertFormSet(fn (array $state): array => tap([], function () use ($state): void {
+            expect(data_get($state, 'items.0.valor'))->toBe('325,50');
+        }));
+
+    Livewire::test(CreateLancamento::class)
+        ->fillForm(financialItemFormPayload([
+            'tipo' => TipoLacamento::Receita->value,
+            'items' => [
+                [
+                    'nome' => 'Equipe configurada',
+                    'valor' => 0,
+                    'categoria_lancamento_id' => null,
+                    'registration_type' => EquipeTrabalho::class,
+                    'registration_id' => $internalTeam->id,
+                    'descricao' => null,
+                ],
+            ],
+        ]))
+        ->set('data.items.0.valor', '12,34')
+        ->set('data.items.0.categoria_lancamento_id', $teamCategory->id)
+        ->set('data.items.0.registration_id', $internalTeam->id)
+        ->assertFormSet(fn (array $state): array => tap([], function () use ($state): void {
+            expect(data_get($state, 'items.0.valor'))->toBe('44,00');
+        }))
+        ->set('data.items.0.valor', '12,34')
+        ->set('data.items.0.registration_id', $externalTeam->id)
+        ->assertFormSet(fn (array $state): array => tap([], function () use ($state): void {
+            expect(data_get($state, 'items.0.valor'))->toBe('35,00');
+        }));
+
+    expect(LancamentoForm::categoryDefaultValueForInput(
+        TipoLacamento::Receita->value,
+        $teamCategory->id,
+        EquipeTrabalho::class,
+        null,
+    ))->toBeNull();
+
+    Livewire::test(CreateLancamento::class)
+        ->fillForm(financialItemFormPayload([
+            'tipo' => TipoLacamento::Receita->value,
+            'items' => [
+                [
+                    'nome' => 'Equipe sem vínculo',
+                    'valor' => 1234,
+                    'categoria_lancamento_id' => null,
+                    'registration_type' => EquipeTrabalho::class,
+                    'registration_id' => null,
+                    'descricao' => null,
+                ],
+            ],
+        ]))
+        ->set('data.items.0.valor', '12,34')
+        ->set('data.items.0.categoria_lancamento_id', $teamCategory->id)
+        ->assertFormSet(fn (array $state): array => tap([], function () use ($state): void {
+            expect(data_get($state, 'items.0.valor'))->toBe('12,34');
+        }));
 });
 
 it('keeps financial items when changing type and only clears item categories', function () {
