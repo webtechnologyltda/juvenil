@@ -6,9 +6,6 @@
   var config = null;
   var isStarted = false;
   var DEFAULT_PROXY_ENDPOINT = "/tracefy-sdk/events/js";
-  var DEFAULT_BASE_URL = "https://tracefy.webtechnology.com.br";
-  var DEFAULT_EVENT_ROUTE = "/api/events";
-  var DEFAULT_JS_ENDPOINT = "js";
 
   function nowIso() {
     return new Date().toISOString();
@@ -48,11 +45,7 @@
       return DEFAULT_PROXY_ENDPOINT;
     }
 
-    var baseUrl = (config && config.baseUrl) || DEFAULT_BASE_URL;
-    var route = (config && config.eventRoute) || DEFAULT_EVENT_ROUTE;
-    var endpoint = (config && config.eventEndpoint) || DEFAULT_JS_ENDPOINT;
-
-    return baseUrl.replace(/\/+$/, "") + "/" + route.replace(/^\/+|\/+$/g, "") + "/" + endpoint.replace(/^\/+|\/+$/g, "");
+    return DEFAULT_PROXY_ENDPOINT;
   }
 
   function send(payload) {
@@ -63,10 +56,6 @@
       "Content-Type": "application/json",
       "Accept": "application/json"
     };
-
-    if (config.apiKey) {
-      headers["X-API-KEY"] = config.apiKey;
-    }
 
     if (navigator.sendBeacon && !config.forceFetch) {
       var blob = new Blob([body], { type: "application/json" });
