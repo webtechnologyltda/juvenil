@@ -6,6 +6,8 @@ use App\Filament\Dashboard;
 use App\Filament\Pages\Auth\Login;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Enums\ThemeMode;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -27,6 +29,17 @@ use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
+    public function boot(): void
+    {
+        FileUpload::configureUsing(function (FileUpload $component): void {
+            $component->preventFilePathTampering();
+        });
+
+        RichEditor::configureUsing(function (RichEditor $component): void {
+            $component->preventFileAttachmentPathTampering();
+        });
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel

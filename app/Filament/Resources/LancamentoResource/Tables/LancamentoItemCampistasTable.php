@@ -17,12 +17,15 @@ class LancamentoItemCampistasTable
             ->modifyQueryUsing(function (Builder $query) use ($table): Builder {
                 $arguments = $table->getArguments();
 
-                return $query->whereKey(array_keys(app(RegistrationPaymentAllocator::class)->registrationOptions(
-                    Campista::class,
-                    $arguments['excluding_lancamento_id'] ?? null,
-                    $arguments['current_registration_id'] ?? null,
-                    $arguments['categoria_lancamento_id'] ?? null,
-                )));
+                return app(RegistrationPaymentAllocator::class)->applyPaymentEligibilityQuery(
+                    query: $query
+                        ->select(['id', 'nome', 'avatar_url', 'form_data', 'status', 'forma_pagamento', 'dia_pagamento', 'presenca', 'tribo_id'])
+                        ->with('tribo:id,cor,cor_hex'),
+                    registrationType: Campista::class,
+                    excludingLancamentoId: $arguments['excluding_lancamento_id'] ?? null,
+                    currentRegistrationId: $arguments['current_registration_id'] ?? null,
+                    categoryId: $arguments['categoria_lancamento_id'] ?? null,
+                );
             })
             ->columns(CampistaTable::getListTableColumns())
             ->defaultSort('id', 'desc')

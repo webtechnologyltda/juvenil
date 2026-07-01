@@ -19,6 +19,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Concerns\RestrictsFileUploadsToSchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +29,7 @@ class CampistaWaitlistForm extends Component implements HasActions, HasForms
 {
     use InteractsWithActions;
     use InteractsWithForms;
+    use RestrictsFileUploadsToSchemaComponents;
 
     public ?array $data = [];
 

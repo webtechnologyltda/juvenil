@@ -18,6 +18,10 @@
         "pest-testing",
         "tailwindcss-development",
         "cep-field-development",
-        "filament-security-audit"
+        "filament-security-audit",
+        "eloquent-best-practices",
+        "laravel-security",
+        "laravel-specialist",
+        "php-best-practices"
     ]
 }

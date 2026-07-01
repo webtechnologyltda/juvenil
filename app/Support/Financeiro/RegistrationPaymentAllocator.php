@@ -13,6 +13,7 @@ use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Models\LancamentoItem;
 use App\Settings\GeneralSettings;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -238,6 +239,81 @@ class RegistrationPaymentAllocator
         return (int) $query->sum('valor');
     }
 
+    /**
+     * @param  Builder<Model>  $query
+     * @param  class-string<Model>  $registrationType
+     * @return Builder<Model>
+     */
+    public function applyPaymentEligibilityQuery(Builder $query, string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null): Builder
+    {
+        if (! $this->isSupportedRegistrationType($registrationType)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $query->where($this->registrationStatusColumn(), '<>', $this->cancelledStatusValue($registrationType));
+
+        if (! $this->categoryCountsTowardRegistrationPayment($registrationType, $categoryId)) {
+            return $query;
+        }
+
+        $paymentCategoryId = $this->categoryForRegistrationType($registrationType)?->id;
+
+        if ($paymentCategoryId === null) {
+            return $currentRegistrationId !== null
+                ? $query->whereKey($currentRegistrationId)
+                : $query->whereRaw('1 = 0');
+        }
+
+        $table = $query->getModel()->getTable();
+        $linkedSql = <<<'SQL'
+            exists (
+                select 1
+                from lancamento_items as linked_items
+                where linked_items.registration_type = ?
+                    and linked_items.registration_id = %s.id
+                    and linked_items.categoria_lancamento_id = ?
+                    %s
+            )
+        SQL;
+        $paidSql = <<<'SQL'
+            (
+                select coalesce(sum(paid_items.valor), 0)
+                from lancamento_items as paid_items
+                inner join lancamentos as paid_lancamentos on paid_lancamentos.id = paid_items.lancamento_id
+                where paid_items.registration_type = ?
+                    and paid_items.registration_id = %s.id
+                    and paid_items.categoria_lancamento_id = ?
+                    and paid_lancamentos.status = ?
+                    %s
+            )
+        SQL;
+
+        $excludingSql = $excludingLancamentoId !== null ? 'and %s.lancamento_id <> ?' : '';
+        $linkedBindings = [$registrationType, $paymentCategoryId];
+        $paidBindings = [$registrationType, $paymentCategoryId, StatusLacamento::Pago->value];
+
+        if ($excludingLancamentoId !== null) {
+            $linkedBindings[] = $excludingLancamentoId;
+            $paidBindings[] = $excludingLancamentoId;
+        }
+
+        $linkedSql = sprintf($linkedSql, $table, $excludingSql === '' ? '' : sprintf($excludingSql, 'linked_items'));
+        $paidSql = sprintf($paidSql, $table, $excludingSql === '' ? '' : sprintf($excludingSql, 'paid_items'));
+        $expectedSql = $this->expectedAmountSqlFor($registrationType);
+
+        return $query->where(function (Builder $query) use ($currentRegistrationId, $linkedSql, $linkedBindings, $paidSql, $paidBindings, $expectedSql): void {
+            if ($currentRegistrationId !== null) {
+                $query->whereKey($currentRegistrationId);
+            }
+
+            $query->orWhere(function (Builder $query) use ($linkedSql, $linkedBindings, $paidSql, $paidBindings, $expectedSql): void {
+                $query
+                    ->whereRaw("not {$linkedSql}", $linkedBindings)
+                    ->whereRaw("{$paidSql} < {$expectedSql}", $paidBindings);
+            });
+        });
+    }
+
     public function remainingAmountFor(Model $registration, ?int $excludingLancamentoId = null): int
     {
         $expected = $this->expectedAmountFor($registration);
@@ -441,10 +517,10 @@ class RegistrationPaymentAllocator
             ->first();
     }
 
-    private function registrationOptionLabel(Model $registration, ?int $excludingLancamentoId = null): string
+    private function registrationOptionLabel(Model $registration, ?int $excludingLancamentoId = null, ?int $paidAmount = null): string
     {
         $expected = $this->expectedAmountFor($registration) ?? 0;
-        $paid = $this->paidAmountFor($registration, $excludingLancamentoId);
+        $paid = $paidAmount ?? $this->paidAmountFor($registration, $excludingLancamentoId);
         $remaining = max(0, $expected - $paid);
 
         return sprintf(
@@ -464,25 +540,69 @@ class RegistrationPaymentAllocator
      */
     private function registrationOptionResults(string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null, ?string $search = null, ?int $limit = null): array
     {
-        return $registrationType::query()
+        $query = $registrationType::query();
+
+        $registrations = $this->applyPaymentEligibilityQuery(
+            query: $query,
+            registrationType: $registrationType,
+            excludingLancamentoId: $excludingLancamentoId,
+            currentRegistrationId: $currentRegistrationId,
+            categoryId: $categoryId,
+        )
             ->when(filled($search), fn ($query) => $query->where('nome', 'like', '%'.str_replace(['%', '_'], ['\\%', '\\_'], trim((string) $search)).'%'))
             ->when(
                 filled($search),
                 fn ($query) => $query->orderBy('nome')->orderBy('id'),
                 fn ($query) => $query->orderBy('id'),
             )
-            ->when($limit !== null, fn ($query) => $query->limit($limit * 4))
-            ->get()
-            ->filter(fn (Model $registration): bool => $this->registrationCanReceivePayment(
-                registration: $registration,
-                excludingLancamentoId: $excludingLancamentoId,
-                currentRegistrationId: $currentRegistrationId,
-                categoryId: $categoryId,
-            ))
-            ->take($limit ?? PHP_INT_MAX)
+            ->when($limit !== null, fn ($query) => $query->limit($limit))
+            ->get();
+
+        $paidAmounts = $this->paidAmountsFor(
+            registrationType: $registrationType,
+            registrationIds: $registrations->modelKeys(),
+            excludingLancamentoId: $excludingLancamentoId,
+        );
+
+        return $registrations
             ->mapWithKeys(fn (Model $registration): array => [
-                $registration->getKey() => $this->registrationOptionLabel($registration, $excludingLancamentoId),
+                $registration->getKey() => $this->registrationOptionLabel(
+                    registration: $registration,
+                    excludingLancamentoId: $excludingLancamentoId,
+                    paidAmount: $paidAmounts[$registration->getKey()] ?? 0,
+                ),
             ])
+            ->all();
+    }
+
+    /**
+     * @param  class-string<Model>  $registrationType
+     * @param  array<int, int|string>  $registrationIds
+     * @return array<int, int>
+     */
+    private function paidAmountsFor(string $registrationType, array $registrationIds, ?int $excludingLancamentoId = null): array
+    {
+        if ($registrationIds === []) {
+            return [];
+        }
+
+        $categoryId = $this->categoryForRegistrationType($registrationType)?->id;
+
+        if ($categoryId === null) {
+            return [];
+        }
+
+        return LancamentoItem::query()
+            ->select('registration_id')
+            ->selectRaw('coalesce(sum(valor), 0) as paid_amount')
+            ->where('registration_type', $registrationType)
+            ->whereIn('registration_id', $registrationIds)
+            ->where('categoria_lancamento_id', $categoryId)
+            ->whereHas('lancamento', fn (Builder $query): Builder => $query->where('status', StatusLacamento::Pago->value))
+            ->when($excludingLancamentoId !== null, fn (Builder $query): Builder => $query->where('lancamento_id', '<>', $excludingLancamentoId))
+            ->groupBy('registration_id')
+            ->pluck('paid_amount', 'registration_id')
+            ->map(fn (mixed $amount): int => (int) $amount)
             ->all();
     }
 
@@ -577,6 +697,50 @@ class RegistrationPaymentAllocator
             $registration instanceof EquipeTrabalho => $registration->status === StatusInscricaoEquipeTrabalho::Cancelado,
             default => true,
         };
+    }
+
+    private function registrationStatusColumn(): string
+    {
+        return 'status';
+    }
+
+    /**
+     * @param  class-string<Model>  $registrationType
+     */
+    private function cancelledStatusValue(string $registrationType): int
+    {
+        return match ($registrationType) {
+            Campista::class => StatusInscricao::Cancelado->value,
+            EquipeTrabalho::class => StatusInscricaoEquipeTrabalho::Cancelado->value,
+            default => -1,
+        };
+    }
+
+    /**
+     * @param  class-string<Model>  $registrationType
+     */
+    private function expectedAmountSqlFor(string $registrationType): string
+    {
+        $settings = app(GeneralSettings::class);
+
+        if ($registrationType === Campista::class) {
+            return (string) max(0, (int) ($settings->valor_acampamento ?? 0));
+        }
+
+        if ($registrationType === EquipeTrabalho::class) {
+            $internal = max(0, (int) ($settings->valor_equipe_trabalho_interna ?? 0));
+            $external = max(0, (int) ($settings->valor_equipe_trabalho_externa ?? 0));
+
+            return sprintf(
+                '(case when tipo_equipe = %d then %d when tipo_equipe = %d then %d else 0 end)',
+                TipoEquipeTrabalho::Interna->value,
+                $internal,
+                TipoEquipeTrabalho::Externa->value,
+                $external,
+            );
+        }
+
+        return '0';
     }
 
     private function isSupportedRegistrationType(mixed $registrationType): bool

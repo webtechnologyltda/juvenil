@@ -157,6 +157,8 @@ it('uses a compact readable layout for the launch table columns', function () {
         ->toContain('.juvenil-lancamento-table__popover-category-icon')
         ->toContain('.juvenil-lancamento-table__popover-category-name')
         ->toContain('.juvenil-launch-registration-card')
+        ->toContain('.juvenil-launch-registration-select > div:first-child')
+        ->toContain('max-width: 42rem;')
         ->toContain('grid-template-columns: auto minmax(0, 1fr);')
         ->toContain('.juvenil-launch-registration-card__photo')
         ->toContain('.juvenil-launch-registration-card__status--success');

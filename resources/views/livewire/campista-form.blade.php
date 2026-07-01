@@ -251,7 +251,7 @@
                 </p>
                 @if(filled($this->settings['liberacao_inscricoes_bloco'] ?? null))
                     <div class="no-tailwind mt-6 text-[#d8f2fa]">
-                        {!! $this->settings['liberacao_inscricoes_bloco'] !!}
+                        {!! str($this->settings['liberacao_inscricoes_bloco'])->sanitizeHtml() !!}
                     </div>
                 @endif
             </div>
@@ -267,7 +267,7 @@
                     </p>
                     @if(filled($this->settings['liberacao_inscricoes_bloco'] ?? null))
                         <div class="no-tailwind mt-6 text-[#d8f2fa]">
-                            {!! $this->settings['liberacao_inscricoes_bloco'] !!}
+                            {!! str($this->settings['liberacao_inscricoes_bloco'])->sanitizeHtml() !!}
                         </div>
                     @endif
                 </div>

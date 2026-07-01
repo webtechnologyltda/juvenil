@@ -39,6 +39,11 @@ class WaitlistEntry extends Model
         'status' => WaitlistEntryStatus::Aguardando->value,
     ];
 
+    protected $hidden = [
+        'invitation_token_hash',
+        'invitation_token_encrypted',
+    ];
+
     protected function casts(): array
     {
         return [
