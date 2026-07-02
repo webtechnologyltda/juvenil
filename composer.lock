@@ -11773,16 +11773,16 @@
         },
         {
             "name": "webtechnologyltda/tracefy-sdk",
-            "version": "v2.0.0",
+            "version": "v2.0.1",
             "source": {
                 "type": "git",
                 "url": "git@github.com:webtechnologyltda/tracefy-sdk.git",
-                "reference": "4ed6707e1bd05b651c459be775a190ea0c5a52f9"
+                "reference": "55f03889e7729569c09f12a1031b3f2c1eaffe68"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webtechnologyltda/tracefy-sdk/zipball/4ed6707e1bd05b651c459be775a190ea0c5a52f9",
-                "reference": "4ed6707e1bd05b651c459be775a190ea0c5a52f9",
+                "url": "https://api.github.com/repos/webtechnologyltda/tracefy-sdk/zipball/55f03889e7729569c09f12a1031b3f2c1eaffe68",
+                "reference": "55f03889e7729569c09f12a1031b3f2c1eaffe68",
                 "shasum": ""
             },
             "require": {
@@ -11837,10 +11837,10 @@
             ],
             "description": "Tracefy SDK package for sending application errors to the central error monitoring service.",
             "support": {
-                "source": "https://github.com/webtechnologyltda/tracefy-sdk/tree/v2.0.0",
+                "source": "https://github.com/webtechnologyltda/tracefy-sdk/tree/v2.0.1",
                 "issues": "https://github.com/webtechnologyltda/tracefy-sdk/issues"
             },
-            "time": "2026-06-24T04:26:35+00:00"
+            "time": "2026-07-02T01:48:12+00:00"
         }
     ],
     "packages-dev": [
