@@ -254,15 +254,38 @@ class LancamentoResource extends Resource
                 SelectFilter::make('categoria_lancamento_id')
                     ->label('Categoria')
                     ->options(fn (): array => self::categoryFilterOptions())
-                    ->query(fn (Builder $query, array $data): Builder => blank($data['value'] ?? null)
-                        ? $query
-                        : $query->whereHas('items', fn (Builder $query): Builder => $query->where('categoria_lancamento_id', $data['value'])))
+                    ->multiple()
+                    ->query(function (Builder $query, array $data): Builder {
+                        $categoryIds = collect($data['values'] ?? [])
+                            ->filter(fn (mixed $value): bool => filled($value))
+                            ->map(fn (mixed $value): int => (int) $value)
+                            ->values()
+                            ->all();
+
+                        return $categoryIds === []
+                            ? $query
+                            : $query->whereHas('items', fn (Builder $query): Builder => $query->whereIn('categoria_lancamento_id', $categoryIds));
+                    })
                     ->searchable()
                     ->native(false)
                     ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
-                    ->indicateUsing(fn (array $state): array => blank($state['value'] ?? null)
-                        ? []
-                        : ['Categoria: '.(CategoriaLancamento::query()->whereKey($state['value'])->value('nome') ?? $state['value'])])
+                    ->indicateUsing(function (array $state): array {
+                        $categoryIds = collect($state['values'] ?? [])
+                            ->filter(fn (mixed $value): bool => filled($value))
+                            ->map(fn (mixed $value): int => (int) $value)
+                            ->values();
+
+                        if ($categoryIds->isEmpty()) {
+                            return [];
+                        }
+
+                        return CategoriaLancamento::query()
+                            ->whereKey($categoryIds->all())
+                            ->orderBy('nome')
+                            ->pluck('nome')
+                            ->map(fn (string $name): string => 'Categoria: '.$name)
+                            ->all();
+                    })
                     ->preload(),
                 SelectFilter::make('batch_code')
                     ->label('Lote')

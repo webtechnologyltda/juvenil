@@ -362,6 +362,8 @@ it('exposes the category field on the financial entry form and table', function 
         ->toContain('IconBadge::tile($category')
         ->toContain('->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())')
         ->toContain('->native(false)')
+        ->toContain('->multiple()')
         ->toContain("whereHas('items'")
+        ->toContain("whereIn('categoria_lancamento_id'")
         ->toContain("Group::make('batch_code')");
 });

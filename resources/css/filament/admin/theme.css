@@ -778,6 +778,10 @@ body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-
     overflow-x: auto;
 }
 
+body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-content-ctn:has(.fi-ta-cell-registration-payments-summary .juvenil-lancamento-table__registrations:is(:hover, :focus-within)) {
+    overflow: visible;
+}
+
 body.fi-panel-admin:not(.juvenil-admin-auth-body) .juvenil-lancamento-table .fi-ta-table {
     min-width: 84rem;
     table-layout: fixed;
