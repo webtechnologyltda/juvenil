@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Filament\Resources\CampistaResource;
+use App\Filament\Resources\EquipeTrabalhoResource;
+use App\Filament\Resources\TriboResource;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Filament\Pages\Dashboard;
 use Filament\Widgets\AccountWidget;
@@ -16,7 +19,7 @@ return [
             'pages' => true,
             'widgets' => true,
             'resources' => true,
-            'custom_permissions' => false,
+            'custom_permissions' => true,
         ],
     ],
 
@@ -78,12 +81,26 @@ return [
     'resources' => [
         'subject' => 'model',
         'manage' => [
+            CampistaResource::class => [
+                'audit',
+                'export',
+                'restoreAudit',
+                'updateTribo',
+                'viewSensitiveHealth',
+            ],
+            EquipeTrabalhoResource::class => [
+                'export',
+            ],
             RoleResource::class => [
                 'viewAny',
                 'view',
                 'create',
                 'update',
                 'delete',
+            ],
+            TriboResource::class => [
+                'audit',
+                'restoreAudit',
             ],
         ],
         'exclude' => [],
@@ -106,7 +123,12 @@ return [
         ],
     ],
 
-    'custom_permissions' => [],
+    'custom_permissions' => [
+        'print_mission_contacts_report' => 'Imprimir relatório de contatos e endereços',
+        'print_registration_fichas_report' => 'Imprimir fichas de inscrição',
+        'print_sensitive_health_report' => 'Imprimir relatório médico da enfermaria',
+        'print_tribe_quadrant_report' => 'Imprimir quadrante por tribo',
+    ],
 
     'discovery' => [
         'discover_all_resources' => false,

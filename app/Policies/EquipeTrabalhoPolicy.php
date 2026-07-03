@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\EquipeTrabalho;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 class EquipeTrabalhoPolicy
 {
@@ -72,4 +72,8 @@ class EquipeTrabalhoPolicy
         return $authUser->can('reorder_equipe_trabalho');
     }
 
+    public function export(AuthUser $authUser): bool
+    {
+        return $authUser->can('export_equipe_trabalho');
+    }
 }

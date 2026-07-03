@@ -8,6 +8,7 @@ use App\Enums\TipoLacamento;
 use App\Filament\Widgets\Financial\FinancialCategoryChart;
 use App\Filament\Widgets\Financial\FinancialDailyFlowChart;
 use App\Filament\Widgets\Financial\FinancialOverviewStats;
+use App\Filament\Widgets\Financial\FinancialPaymentMethodChart;
 use App\Filament\Widgets\Financial\RecentFinancialEntriesTable;
 use App\Models\CategoriaLancamento;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
@@ -85,6 +86,7 @@ class FinancialDashboard extends FilamentDashboard
             FinancialOverviewStats::class,
             FinancialDailyFlowChart::class,
             FinancialCategoryChart::class,
+            FinancialPaymentMethodChart::class,
             RecentFinancialEntriesTable::class,
         ];
     }

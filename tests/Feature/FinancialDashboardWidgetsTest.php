@@ -6,6 +6,7 @@ use App\Filament\Pages\FinancialDashboard;
 use App\Filament\Widgets\Financial\FinancialCategoryChart;
 use App\Filament\Widgets\Financial\FinancialDailyFlowChart;
 use App\Filament\Widgets\Financial\FinancialOverviewStats;
+use App\Filament\Widgets\Financial\FinancialPaymentMethodChart;
 use App\Filament\Widgets\Financial\RecentFinancialEntriesTable;
 use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
@@ -68,6 +69,7 @@ it('registers a financial dashboard page in the finance navigation group with gl
         FinancialOverviewStats::class,
         FinancialDailyFlowChart::class,
         FinancialCategoryChart::class,
+        FinancialPaymentMethodChart::class,
         RecentFinancialEntriesTable::class,
     ])
         ->and(FinancialDashboard::getRoutePath(filament()->getPanel('admin')))->toBe('/financeiro')
@@ -95,16 +97,20 @@ it('renders the financial dashboard route for administrators', function () {
 it('configures financial Apex charts with currency formatters', function () {
     $dailyOptions = financialDashboardChartOptions(FinancialDailyFlowChart::class);
     $categoryOptions = financialDashboardChartOptions(FinancialCategoryChart::class);
+    $paymentMethodOptions = financialDashboardChartOptions(FinancialPaymentMethodChart::class);
 
     expect($dailyOptions['chart']['type'])->toBe('bar')
         ->and($dailyOptions['series'])->toHaveCount(4)
         ->and($categoryOptions['chart']['type'])->toBe('pie')
+        ->and($paymentMethodOptions['chart']['type'])->toBe('pie')
+        ->and($paymentMethodOptions)->toHaveKey('labels')
         ->and($categoryOptions)->toHaveKey('labels')
         ->and($categoryOptions)->not->toHaveKey('xaxis')
         ->and($categoryOptions)->not->toHaveKey('plotOptions')
         ->and(financialDashboardChartExtraJs(FinancialDailyFlowChart::class))->toContain('Intl.NumberFormat')
         ->and(financialDashboardChartExtraJs(FinancialCategoryChart::class))->toContain('Intl.NumberFormat')
-        ->and(financialDashboardChartExtraJs(FinancialCategoryChart::class))->toContain('options.w.config.series');
+        ->and(financialDashboardChartExtraJs(FinancialCategoryChart::class))->toContain('options.w.config.series')
+        ->and(financialDashboardChartExtraJs(FinancialPaymentMethodChart::class))->toContain('options.w.config.series');
 });
 
 it('renders financial category values as pie chart slices', function () {
@@ -127,6 +133,30 @@ it('renders financial category values as pie chart slices', function () {
     expect($options['chart']['type'])->toBe('pie')
         ->and($options['labels'])->toBe(['Mercado'])
         ->and($options['series'])->toBe([560]);
+});
+
+it('renders financial balances by payment method as pie chart slices', function () {
+    makeFinancialDashboardWidgetEntry([
+        'valor' => 25000,
+        'tipo' => TipoLacamento::Receita->value,
+        'forma_pagamento' => 1,
+    ]);
+    makeFinancialDashboardWidgetEntry([
+        'valor' => 4000,
+        'tipo' => TipoLacamento::Despesa->value,
+        'forma_pagamento' => 1,
+    ]);
+    makeFinancialDashboardWidgetEntry([
+        'valor' => 10000,
+        'tipo' => TipoLacamento::Doacao->value,
+        'forma_pagamento' => 2,
+    ]);
+
+    $options = financialDashboardChartOptions(FinancialPaymentMethodChart::class);
+
+    expect($options['chart']['type'])->toBe('pie')
+        ->and($options['labels'])->toBe(['Pix', 'Dinheiro'])
+        ->and($options['series'])->toBe([21000, 10000]);
 });
 
 it('keeps the daily financial flow y axis able to show negative balances', function () {

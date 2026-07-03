@@ -235,18 +235,8 @@ class ShieldSeeder extends Seeder
 
     protected static function customPermissionNames(): array
     {
-        return [
-            'audit_campista',
-            'audit_tribo',
-            'export_campista',
-            self::MISSION_CONTACTS_REPORT_PERMISSION,
-            self::REGISTRATION_FICHAS_REPORT_PERMISSION,
-            'restoreAudit_campista',
-            'restoreAudit_tribo',
-            self::SENSITIVE_HEALTH_REPORT_PERMISSION,
-            self::TRIBE_QUADRANT_REPORT_PERMISSION,
-            'updateTribo_campista',
-            self::SENSITIVE_HEALTH_PERMISSION,
-        ];
+        return collect(config('filament-shield.custom_permissions', []))
+            ->keys()
+            ->all();
     }
 }

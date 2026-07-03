@@ -148,6 +148,8 @@ it('seeds report permissions with least privilege by role', function () {
     $this->seed(ShieldSeeder::class);
 
     expect(Permission::query()->where('name', 'page_reports_page')->exists())->toBeTrue()
+        ->and(config('filament-shield.shield_resource.tabs.custom_permissions'))->toBeTrue()
+        ->and(config('filament-shield.custom_permissions.print_registration_fichas_report'))->toBe('Imprimir fichas de inscrição')
         ->and(Permission::query()->where('name', 'print_registration_fichas_report')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'print_tribe_quadrant_report')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'print_mission_contacts_report')->exists())->toBeTrue()
