@@ -8,6 +8,7 @@ use App\Filament\Resources\EquipeTrabalhoResource\EquipeTrabalhoTable;
 use App\Filament\Resources\EquipeTrabalhoResource\Pages;
 use App\Filament\Resources\EquipeTrabalhoResource\Widgets\EquipeTrabalhoStatsWidget;
 use App\Models\EquipeTrabalho;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Carbon\Carbon;
 use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
@@ -16,7 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 
-class EquipeTrabalhoResource extends Resource
+class EquipeTrabalhoResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = EquipeTrabalho::class;
 
@@ -54,6 +55,7 @@ class EquipeTrabalhoResource extends Resource
             ])
             ->toolbarActions([
                 ExportBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()->can('export', EquipeTrabalho::class))
                     ->exporter(EquipeTrabalhoExporter::class)
                     ->fileName(fn (Export $export): string => 'equipe-trabalho-'.Carbon::now()->format('YmdHis').'-'.$export->getKey())
                     ->label('Exportar'),
@@ -74,6 +76,25 @@ class EquipeTrabalhoResource extends Resource
             'create' => Pages\CreateEquipeTrabalho::route('/create'),
             'view' => Pages\ViewEquipeTrabalho::route('/{record}'),
             'edit' => Pages\EditEquipeTrabalho::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view_any',
+            'view',
+            'create',
+            'update',
+            'delete',
+            'delete_any',
+            'restore',
+            'force_delete',
+            'force_delete_any',
+            'restore_any',
+            'replicate',
+            'reorder',
+            'export',
         ];
     }
 

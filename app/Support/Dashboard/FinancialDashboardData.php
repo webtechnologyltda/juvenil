@@ -2,6 +2,7 @@
 
 namespace App\Support\Dashboard;
 
+use App\Enums\FormaPagamento;
 use App\Enums\TipoLacamento;
 use App\Models\Lancamento;
 use App\Models\LancamentoItem;
@@ -91,6 +92,16 @@ class FinancialDashboardDataSet
             ->all();
     }
 
+    public function paymentMethodBalances(): array
+    {
+        return $this->records
+            ->groupBy(fn (Lancamento $lancamento): string => $this->paymentMethodLabel($lancamento))
+            ->map(fn (Collection $records): int => $this->flowFor($records)['balance'])
+            ->filter(fn (int $balance): bool => $balance !== 0)
+            ->sortDesc()
+            ->all();
+    }
+
     public function recentEntries(int $limit = 8): Collection
     {
         return $this->records->take($limit)->values();
@@ -132,6 +143,17 @@ class FinancialDashboardDataSet
         }
 
         return abs((int) $lancamento->valor);
+    }
+
+    private function paymentMethodLabel(Lancamento $lancamento): string
+    {
+        if ($lancamento->forma_pagamento instanceof FormaPagamento) {
+            return $lancamento->forma_pagamento->getLabel() ?? 'Não informado';
+        }
+
+        $paymentMethod = FormaPagamento::tryFrom((int) $lancamento->forma_pagamento);
+
+        return $paymentMethod?->getLabel() ?? 'Não informado';
     }
 
     private function categoryItems(Lancamento $lancamento): Collection

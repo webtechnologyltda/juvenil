@@ -9,6 +9,7 @@ use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -33,6 +34,13 @@ it('grants the team work groups page permission to camp administrators', functio
 
     expect(Role::findByName('Administrador')->hasPermissionTo('page_equipe_trabalho_groups'))->toBeTrue()
         ->and(Role::findByName('Financeiro')->hasPermissionTo('page_equipe_trabalho_groups'))->toBeFalse();
+});
+
+it('registers the team work export permission for permission groups', function () {
+    $this->seed(ShieldSeeder::class);
+
+    expect(Permission::query()->where('name', 'export_equipe_trabalho')->exists())->toBeTrue()
+        ->and(Role::findByName('Super Administrador')->hasPermissionTo('export_equipe_trabalho'))->toBeTrue();
 });
 
 it('renders work team groups with their value rule and configured reference amount', function () {

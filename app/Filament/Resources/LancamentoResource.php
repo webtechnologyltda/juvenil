@@ -282,6 +282,7 @@ class LancamentoResource extends Resource
             ->toolbarActions([
                 ExportBulkAction::make()
                     ->exporter(LancamentoExporter::class)
+                    ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['items.categoria', 'items.registration']))
                     ->fileName(fn (Export $export): string => 'lancamento-financeiro-'.Carbon::now()->format('YmdHis').'-'.$export->getKey())
                     ->label('Exportar'),
             ]);

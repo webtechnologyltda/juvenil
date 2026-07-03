@@ -156,8 +156,39 @@ it('applies financial dashboard filters to totals charts and recent entries', fu
             'Inscrição' => 25000,
             'Alimentação' => 4000,
         ])
+        ->and($data->paymentMethodBalances())->toBe([
+            'Pix' => 21000,
+        ])
         ->and($data->recentEntries()->pluck('nome')->all())->toBe([
             'Despesa filtrada',
             'PIX filtrado',
         ]);
+});
+
+it('summarizes financial balances by payment method', function () {
+    makeFinancialDashboardEntry([
+        'nome' => 'Receita Pix',
+        'valor' => 25000,
+        'tipo' => TipoLacamento::Receita->value,
+        'forma_pagamento' => FormaPagamento::Pix->value,
+    ]);
+    makeFinancialDashboardEntry([
+        'nome' => 'Despesa Pix',
+        'valor' => 4000,
+        'tipo' => TipoLacamento::Despesa->value,
+        'forma_pagamento' => FormaPagamento::Pix->value,
+    ]);
+    makeFinancialDashboardEntry([
+        'nome' => 'Doação dinheiro',
+        'valor' => 10000,
+        'tipo' => TipoLacamento::Doacao->value,
+        'forma_pagamento' => FormaPagamento::Dinheiro->value,
+    ]);
+
+    $balances = app(FinancialDashboardData::class)->forFilters([])->paymentMethodBalances();
+
+    expect($balances)->toBe([
+        'Pix' => 21000,
+        'Dinheiro' => 10000,
+    ]);
 });
