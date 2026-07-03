@@ -135,6 +135,7 @@ it('uses a compact readable layout for the launch table columns', function () {
         ->toContain('Itens deste lançamento')
         ->and($theme)
         ->toContain('.juvenil-lancamento-table .fi-ta-table')
+        ->toContain('.juvenil-lancamento-table .fi-ta-content-ctn:has(.fi-ta-cell-registration-payments-summary .juvenil-lancamento-table__registrations:is(:hover, :focus-within))')
         ->toContain('min-width: 84rem;')
         ->toContain('.juvenil-lancamento-table__category-stack')
         ->toContain('.juvenil-lancamento-table__category-stack-extra')
