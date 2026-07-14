@@ -20,7 +20,7 @@ class EquipeTrabalhoExporter extends Exporter
                 ->label('Cod. Inscricão'),
 
             ExportColumn::make('nome')
-                ->label('Campista'),
+                ->label('Nome'),
 
             ExportColumn::make('descricao')
                 ->label('Equipe'),
