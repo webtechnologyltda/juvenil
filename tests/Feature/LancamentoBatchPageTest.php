@@ -9,15 +9,18 @@ use App\Enums\TipoLacamento;
 use App\Filament\Resources\LancamentoResource;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Pages\BatchLancamentos;
+use App\Filament\Resources\LancamentoResource\Tables\LancamentoBatchEquipeTrabalhoTable;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
 use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Models\User;
 use App\Support\Financeiro\LancamentoBatchCreator;
+use App\Support\Financeiro\RegistrationPaymentAllocator;
 use Carbon\Carbon;
 use Database\Seeders\ShieldSeeder;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TableSelect\Livewire\TableSelectLivewireComponent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -49,10 +52,13 @@ it('registers a dedicated batch launch page and list action', function () {
         ->toContain("Action::make('createBatch')")
         ->and(file_get_contents(app_path('Filament/Resources/LancamentoResource/Tables/LancamentoBatchCampistasTable.php')))
         ->toContain('CampistaTable::getListTableColumns()')
-        ->toContain('LancamentoBatchCreator::class')
+        ->toContain('RegistrationPaymentAllocator::class')
+        ->toContain('applyPaymentEligibilityQuery')
         ->and($equipeTrabalhoBatchTable)
         ->toContain('EquipeTrabalhoTable::getColumns()')
         ->toContain('EquipeTrabalhoTable::getFilters()')
+        ->toContain('RegistrationPaymentAllocator::class')
+        ->toContain('applyPaymentEligibilityQuery')
         ->and($view)
         ->toContain('{{ $this->form }}');
 });
@@ -216,6 +222,116 @@ it('fills selected team work batch rows with internal and external configured va
         ])
         ->assertSet('data.registration_items.0.valor', '120,00')
         ->assertSet('data.registration_items.1.valor', '80,00');
+});
+
+it('shows the configured internal and external team work values instead of the camp default', function () {
+    $this->seed(ShieldSeeder::class);
+    seedLancamentoBatchSettings(35000, teamInternalAmount: 12000, teamExternalAmount: 8000);
+
+    $user = User::factory()->create();
+    $user->assignRole('Super Administrador');
+    $this->actingAs($user);
+
+    Livewire::test(BatchLancamentos::class)
+        ->fillForm([
+            'registration_type' => EquipeTrabalho::class,
+        ])
+        ->assertFormFieldHidden('default_value')
+        ->assertSee('Equipe interna')
+        ->assertSee('R$ 120,00')
+        ->assertSee('Equipe externa')
+        ->assertSee('R$ 80,00');
+});
+
+it('hydrates only the visible page when opening the team work batch selector', function () {
+    seedLancamentoBatchSettings(35000, teamInternalAmount: 12000, teamExternalAmount: 8000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    EquipeTrabalho::factory()->count(30)->create([
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Interna->value,
+    ]);
+
+    $retrievedRegistrations = 0;
+    $isMeasuring = true;
+
+    EquipeTrabalho::retrieved(function () use (&$retrievedRegistrations, &$isMeasuring): void {
+        if ($isMeasuring) {
+            $retrievedRegistrations++;
+        }
+    });
+
+    Livewire::test(TableSelectLivewireComponent::class, [
+        'tableConfiguration' => base64_encode(LancamentoBatchEquipeTrabalhoTable::class),
+        'state' => [],
+    ])->assertSuccessful();
+
+    $isMeasuring = false;
+
+    expect($retrievedRegistrations)->toBeLessThanOrEqual(10);
+});
+
+it('hydrates only selected team work registrations when resolving selector labels', function () {
+    seedLancamentoBatchSettings(35000, teamInternalAmount: 12000, teamExternalAmount: 8000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $registrations = EquipeTrabalho::factory()->count(30)->create([
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Interna->value,
+    ]);
+    $selectedRegistrationId = $registrations->first()->id;
+    $retrievedRegistrations = 0;
+    $isMeasuring = true;
+
+    EquipeTrabalho::retrieved(function () use (&$retrievedRegistrations, &$isMeasuring): void {
+        if ($isMeasuring) {
+            $retrievedRegistrations++;
+        }
+    });
+
+    $labels = app(RegistrationPaymentAllocator::class)->registrationOptionLabels(
+        EquipeTrabalho::class,
+        [$selectedRegistrationId],
+    );
+
+    $isMeasuring = false;
+
+    expect($labels)
+        ->toHaveCount(1)
+        ->toHaveKey($selectedRegistrationId)
+        ->and($retrievedRegistrations)->toBe(1);
+});
+
+it('validates only selected team work registrations when creating a batch', function () {
+    seedLancamentoBatchSettings(35000, teamInternalAmount: 12000, teamExternalAmount: 8000);
+    CategoriaLancamento::ensureSystemDefaults();
+
+    $registrations = EquipeTrabalho::factory()->count(30)->create([
+        'status' => StatusInscricaoEquipeTrabalho::Pendente->value,
+        'tipo_equipe' => TipoEquipeTrabalho::Interna->value,
+    ]);
+
+    $retrievedRegistrations = 0;
+    $isMeasuring = true;
+
+    EquipeTrabalho::retrieved(function () use (&$retrievedRegistrations, &$isMeasuring): void {
+        if ($isMeasuring) {
+            $retrievedRegistrations++;
+        }
+    });
+
+    $created = app(LancamentoBatchCreator::class)->create([
+        'mode' => LancamentoBatchCreator::MODE_REGISTRATIONS,
+        'registration_type' => EquipeTrabalho::class,
+        'registration_ids' => [$registrations->first()->id],
+        'data' => '2026-07-14',
+    ]);
+
+    $isMeasuring = false;
+
+    expect($created)
+        ->toHaveCount(1)
+        ->and($retrievedRegistrations)->toBeLessThanOrEqual(6);
 });
 
 it('excludes cancelled and already linked registrations from batch options and validation', function () {

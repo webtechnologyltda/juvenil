@@ -94,8 +94,8 @@ class LancamentoBatchCreator
             ]);
         }
 
-        $availableIds = array_keys($this->registrationOptions($registrationType));
         $selectedIds = collect($rows)->pluck('registration_id')->unique()->values()->all();
+        $availableIds = $this->allocator->eligibleRegistrationIds($registrationType, $selectedIds);
         $invalidIds = array_values(array_diff($selectedIds, $availableIds));
 
         if ($invalidIds !== []) {
@@ -189,12 +189,27 @@ class LancamentoBatchCreator
             ->unique()
             ->values();
 
+        $itemRegistrationIds = collect($data['registration_items'] ?? [])
+            ->pluck('registration_id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->filter();
+        $registrationIds = $selectedIds
+            ->merge($itemRegistrationIds)
+            ->unique()
+            ->values();
+        $registrationColumns = $registrationType === EquipeTrabalho::class
+            ? ['id', 'nome', 'tipo_equipe']
+            : ['id', 'nome'];
+        $registrations = $registrationType::query()
+            ->select($registrationColumns)
+            ->whereKey($registrationIds->all())
+            ->get()
+            ->keyBy(fn (Model $registration): int => (int) $registration->getKey());
+
         $rows = collect($data['registration_items'] ?? [])
-            ->map(function (array $row) use ($data, $registrationType): array {
+            ->map(function (array $row) use ($data, $registrations): array {
                 $registrationId = (int) ($row['registration_id'] ?? 0);
-                $registration = $registrationId > 0
-                    ? $registrationType::query()->find($registrationId)
-                    : null;
+                $registration = $registrations->get($registrationId);
 
                 return [
                     'registration_id' => $registrationId,
@@ -209,8 +224,8 @@ class LancamentoBatchCreator
             ->values();
 
         if ($rows->isEmpty()) {
-            $rows = $selectedIds->map(function (int $id) use ($data, $registrationType): array {
-                $registration = $registrationType::query()->find($id);
+            $rows = $selectedIds->map(function (int $id) use ($data, $registrations): array {
+                $registration = $registrations->get($id);
 
                 return [
                     'registration_id' => $id,

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Campistas\CancelCampistaRegistrationAction;
 use App\Enums\StatusInscricao;
 use App\Filament\Exports\CampistaExporter;
 use App\Filament\Resources\CampistaResource\CampistaForm;
@@ -15,6 +16,7 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\Exports\Models\Export;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
@@ -157,26 +159,65 @@ class CampistaResource extends Resource implements HasShieldPermissions
                     ->modalIcon('heroicon-o-hand-thumb-down'),
 
                 Action::make('Cancelar')
-                    ->action(fn (Campista $record, array $data) => $record->update([
-                        'status' => StatusInscricao::Cancelado->value,
-                        'observacoes' => $data['observacoes'],
-                    ]))
-                    ->visible(fn (Campista $record) => $record->status == StatusInscricao::Pendente || $record->status == StatusInscricao::Pago && auth()->user()->can('update', $record))
+                    ->action(fn (
+                        Campista $record,
+                        array $data,
+                        CancelCampistaRegistrationAction $cancelRegistration,
+                    ) => $cancelRegistration->execute(
+                        campista: $record,
+                        reason: $data['observacoes'] ?? null,
+                        paymentAction: $data['payment_action'] ?? null,
+                    ))
+                    ->visible(fn (Campista $record): bool => in_array($record->status, [
+                        StatusInscricao::Pendente,
+                        StatusInscricao::Pago,
+                    ], true) && auth()->user()->can('update', $record))
                     ->requiresConfirmation()
                     ->color('danger')
                     ->iconButton()
                     ->tooltip('Cancelar Inscrição')
+                    ->modalHeading(fn (
+                        Campista $record,
+                        CancelCampistaRegistrationAction $cancelRegistration,
+                    ): string => $cancelRegistration->hasPaidPayment($record)
+                        ? 'Cancelar inscrição paga'
+                        : 'Cancelar inscrição')
+                    ->modalDescription(fn (
+                        Campista $record,
+                        CancelCampistaRegistrationAction $cancelRegistration,
+                    ): string => $cancelRegistration->hasPaidPayment($record)
+                        ? 'Informe o motivo e escolha o que deve acontecer com o pagamento já confirmado.'
+                        : 'Informe o motivo do cancelamento da inscrição.')
+                    ->modalSubmitActionLabel('Confirmar cancelamento')
+                    ->closeModalByClickingAway(false)
                     ->fillForm(fn (Campista $record): array => [
                         'observacoes' => $record->observacoes,
+                        'payment_action' => null,
                     ])
-                    ->form([
+                    ->schema(fn (
+                        Campista $record,
+                        CancelCampistaRegistrationAction $cancelRegistration,
+                    ): array => [
                         Textarea::make('observacoes')
                             ->label('Observação')
-                            ->placeholder('Motivo do Cancelamento')
+                            ->placeholder('Motivo do cancelamento')
                             ->rows(5)
                             ->columnSpan(2),
+                        ...($cancelRegistration->hasPaidPayment($record) ? [
+                            Radio::make('payment_action')
+                                ->label('O que deseja fazer com o pagamento?')
+                                ->options([
+                                    CancelCampistaRegistrationAction::PAYMENT_REFUND => 'Cancelar o pagamento e registrar o estorno',
+                                    CancelCampistaRegistrationAction::PAYMENT_KEEP_PAID => 'Manter o pagamento como pago (sem estorno)',
+                                ])
+                                ->descriptions([
+                                    CancelCampistaRegistrationAction::PAYMENT_REFUND => 'O lançamento será cancelado e receberá uma observação com a quantia estornada.',
+                                    CancelCampistaRegistrationAction::PAYMENT_KEEP_PAID => 'A inscrição será cancelada, mas o lançamento continuará com status pago.',
+                                ])
+                                ->required()
+                                ->columnSpanFull(),
+                        ] : []),
                     ])
-                    ->icon('heroicon-s-arrow-left-on-rectangle')
                     ->icon('heroicon-s-arrow-left-on-rectangle'),
                 EditAction::make()
                     ->iconButton()
