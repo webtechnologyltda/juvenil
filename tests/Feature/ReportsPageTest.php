@@ -9,6 +9,7 @@ use App\Enums\TipoLacamento;
 use App\Jobs\GenerateReportExport;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
+use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Models\ReportExport;
 use App\Models\Tribo;
@@ -94,6 +95,39 @@ function reportCampistaLinkedPayment(Campista $campista): Lancamento
     return $lancamento;
 }
 
+function reportRegistrationLinkedPayment(
+    Campista|EquipeTrabalho $registration,
+    StatusLacamento $status,
+    int $amount,
+): Lancamento {
+    $category = CategoriaLancamento::factory()->create([
+        'nome' => 'Inscrições '.str($registration::class)->afterLast('\\')->lower().' '.$registration->getKey(),
+        'tipo' => TipoLacamento::Receita,
+    ]);
+
+    $lancamento = Lancamento::factory()->create([
+        'nome' => 'Pagamento de '.$registration->nome,
+        'data' => '2026-07-13 10:00:00',
+        'valor' => $amount,
+        'tipo' => TipoLacamento::Receita,
+        'status' => $status,
+        'forma_pagamento' => $status === StatusLacamento::Pago
+            ? FormaPagamento::Pix
+            : FormaPagamento::NaoPago,
+        'user_id' => null,
+    ]);
+
+    $lancamento->items()->create([
+        'nome' => 'Inscrição de '.$registration->nome,
+        'valor' => $amount,
+        'categoria_lancamento_id' => $category->id,
+        'registration_type' => $registration::class,
+        'registration_id' => $registration->getKey(),
+    ]);
+
+    return $lancamento;
+}
+
 function reportHtml(string $type, array $filters, User $user): string
 {
     $filters = [
@@ -150,7 +184,9 @@ it('seeds report permissions with least privilege by role', function () {
     expect(Permission::query()->where('name', 'page_reports_page')->exists())->toBeTrue()
         ->and(config('filament-shield.shield_resource.tabs.custom_permissions'))->toBeTrue()
         ->and(config('filament-shield.custom_permissions.print_registration_fichas_report'))->toBe('Imprimir fichas de inscrição')
+        ->and(config('filament-shield.custom_permissions.print_registration_payments_report'))->toBe('Imprimir relatório de pagamentos de inscrições')
         ->and(Permission::query()->where('name', 'print_registration_fichas_report')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'print_registration_payments_report')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'print_tribe_quadrant_report')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'print_mission_contacts_report')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'print_sensitive_health_report')->exists())->toBeTrue()
@@ -158,11 +194,13 @@ it('seeds report permissions with least privilege by role', function () {
         ->and(Role::findByName('Administrador')->hasPermissionTo('print_registration_fichas_report'))->toBeTrue()
         ->and(Role::findByName('Administrador')->hasPermissionTo('print_tribe_quadrant_report'))->toBeTrue()
         ->and(Role::findByName('Administrador')->hasPermissionTo('print_mission_contacts_report'))->toBeTrue()
+        ->and(Role::findByName('Administrador')->hasPermissionTo('print_registration_payments_report'))->toBeFalse()
         ->and(Role::findByName('Administrador')->hasPermissionTo('print_sensitive_health_report'))->toBeFalse()
         ->and(Role::findByName('Enfermaria')->hasPermissionTo('page_reports_page'))->toBeTrue()
         ->and(Role::findByName('Enfermaria')->hasPermissionTo('print_sensitive_health_report'))->toBeTrue()
         ->and(Role::findByName('Enfermaria')->hasPermissionTo('print_mission_contacts_report'))->toBeFalse()
-        ->and(Role::findByName('Financeiro')->hasPermissionTo('page_reports_page'))->toBeFalse();
+        ->and(Role::findByName('Financeiro')->hasPermissionTo('page_reports_page'))->toBeFalse()
+        ->and(Role::findByName('Financeiro')->hasPermissionTo('print_registration_payments_report'))->toBeTrue();
 });
 
 it('renders the reports launcher only for authorized operational users', function () {
@@ -178,11 +216,17 @@ it('renders the reports launcher only for authorized operational users', functio
         ->assertSee('Fichas de inscrição')
         ->assertSee('Quadrante por tribo')
         ->assertSee('Contatos e endereços')
+        ->assertDontSee('Pagamentos de inscrições')
         ->assertDontSee('Lista médica da enfermaria');
 
     $this->actingAs($finance)
         ->get(route('filament.admin.pages.reports-page'))
-        ->assertForbidden();
+        ->assertOk()
+        ->assertSee('Pagamentos de inscrições')
+        ->assertSee('Status do pagamento')
+        ->assertDontSee('Fichas de inscrição')
+        ->assertDontSee('Quadrante por tribo')
+        ->assertDontSee('Contatos e endereços');
 });
 
 it('uses the reports page permission to expose standard operational reports', function () {
@@ -264,6 +308,8 @@ it('builds the report filters with native Filament form components', function ()
         ->toContain("view('filament.pages.partials.reports-help'")
         ->toContain("Select::make('type')")
         ->toContain("Select::make('status')")
+        ->toContain("Select::make('payment_status')")
+        ->toContain('Status do pagamento')
         ->toContain("Select::make('tribo_id')")
         ->toContain("Select::make('presenca')")
         ->toContain("Toggle::make('show_sensitive_health')")
@@ -293,7 +339,76 @@ it('builds the report filters with native Filament form components', function ()
         ->toContain('Fichas de inscrição')
         ->toContain('Quadrante das inscrições por tribo')
         ->toContain('Lista médica da enfermaria')
-        ->toContain('Contatos e endereços para missão');
+        ->toContain('Contatos e endereços para missão')
+        ->toContain('Pagamentos de campistas e equipe de trabalho');
+});
+
+it('reports paid and pending campista and team registrations with financial access', function () {
+    $this->seed(ShieldSeeder::class);
+
+    Queue::fake();
+
+    $pendingCampista = reportCampista([
+        'nome' => 'Campista Pendente Relatório',
+        'status' => StatusInscricao::Pendente,
+    ]);
+    $paidTeamMember = EquipeTrabalho::factory()->create([
+        'nome' => 'Equipe Paga Relatório',
+    ]);
+    $cancelledCampista = reportCampista([
+        'nome' => 'Campista Cancelado Relatório',
+        'status' => StatusInscricao::Cancelado,
+    ]);
+
+    reportRegistrationLinkedPayment($pendingCampista, StatusLacamento::Pendente, 25000);
+    reportRegistrationLinkedPayment($paidTeamMember, StatusLacamento::Pago, 18000);
+    reportRegistrationLinkedPayment($cancelledCampista, StatusLacamento::Cancelado, 20000);
+
+    $finance = reportUserWithRole('Financeiro');
+    $administrator = reportUserWithRole('Administrador');
+
+    $this->actingAs($finance)
+        ->get(route('filament.admin.pages.view-report', [
+            'type' => CampistaReportType::RegistrationPayments->value,
+            'payment_status' => [
+                StatusLacamento::Pendente->value,
+                StatusLacamento::Pago->value,
+            ],
+        ]))
+        ->assertOk()
+        ->assertSee('Pagamentos de campistas e equipe de trabalho');
+
+    $this->actingAs($administrator)
+        ->get(route('filament.admin.pages.view-report', [
+            'type' => CampistaReportType::RegistrationPayments->value,
+        ]))
+        ->assertForbidden();
+
+    $html = reportHtml(CampistaReportType::RegistrationPayments->value, [
+        'payment_status' => [
+            StatusLacamento::Pendente->value,
+            StatusLacamento::Pago->value,
+        ],
+    ], $finance);
+
+    expect($html)
+        ->toContain('Pagamentos de campistas e equipe de trabalho')
+        ->toContain('Campista Pendente Relatório')
+        ->toContain('Equipe Paga Relatório')
+        ->toContain('Campista')
+        ->toContain('Equipe de trabalho')
+        ->toContain('R$ 250,00')
+        ->toContain('R$ 180,00')
+        ->toContain('Pendente')
+        ->toContain('Pago')
+        ->not->toContain('Campista Cancelado Relatório');
+
+    expect(reportHtml(CampistaReportType::RegistrationPayments->value, [
+        'payment_status' => [StatusLacamento::Pago->value],
+    ], $finance))
+        ->toContain('Equipe Paga Relatório')
+        ->not->toContain('Campista Pendente Relatório')
+        ->not->toContain('Campista Cancelado Relatório');
 });
 
 it('renders generated report exports as printable HTML in the same tab', function () {
@@ -392,6 +507,35 @@ it('renders the campista photo in printable registration fichas', function () {
     expect($html)
         ->toContain('Foto de Ana Maria Juvenil')
         ->toContain('/storage/foto-formulario/ana.png');
+});
+
+it('renders cached thumbnails instead of full size campista photos', function () {
+    Storage::fake('public');
+    $this->seed(ShieldSeeder::class);
+
+    $source = imagecreatetruecolor(1600, 1200);
+    $orange = imagecolorallocate($source, 244, 107, 18);
+    imagefill($source, 0, 0, $orange);
+    ob_start();
+    imagejpeg($source, null, 100);
+    $original = ob_get_clean();
+    unset($source);
+
+    Storage::disk('public')->put('foto-formulario/ana-grande.jpg', $original);
+
+    reportCampista([
+        'avatar_url' => 'foto-formulario/ana-grande.jpg',
+    ]);
+
+    $administrator = reportUserWithRole('Administrador');
+    $thumbnailPath = 'report-thumbnails/'.sha1('foto-formulario/ana-grande.jpg').'.jpg';
+    $html = reportHtml('registration_fichas', [], $administrator);
+
+    Storage::disk('public')->assertExists($thumbnailPath);
+
+    expect($html)
+        ->toContain('/storage/'.$thumbnailPath)
+        ->not->toContain('/storage/foto-formulario/ana-grande.jpg');
 });
 
 it('applies ficha visual styling and keeps linked payments hidden by default on printable registration reports', function () {

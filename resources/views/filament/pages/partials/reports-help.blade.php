@@ -27,6 +27,11 @@
             'tone' => 'operacional',
             'description' => 'Use para preparar visitas missionárias com responsável, telefone, endereço, bairro, cidade e ponto de referência.',
         ],
+        'registration_payments' => [
+            'title' => 'Pagamentos de campistas e equipe de trabalho',
+            'tone' => 'financeiro',
+            'description' => 'Use para conferir, em uma única lista, os lançamentos pagos ou pendentes vinculados a campistas e integrantes da equipe de trabalho.',
+        ],
     ])
         ->filter(fn (array $item, string $key): bool => $key === 'usage' || in_array($key, $availableValues, true));
 @endphp

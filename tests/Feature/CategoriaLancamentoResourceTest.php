@@ -359,11 +359,14 @@ it('exposes the category field on the financial entry form and table', function 
         ->toContain("TextColumn::make('categories_summary')")
         ->toContain("SelectFilter::make('categoria_lancamento_id')")
         ->toContain('categoryFilterOptions')
-        ->toContain('IconBadge::tile($category')
+        ->toContain('FinancialFilterOptions::categories()')
         ->toContain('->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())')
         ->toContain('->native(false)')
         ->toContain('->multiple()')
         ->toContain("whereHas('items'")
         ->toContain("whereIn('categoria_lancamento_id'")
         ->toContain("Group::make('batch_code')");
+
+    expect(file_get_contents(app_path('Support/Financeiro/FinancialFilterOptions.php')))
+        ->toContain('IconBadge::tile(');
 });

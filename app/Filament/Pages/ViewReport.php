@@ -42,11 +42,13 @@ class ViewReport extends Page
 
     /**
      * @param  array<int, int>|null  $status
+     * @param  array<int, int>|null  $payment_status
      * @param  array<int, int>|null  $tribo_id
      */
     public function mount(
         ?string $type = null,
         ?array $status = null,
+        ?array $payment_status = null,
         ?array $tribo_id = null,
         ?string $presenca = null,
         ?string $search = null,
@@ -60,6 +62,7 @@ class ViewReport extends Page
         $merged = array_merge($queryParams, array_filter([
             'type' => $type,
             'status' => $status,
+            'payment_status' => $payment_status,
             'tribo_id' => $tribo_id,
             'presenca' => $presenca,
             'search' => $search,
@@ -216,6 +219,7 @@ class ViewReport extends Page
         return collect([
             'type' => $this->reportType,
             'status' => $this->integerList($query['status'] ?? []),
+            'payment_status' => $this->integerList($query['payment_status'] ?? []),
             'tribo_id' => $this->integerList($query['tribo_id'] ?? []),
             'presenca' => array_key_exists('presenca', $query) && $query['presenca'] !== ''
                 ? (string) (int) $query['presenca']

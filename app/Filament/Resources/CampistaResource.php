@@ -8,12 +8,14 @@ use App\Filament\Resources\CampistaResource\CampistaForm;
 use App\Filament\Resources\CampistaResource\CampistaTable;
 use App\Filament\Resources\CampistaResource\Pages;
 use App\Models\Campista;
+use App\Support\Financeiro\FinancialFilterOptions;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\Exports\Models\Export;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -21,6 +23,7 @@ use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Tapp\FilamentAuditing\RelationManagers\AuditsRelationManager;
 
@@ -65,6 +68,44 @@ class CampistaResource extends Resource implements HasShieldPermissions
                     ->selectablePlaceholder('Sem tribo definida')
                     ->label('Tribo')
                     ->relationship('tribo', 'cor'),
+                SelectFilter::make('payment_status')
+                    ->label('Status do pagamento')
+                    ->options(fn (): array => FinancialFilterOptions::paymentStatuses())
+                    ->multiple()
+                    ->query(function (Builder $query, array $data): Builder {
+                        $statuses = FinancialFilterOptions::selectedIntegerValues($data);
+
+                        return $statuses === []
+                            ? $query
+                            : $query->whereHas(
+                                'lancamentoItems.lancamento',
+                                fn (Builder $query): Builder => $query->whereIn('status', $statuses),
+                            );
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->native(false)
+                    ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
+                    ->indicateUsing(fn (array $state): array => FinancialFilterOptions::paymentStatusIndicators($state)),
+                SelectFilter::make('categoria_lancamento_id')
+                    ->label('Categoria')
+                    ->options(fn (): array => FinancialFilterOptions::categories())
+                    ->multiple()
+                    ->query(function (Builder $query, array $data): Builder {
+                        $categoryIds = FinancialFilterOptions::selectedIntegerValues($data);
+
+                        return $categoryIds === []
+                            ? $query
+                            : $query->whereHas(
+                                'lancamentoItems',
+                                fn (Builder $query): Builder => $query->whereIn('categoria_lancamento_id', $categoryIds),
+                            );
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->native(false)
+                    ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
+                    ->indicateUsing(fn (array $state): array => FinancialFilterOptions::categoryIndicators($state)),
                 Tables\Filters\TernaryFilter::make('presenca')
                     ->label('Presença')
                     ->placeholder('Todos')

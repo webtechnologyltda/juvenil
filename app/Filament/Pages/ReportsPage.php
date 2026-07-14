@@ -3,9 +3,12 @@
 namespace App\Filament\Pages;
 
 use App\Enums\StatusInscricao;
+use App\Enums\StatusLacamento;
 use App\Support\Reports\CampistaReportData;
+use App\Support\Reports\CampistaReportType;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -46,6 +49,10 @@ class ReportsPage extends Page
             StatusInscricao::Pendente->value,
             StatusInscricao::Pago->value,
         ],
+        'payment_status' => [
+            StatusLacamento::Pendente->value,
+            StatusLacamento::Pago->value,
+        ],
         'tribo_id' => [],
         'presenca' => null,
         'search' => null,
@@ -57,6 +64,15 @@ class ReportsPage extends Page
     public static function getRoutePath(Panel $panel): string
     {
         return '/relatorios';
+    }
+
+    public static function canAccess(): bool
+    {
+        $user = Filament::auth()?->user();
+
+        return $user !== null
+            && ($user->can(CampistaReportType::PAGE_PERMISSION)
+                || $user->can(CampistaReportType::RegistrationPayments->permission()));
     }
 
     public function mount(): void
@@ -114,7 +130,7 @@ class ReportsPage extends Page
 
                                 TextInput::make('search')
                                     ->label('Busca')
-                                    ->placeholder('Nome, responsável, bairro ou cidade')
+                                    ->placeholder('Nome, responsável, bairro, cidade ou lançamento')
                                     ->prefixIcon('heroicon-o-magnifying-glass')
                                     ->live(debounce: 500)
                                     ->columnSpan([
@@ -130,6 +146,21 @@ class ReportsPage extends Page
                                     ->native(false)
                                     ->live()
                                     ->placeholder('Pendente e Pago')
+                                    ->visible(fn (Get $get): bool => ! $this->isRegistrationPaymentReport($get('type')))
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                        'xl' => 4,
+                                    ]),
+
+                                Select::make('payment_status')
+                                    ->label('Status do pagamento')
+                                    ->multiple()
+                                    ->options(fn (): array => $this->paymentStatusOptions())
+                                    ->native(false)
+                                    ->live()
+                                    ->placeholder('Pendente e Pago')
+                                    ->visible(fn (Get $get): bool => $this->isRegistrationPaymentReport($get('type')))
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => 1,
@@ -145,6 +176,7 @@ class ReportsPage extends Page
                                     ->preload()
                                     ->live()
                                     ->placeholder('Todas')
+                                    ->visible(fn (Get $get): bool => ! $this->isRegistrationPaymentReport($get('type')))
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => 1,
@@ -160,6 +192,7 @@ class ReportsPage extends Page
                                     ->native(false)
                                     ->live()
                                     ->placeholder('Todas')
+                                    ->visible(fn (Get $get): bool => ! $this->isRegistrationPaymentReport($get('type')))
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => 1,
@@ -175,7 +208,8 @@ class ReportsPage extends Page
                                             $set('confirm_sensitive_health', false);
                                         }
                                     })
-                                    ->visible(fn (): bool => $this->canUseSensitiveHealthFilter())
+                                    ->visible(fn (Get $get): bool => $this->canUseSensitiveHealthFilter()
+                                        && ! $this->isRegistrationPaymentReport($get('type')))
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => 1,
@@ -186,7 +220,8 @@ class ReportsPage extends Page
                                     ->label('Exibir dados de pagamento')
                                     ->helperText('Por padrão, dados de pagamento permanecem ocultos nos relatórios.')
                                     ->live()
-                                    ->visible(fn (): bool => $this->canUsePaymentDataFilter())
+                                    ->visible(fn (Get $get): bool => $this->canUsePaymentDataFilter()
+                                        && ! $this->isRegistrationPaymentReport($get('type')))
                                     ->columnSpan([
                                         'default' => 'full',
                                         'md' => 1,
@@ -199,7 +234,9 @@ class ReportsPage extends Page
                                         <span>Ao exibir estes dados, trate as informações com cuidado. Elas não devem ser compartilhadas fora das pessoas responsáveis pelo cuidado e pela operação do acampamento.</span>
                                     </div>'
                                 ))
-                                    ->visible(fn (Get $get): bool => $this->canUseSensitiveHealthFilter() && (bool) $get('show_sensitive_health'))
+                                    ->visible(fn (Get $get): bool => $this->canUseSensitiveHealthFilter()
+                                        && ! $this->isRegistrationPaymentReport($get('type'))
+                                        && (bool) $get('show_sensitive_health'))
                                     ->columnSpanFull(),
 
                                 Checkbox::make('confirm_sensitive_health')
@@ -207,7 +244,9 @@ class ReportsPage extends Page
                                     ->helperText('A impressão só exibirá os dados médicos após esta confirmação.')
                                     ->accepted()
                                     ->live()
-                                    ->visible(fn (Get $get): bool => $this->canUseSensitiveHealthFilter() && (bool) $get('show_sensitive_health'))
+                                    ->visible(fn (Get $get): bool => $this->canUseSensitiveHealthFilter()
+                                        && ! $this->isRegistrationPaymentReport($get('type'))
+                                        && (bool) $get('show_sensitive_health'))
                                     ->columnSpanFull(),
                             ]),
                     ])
@@ -234,6 +273,11 @@ class ReportsPage extends Page
         return app(CampistaReportData::class)->statusOptions();
     }
 
+    public function paymentStatusOptions(): array
+    {
+        return app(CampistaReportData::class)->paymentStatusOptions();
+    }
+
     public function tribeOptions(): array
     {
         return app(CampistaReportData::class)->tribeOptions();
@@ -241,7 +285,13 @@ class ReportsPage extends Page
 
     public function previewQuery(): array
     {
-        $query = collect($this->filters)
+        $query = collect($this->filters);
+
+        $query = $this->isRegistrationPaymentReport($this->filters['type'] ?? null)
+            ? $query->only(['type', 'payment_status', 'search'])
+            : $query->except('payment_status');
+
+        $query = $query
             ->filter(fn (mixed $value): bool => $value !== null && $value !== '' && $value !== [] && $value !== false)
             ->all();
 
@@ -266,7 +316,8 @@ class ReportsPage extends Page
 
     private function missingSensitiveHealthConfirmation(): bool
     {
-        return $this->canUseSensitiveHealthFilter()
+        return ! $this->isRegistrationPaymentReport($this->filters['type'] ?? null)
+            && $this->canUseSensitiveHealthFilter()
             && (bool) ($this->filters['show_sensitive_health'] ?? false)
             && ! (bool) ($this->filters['confirm_sensitive_health'] ?? false);
     }
@@ -286,6 +337,10 @@ class ReportsPage extends Page
 
         if (array_key_exists('status', $query)) {
             $filters['status'] = $this->integerList($query['status']);
+        }
+
+        if (array_key_exists('payment_status', $query)) {
+            $filters['payment_status'] = $this->integerList($query['payment_status']);
         }
 
         if (array_key_exists('tribo_id', $query)) {
@@ -325,5 +380,10 @@ class ReportsPage extends Page
     private function truthy(mixed $value): bool
     {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    private function isRegistrationPaymentReport(mixed $type): bool
+    {
+        return $type === CampistaReportType::RegistrationPayments->value;
     }
 }

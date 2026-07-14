@@ -104,6 +104,12 @@ class CampistaForm extends Component implements HasActions, HasForms
                                 'xl' => 2,
                             ])
                             ->image()
+                            ->imageAspectRatio('1:1')
+                            ->automaticallyCropImagesToAspectRatio()
+                            ->automaticallyResizeImagesMode('cover')
+                            ->automaticallyResizeImagesToWidth('500')
+                            ->automaticallyResizeImagesToHeight('500')
+                            ->automaticallyUpscaleImagesWhenResizing(false)
                             ->acceptedFileTypes([
                                 'image/jpeg',
                                 'image/png',

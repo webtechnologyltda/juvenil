@@ -12,11 +12,15 @@ use App\Support\Tribes\TribeColor;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CampistaReportData
 {
+    public function __construct(
+        private readonly PrintableReportImage $printableReportImage,
+        private readonly RegistrationPaymentReportData $registrationPayments,
+    ) {}
+
     /**
      * @return array<int, array{value: string, label: string, title: string, description: string, sensitive: bool}>
      */
@@ -37,7 +41,10 @@ class CampistaReportData
 
     public function payload(CampistaReportType $type, array $filters, User $user): array
     {
-        $records = $this->records($filters);
+        $records = $type->isFinancial() ? collect() : $this->records($filters);
+        $registrationPaymentRows = $type === CampistaReportType::RegistrationPayments
+            ? $this->registrationPayments->rows($filters)
+            : [];
         $canUseSensitiveHealth = $user->can('view_sensitive_health_campista');
         $showSensitiveHealth = $this->canExposeSensitiveHealth($filters, $user);
         $showPaymentData = $this->canExposePaymentData($filters, $user);
@@ -51,10 +58,14 @@ class CampistaReportData
             'title' => $type->title(),
             'description' => $type->description(),
             'generatedAt' => now()->format('d/m/Y H:i'),
-            'filters' => $this->filterSummary($filters),
+            'filters' => $type === CampistaReportType::RegistrationPayments
+                ? $this->registrationPayments->filterSummary($filters)
+                : $this->filterSummary($filters),
             'canUseSensitiveHealth' => $canUseSensitiveHealth,
             'showSensitiveHealth' => $showSensitiveHealth,
-            'recordsCount' => $records->count(),
+            'recordsCount' => $type === CampistaReportType::RegistrationPayments
+                ? count($registrationPaymentRows)
+                : $records->count(),
             'fichas' => $type === CampistaReportType::RegistrationFichas
                 ? $records->map(fn (Campista $campista): array => $this->ficha($campista, $showSensitiveHealth, $showPaymentData))->all()
                 : [],
@@ -67,6 +78,7 @@ class CampistaReportData
             'missionRows' => $type === CampistaReportType::MissionContacts
                 ? $records->map(fn (Campista $campista): array => $this->missionRow($campista))->all()
                 : [],
+            'registrationPaymentRows' => $registrationPaymentRows,
         ];
     }
 
@@ -75,6 +87,11 @@ class CampistaReportData
         return collect(StatusInscricao::cases())
             ->mapWithKeys(fn (StatusInscricao $status): array => [$status->value => $status->getLabel()])
             ->all();
+    }
+
+    public function paymentStatusOptions(): array
+    {
+        return $this->registrationPayments->statusOptions();
     }
 
     public function tribeOptions(): array
@@ -434,9 +451,7 @@ class CampistaReportData
             return null;
         }
 
-        return Str::startsWith($avatar, ['http://', 'https://', '/'])
-            ? $avatar
-            : Storage::disk('public')->url($avatar);
+        return $this->printableReportImage->url($avatar);
     }
 
     private function responsibleName(Campista $campista): ?string
