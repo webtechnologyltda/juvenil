@@ -10,6 +10,7 @@ return [
             'tribe_quadrant' => '2026-06-23-html-export-v1',
             'sensitive_health' => '2026-06-23-html-export-v1',
             'mission_contacts' => '2026-06-23-html-export-v1',
+            'registration_payments' => '2026-07-13-html-export-v1',
         ],
     ],
 ];

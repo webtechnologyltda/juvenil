@@ -28,6 +28,8 @@ class ShieldSeeder extends Seeder
 
     protected const SENSITIVE_HEALTH_REPORT_PERMISSION = 'print_sensitive_health_report';
 
+    protected const REGISTRATION_PAYMENTS_REPORT_PERMISSION = 'print_registration_payments_report';
+
     public function run(): void
     {
         static::syncRolesAndPermissions();
@@ -166,6 +168,9 @@ class ShieldSeeder extends Seeder
                 || str_contains($permission, 'operational')
                 || str_contains($permission, 'campista')
                 || str_contains($permission, 'tribo'))
+            ->merge([
+                self::REGISTRATION_PAYMENTS_REPORT_PERMISSION,
+            ])
             ->values()
             ->all();
     }

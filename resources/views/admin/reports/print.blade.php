@@ -668,6 +668,19 @@
             background: #f9fcfc;
         }
 
+        .report-payment-table__type,
+        .report-payment-table__detail {
+            display: block;
+            color: var(--muted);
+            font-size: .7rem;
+        }
+
+        .report-payment-table__type {
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
         .report-empty {
             border: 1px dashed var(--line);
             color: var(--muted);
@@ -857,6 +870,10 @@
 
                 @case('mission_contacts')
                     @include('admin.reports.partials.mission-contacts', ['rows' => $report['missionRows']])
+                    @break
+
+                @case('registration_payments')
+                    @include('admin.reports.partials.registration-payments', ['rows' => $report['registrationPaymentRows']])
                     @break
             @endswitch
         </section>

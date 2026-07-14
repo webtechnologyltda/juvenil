@@ -13,6 +13,7 @@ use App\Models\EquipeTrabalho;
 use App\Models\Lancamento;
 use App\Models\LancamentoItem;
 use App\Support\EnumOptionBadge;
+use App\Support\Financeiro\FinancialFilterOptions;
 use App\Support\IconBadge;
 use Carbon\Carbon;
 use Filament\Actions\EditAction;
@@ -154,6 +155,15 @@ class LancamentoResource extends Resource
                     ->indicateUsing(fn (array $state): array => blank($state['value'] ?? null)
                         ? []
                         : ['Tipo: '.(TipoLacamento::tryFrom((int) $state['value'])?->getLabel() ?? $state['value'])]),
+                SelectFilter::make('status')
+                    ->label('Status do pagamento')
+                    ->options(fn (): array => FinancialFilterOptions::paymentStatuses())
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->native(false)
+                    ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
+                    ->indicateUsing(fn (array $state): array => FinancialFilterOptions::paymentStatusIndicators($state)),
                 Filter::make('registration_link')
                     ->label('Cadastro vinculado')
                     ->form([
@@ -269,23 +279,7 @@ class LancamentoResource extends Resource
                     ->searchable()
                     ->native(false)
                     ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
-                    ->indicateUsing(function (array $state): array {
-                        $categoryIds = collect($state['values'] ?? [])
-                            ->filter(fn (mixed $value): bool => filled($value))
-                            ->map(fn (mixed $value): int => (int) $value)
-                            ->values();
-
-                        if ($categoryIds->isEmpty()) {
-                            return [];
-                        }
-
-                        return CategoriaLancamento::query()
-                            ->whereKey($categoryIds->all())
-                            ->orderBy('nome')
-                            ->pluck('nome')
-                            ->map(fn (string $name): string => 'Categoria: '.$name)
-                            ->all();
-                    })
+                    ->indicateUsing(fn (array $state): array => FinancialFilterOptions::categoryIndicators($state))
                     ->preload(),
                 SelectFilter::make('batch_code')
                     ->label('Lote')
@@ -354,15 +348,12 @@ class LancamentoResource extends Resource
         return '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%';
     }
 
+    /**
+     * @return array<int, string>
+     */
     private static function categoryFilterOptions(): array
     {
-        return CategoriaLancamento::query()
-            ->orderBy('nome')
-            ->get()
-            ->mapWithKeys(fn (CategoriaLancamento $category): array => [
-                $category->id => (string) IconBadge::tile($category, $category->nome, fallbackIcon: 'heroicon-o-tag'),
-            ])
-            ->all();
+        return FinancialFilterOptions::categories();
     }
 
     private static function categoryBadges(Lancamento $record): HtmlString

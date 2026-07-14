@@ -125,6 +125,7 @@ return [
 
     'custom_permissions' => [
         'print_mission_contacts_report' => 'Imprimir relatório de contatos e endereços',
+        'print_registration_payments_report' => 'Imprimir relatório de pagamentos de inscrições',
         'print_registration_fichas_report' => 'Imprimir fichas de inscrição',
         'print_sensitive_health_report' => 'Imprimir relatório médico da enfermaria',
         'print_tribe_quadrant_report' => 'Imprimir quadrante por tribo',

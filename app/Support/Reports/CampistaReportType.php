@@ -10,6 +10,7 @@ enum CampistaReportType: string
     case TribeQuadrant = 'tribe_quadrant';
     case SensitiveHealth = 'sensitive_health';
     case MissionContacts = 'mission_contacts';
+    case RegistrationPayments = 'registration_payments';
 
     public const PAGE_PERMISSION = 'page_reports_page';
 
@@ -20,6 +21,7 @@ enum CampistaReportType: string
             self::TribeQuadrant => 'Quadrante por tribo',
             self::SensitiveHealth => 'Lista médica da enfermaria',
             self::MissionContacts => 'Contatos e endereços',
+            self::RegistrationPayments => 'Pagamentos de inscrições',
         };
     }
 
@@ -30,6 +32,7 @@ enum CampistaReportType: string
             self::TribeQuadrant => 'Quadrante das inscrições por tribo',
             self::SensitiveHealth => 'Lista médica da enfermaria',
             self::MissionContacts => 'Contatos e endereços para missão',
+            self::RegistrationPayments => 'Pagamentos de campistas e equipe de trabalho',
         };
     }
 
@@ -40,6 +43,7 @@ enum CampistaReportType: string
             self::TribeQuadrant => 'Distribuição dos campistas agrupada por tribo.',
             self::SensitiveHealth => 'Dados restritos para triagem e cuidados da enfermaria.',
             self::MissionContacts => 'Responsáveis, telefones e endereços para visitas missionárias.',
+            self::RegistrationPayments => 'Situação dos lançamentos vinculados a campistas e integrantes da equipe de trabalho.',
         };
     }
 
@@ -50,6 +54,7 @@ enum CampistaReportType: string
             self::TribeQuadrant => 'print_tribe_quadrant_report',
             self::SensitiveHealth => 'print_sensitive_health_report',
             self::MissionContacts => 'print_mission_contacts_report',
+            self::RegistrationPayments => 'print_registration_payments_report',
         };
     }
 
@@ -58,9 +63,14 @@ enum CampistaReportType: string
         return $this === self::SensitiveHealth;
     }
 
+    public function isFinancial(): bool
+    {
+        return $this === self::RegistrationPayments;
+    }
+
     public function canBeAccessedBy(User $user): bool
     {
-        if ($this->isSensitive()) {
+        if ($this->isSensitive() || $this->isFinancial()) {
             return $user->can($this->permission());
         }
 

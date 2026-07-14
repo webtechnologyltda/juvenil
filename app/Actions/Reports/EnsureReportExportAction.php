@@ -119,7 +119,7 @@ class EnsureReportExportAction
         $query = $filters;
         $query['_template_version'] = $this->templateVersionFor($type);
 
-        foreach (['status', 'tribo_id'] as $key) {
+        foreach (['status', 'payment_status', 'tribo_id'] as $key) {
             if (isset($query[$key]) && is_array($query[$key])) {
                 sort($query[$key]);
             }

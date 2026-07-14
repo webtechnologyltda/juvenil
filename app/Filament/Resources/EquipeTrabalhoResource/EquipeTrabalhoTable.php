@@ -5,12 +5,15 @@ namespace App\Filament\Resources\EquipeTrabalhoResource;
 use App\Enums\StatusInscricaoEquipeTrabalho;
 use App\Enums\TipoEquipeTrabalho;
 use App\Models\EquipeTrabalho;
+use App\Support\Financeiro\FinancialFilterOptions;
 use Carbon\Carbon;
+use Filament\Forms\Components\Select;
 use Filament\Support\Colors\Color;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Builder;
 use Throwable;
 
 abstract class EquipeTrabalhoTable
@@ -120,6 +123,46 @@ abstract class EquipeTrabalhoTable
             SelectFilter::make('tipo_equipe')
                 ->label('Tipo da equipe')
                 ->options(TipoEquipeTrabalho::class),
+
+            SelectFilter::make('payment_status')
+                ->label('Status do pagamento')
+                ->options(fn (): array => FinancialFilterOptions::paymentStatuses())
+                ->multiple()
+                ->query(function (Builder $query, array $data): Builder {
+                    $statuses = FinancialFilterOptions::selectedIntegerValues($data);
+
+                    return $statuses === []
+                        ? $query
+                        : $query->whereHas(
+                            'lancamentoItems.lancamento',
+                            fn (Builder $query): Builder => $query->whereIn('status', $statuses),
+                        );
+                })
+                ->searchable()
+                ->preload()
+                ->native(false)
+                ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
+                ->indicateUsing(fn (array $state): array => FinancialFilterOptions::paymentStatusIndicators($state)),
+
+            SelectFilter::make('categoria_lancamento_id')
+                ->label('Categoria')
+                ->options(fn (): array => FinancialFilterOptions::categories())
+                ->multiple()
+                ->query(function (Builder $query, array $data): Builder {
+                    $categoryIds = FinancialFilterOptions::selectedIntegerValues($data);
+
+                    return $categoryIds === []
+                        ? $query
+                        : $query->whereHas(
+                            'lancamentoItems',
+                            fn (Builder $query): Builder => $query->whereIn('categoria_lancamento_id', $categoryIds),
+                        );
+                })
+                ->searchable()
+                ->preload()
+                ->native(false)
+                ->modifyFormFieldUsing(fn (Select $field): Select => $field->allowHtml())
+                ->indicateUsing(fn (array $state): array => FinancialFilterOptions::categoryIndicators($state)),
         ];
     }
 
