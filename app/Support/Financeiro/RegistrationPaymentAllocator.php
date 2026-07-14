@@ -72,6 +72,63 @@ class RegistrationPaymentAllocator
     }
 
     /**
+     * @param  array<int, mixed>  $registrationIds
+     * @return array<int, string>
+     */
+    public function registrationOptionLabels(?string $registrationType, array $registrationIds, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null): array
+    {
+        if (! $this->isSupportedRegistrationType($registrationType)) {
+            return [];
+        }
+
+        $registrationIds = $this->normalizeRegistrationIds($registrationIds);
+
+        if ($registrationIds === []) {
+            return [];
+        }
+
+        /** @var class-string<Model> $registrationType */
+        return $this->registrationOptionResults(
+            registrationType: $registrationType,
+            excludingLancamentoId: $excludingLancamentoId,
+            currentRegistrationId: $currentRegistrationId,
+            categoryId: $categoryId,
+            registrationIds: $registrationIds,
+        );
+    }
+
+    /**
+     * @param  array<int, mixed>  $registrationIds
+     * @return array<int, int>
+     */
+    public function eligibleRegistrationIds(?string $registrationType, array $registrationIds, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null): array
+    {
+        if (! $this->isSupportedRegistrationType($registrationType)) {
+            return [];
+        }
+
+        $registrationIds = $this->normalizeRegistrationIds($registrationIds);
+
+        if ($registrationIds === []) {
+            return [];
+        }
+
+        /** @var class-string<Model> $registrationType */
+        $query = $this->applyPaymentEligibilityQuery(
+            query: $registrationType::query()->whereKey($registrationIds),
+            registrationType: $registrationType,
+            excludingLancamentoId: $excludingLancamentoId,
+            currentRegistrationId: $currentRegistrationId,
+            categoryId: $categoryId,
+        );
+
+        return $query
+            ->pluck($query->getModel()->getKeyName())
+            ->map(fn (mixed $id): int => (int) $id)
+            ->all();
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $items
      * @return array<int, array{nome: string, descricao: ?string, valor: int, categoria_lancamento_id: int, registration_type: class-string<Model>|null, registration_id: int|null}>
      */
@@ -538,7 +595,7 @@ class RegistrationPaymentAllocator
      * @param  class-string<Model>  $registrationType
      * @return array<int, string>
      */
-    private function registrationOptionResults(string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null, ?string $search = null, ?int $limit = null): array
+    private function registrationOptionResults(string $registrationType, ?int $excludingLancamentoId = null, ?int $currentRegistrationId = null, ?int $categoryId = null, ?string $search = null, ?int $limit = null, ?array $registrationIds = null): array
     {
         $query = $registrationType::query();
 
@@ -549,6 +606,8 @@ class RegistrationPaymentAllocator
             currentRegistrationId: $currentRegistrationId,
             categoryId: $categoryId,
         )
+            ->select($this->registrationOptionColumns($registrationType))
+            ->when($registrationIds !== null, fn (Builder $query): Builder => $query->whereKey($registrationIds))
             ->when(filled($search), fn ($query) => $query->where('nome', 'like', '%'.str_replace(['%', '_'], ['\\%', '\\_'], trim((string) $search)).'%'))
             ->when(
                 filled($search),
@@ -572,6 +631,31 @@ class RegistrationPaymentAllocator
                     paidAmount: $paidAmounts[$registration->getKey()] ?? 0,
                 ),
             ])
+            ->all();
+    }
+
+    /**
+     * @param  class-string<Model>  $registrationType
+     * @return array<int, string>
+     */
+    private function registrationOptionColumns(string $registrationType): array
+    {
+        return $registrationType === EquipeTrabalho::class
+            ? ['id', 'nome', 'tipo_equipe']
+            : ['id', 'nome'];
+    }
+
+    /**
+     * @param  array<int, mixed>  $registrationIds
+     * @return array<int, int>
+     */
+    private function normalizeRegistrationIds(array $registrationIds): array
+    {
+        return collect($registrationIds)
+            ->map(fn (mixed $id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
             ->all();
     }
 

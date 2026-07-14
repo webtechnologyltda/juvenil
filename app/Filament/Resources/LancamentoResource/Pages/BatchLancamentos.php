@@ -146,6 +146,7 @@ class BatchLancamentos extends Page
                             ->label('Valor padrão')
                             ->intFormat()
                             ->prefix(RawJs::make('R$'))
+                            ->visible(fn (Get $get): bool => $get('registration_type') !== EquipeTrabalho::class)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set): void {
                                 if ($get('registration_type') === EquipeTrabalho::class) {
@@ -162,6 +163,13 @@ class BatchLancamentos extends Page
 
                                 $set('registration_items', $items);
                             })
+                            ->columnSpan([
+                                'default' => 'full',
+                                'lg' => 3,
+                            ]),
+
+                        Html::make(fn (): HtmlString => new HtmlString($this->teamConfiguredAmountsHtml()))
+                            ->visible(fn (Get $get): bool => $get('registration_type') === EquipeTrabalho::class)
                             ->columnSpan([
                                 'default' => 'full',
                                 'lg' => 3,
@@ -490,12 +498,24 @@ class BatchLancamentos extends Page
         }
 
         /** @var class-string<Model> $registrationType */
-        return collect($ids)
+        $registrationIds = collect($ids)
             ->map(fn (mixed $id): int => (int) $id)
             ->filter()
             ->unique()
-            ->map(function (int $id) use ($registrationType, $amount): ?array {
-                $registration = $registrationType::query()->find($id);
+            ->values();
+
+        $columns = $registrationType === EquipeTrabalho::class
+            ? ['id', 'nome', 'tipo_equipe']
+            : ['id', 'nome'];
+        $registrations = $registrationType::query()
+            ->select($columns)
+            ->whereKey($registrationIds->all())
+            ->get()
+            ->keyBy(fn (Model $registration): int => (int) $registration->getKey());
+
+        return $registrationIds
+            ->map(function (int $id) use ($registrations, $amount): ?array {
+                $registration = $registrations->get($id);
 
                 if (! $registration) {
                     return null;
@@ -519,14 +539,7 @@ class BatchLancamentos extends Page
      */
     private function registrationOptionLabels(?string $registrationType, array $values): array
     {
-        $options = app(LancamentoBatchCreator::class)->registrationOptions($registrationType);
-
-        return collect($values)
-            ->map(fn (mixed $id): int => (int) $id)
-            ->filter()
-            ->unique()
-            ->mapWithKeys(fn (int $id): array => array_key_exists($id, $options) ? [$id => $options[$id]] : [])
-            ->all();
+        return app(RegistrationPaymentAllocator::class)->registrationOptionLabels($registrationType, $values);
     }
 
     private function defaultRegistrationAmount(): int
@@ -557,6 +570,18 @@ class BatchLancamentos extends Page
         return '<div role="alert" class="rounded-lg border border-warning-500/55 bg-warning-500/10 p-4 text-sm text-warning-100">'
             .'<strong class="block text-warning-300">Valor do acampamento não configurado</strong>'
             .'<span>O campo de inscrições pode ficar sem opções enquanto o valor estiver zerado nas configurações.</span>'
+            .'</div>';
+    }
+
+    private function teamConfiguredAmountsHtml(): string
+    {
+        $settings = app(GeneralSettings::class);
+        $internal = MoneyAmount::formatForInput($settings->valor_equipe_trabalho_interna ?? 0);
+        $external = MoneyAmount::formatForInput($settings->valor_equipe_trabalho_externa ?? 0);
+
+        return '<div class="grid grid-cols-2 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-white/5">'
+            .'<div class="grid gap-1"><span class="text-xs text-gray-500 dark:text-gray-400">Equipe interna</span><strong class="text-sm text-gray-950 dark:text-white">R$ '.e($internal).'</strong></div>'
+            .'<div class="grid gap-1"><span class="text-xs text-gray-500 dark:text-gray-400">Equipe externa</span><strong class="text-sm text-gray-950 dark:text-white">R$ '.e($external).'</strong></div>'
             .'</div>';
     }
 
