@@ -4,6 +4,8 @@ namespace App\Providers\Filament;
 
 use App\Filament\Dashboard;
 use App\Filament\Pages\Auth\Login;
+use App\Filament\Pages\Auth\RequestPasswordReset;
+use App\Filament\Pages\Auth\ResetPassword;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Enums\ThemeMode;
 use Filament\Forms\Components\FileUpload;
@@ -47,6 +49,11 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
+            ->passwordReset(
+                requestAction: RequestPasswordReset::class,
+                resetAction: ResetPassword::class,
+            )
+            ->authPasswordBroker('users')
             ->colors([
                 'primary' => Color::generatePalette('#f46b12'),
                 'info' => Color::Cyan,

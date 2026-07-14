@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\RoleEnum;
+use App\Filament\Resources\UserResource\Actions\GeneratePasswordResetLinkAction;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
@@ -177,6 +178,7 @@ class UserResource extends Resource
                     ->visible(fn () => auth()->user()->isSuperAdmin())
                     ->label('Simular acesso do usuário')
                     ->color(Color::Amber),
+                GeneratePasswordResetLinkAction::make(),
                 EditAction::make()
                     ->iconButton()
                     ->tooltip('Editar'),
