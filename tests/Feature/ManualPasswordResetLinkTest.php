@@ -1,8 +1,9 @@
 <?php
 
+use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Auth\RequestPasswordReset;
 use App\Filament\Pages\Auth\ResetPassword;
-use App\Filament\Pages\Auth\Login;
+use App\Filament\Resources\UserResource\Pages\CreateUser;
 use App\Filament\Resources\UserResource\Pages\ListUsers;
 use App\Models\User;
 use App\Support\Auth\ManualPasswordResetLink;
@@ -77,6 +78,43 @@ it('hides password reset link generation from users without permission to update
         ->assertActionHidden(TestAction::make('generatePasswordResetLink')->table($targetUser));
 });
 
+it('disables password reset link generation until the user has panel access', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $administrator = User::factory()->create();
+    $administrator->assignRole('Super Administrador');
+    $targetUser = User::factory()->create();
+
+    $this->actingAs($administrator);
+
+    Livewire::test(ListUsers::class)
+        ->loadTable()
+        ->assertActionDisabled(TestAction::make('generatePasswordResetLink')->table($targetUser));
+});
+
+it('requires a panel access profile when creating a user', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $administrator = User::factory()->create();
+    $administrator->assignRole('Super Administrador');
+
+    $this->actingAs($administrator);
+
+    Livewire::test(CreateUser::class)
+        ->assertFormFieldExists('roles')
+        ->fillForm([
+            'name' => 'Usuário sem perfil',
+            'email' => 'sem-perfil@example.com',
+            'password' => 'NovaSenha123!',
+            'password_confirmation' => 'NovaSenha123!',
+            'roles' => [],
+        ])
+        ->call('create')
+        ->assertHasFormErrors([
+            'roles' => 'required',
+        ]);
+});
+
 it('resets the password of a registered user without a panel role through a generated one-time link', function () {
     $this->seed(ShieldSeeder::class);
 
@@ -115,6 +153,17 @@ it('resets the password of a registered user without a panel role through a gene
         ->toBeFalse()
         ->and($targetUser->fresh()->canAccessPanel(Filament::getPanel('admin')))
         ->toBeFalse();
+
+    Livewire::test(Login::class)
+        ->fillForm([
+            'email' => $targetUser->email,
+            'password' => 'NovaSenha123!',
+            'remember' => false,
+        ])
+        ->call('authenticate')
+        ->assertHasErrors([
+            'data.email' => 'A senha está correta, mas este usuário não possui um perfil de acesso ao painel. Solicite a um administrador que atribua um perfil.',
+        ]);
 });
 
 it('allows login with the password defined through a manual reset link', function () {
