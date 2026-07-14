@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UserResource\Pages;
 
 use App\Filament\Resources\UserResource;
+use App\Filament\Resources\UserResource\Actions\GeneratePasswordResetLinkAction;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -13,6 +14,7 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            GeneratePasswordResetLinkAction::make(),
             Actions\DeleteAction::make(),
         ];
     }
