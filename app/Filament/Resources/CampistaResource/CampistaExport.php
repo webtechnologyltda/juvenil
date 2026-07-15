@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CampistaResource;
 
+use App\Enums\FormaPagamento;
 use App\Models\Campista;
 use Carbon\Carbon;
 use Filament\Actions\Exports\ExportColumn;
@@ -41,7 +42,7 @@ abstract class CampistaExport
 
             ExportColumn::make('forma_pagamento')
                 ->label('Forma de Pagamento')
-                ->formatStateUsing(fn ($state) => match ($state->value) {
+                ->formatStateUsing(fn (?FormaPagamento $state): string => match ($state?->value) {
                     1 => 'Pix',
                     2 => 'Dinheiro',
                     3 => 'Cartão',
