@@ -12,6 +12,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -79,6 +80,17 @@ class UserResource extends Resource
                                         'md' => 12,
                                         'lg' => 6,
                                     ]),
+
+                                Select::make('roles')
+                                    ->label('Perfis de acesso')
+                                    ->relationship('roles', 'name')
+                                    ->multiple()
+                                    ->searchable()
+                                    ->preload()
+                                    ->optionsLimit(5)
+                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->helperText('Usuários sem perfil não podem entrar no painel.')
+                                    ->columnSpanFull(),
 
                                 TextInput::make('password')
                                     ->password()

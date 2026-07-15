@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -115,6 +116,30 @@ it('requires a panel access profile when creating a user', function () {
         ]);
 });
 
+it('saves the selected panel access profile when creating a user', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $administrator = User::factory()->create();
+    $administrator->assignRole('Super Administrador');
+    $role = Role::findByName('Administrador');
+
+    $this->actingAs($administrator);
+
+    Livewire::test(CreateUser::class)
+        ->fillForm([
+            'name' => 'Usuário com perfil',
+            'email' => 'com-perfil@example.com',
+            'password' => 'NovaSenha123!',
+            'password_confirmation' => 'NovaSenha123!',
+            'roles' => [$role->getKey()],
+        ])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    expect(User::query()->where('email', 'com-perfil@example.com')->firstOrFail()->hasRole($role))
+        ->toBeTrue();
+});
+
 it('resets the password of a registered user without a panel role through a generated one-time link', function () {
     $this->seed(ShieldSeeder::class);
 
@@ -202,6 +227,25 @@ it('allows login with the password defined through a manual reset link', functio
         ->assertHasNoFormErrors();
 
     expect(auth()->id())->toBe($targetUser->id);
+});
+
+it('keeps the generic credentials error when the password is invalid', function () {
+    $targetUser = User::factory()->create([
+        'password' => 'SenhaCorreta123!',
+    ]);
+
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+    Livewire::test(Login::class)
+        ->fillForm([
+            'email' => $targetUser->email,
+            'password' => 'SenhaIncorreta123!',
+            'remember' => false,
+        ])
+        ->call('authenticate')
+        ->assertHasErrors([
+            'data.email' => __('filament-panels::auth/pages/login.messages.failed'),
+        ]);
 });
 
 it('rejects an invalid password reset token for a registered user without a panel role', function () {
