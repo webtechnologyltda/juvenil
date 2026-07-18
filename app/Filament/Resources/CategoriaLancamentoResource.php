@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\TipoLacamento;
 use App\Filament\Forms\Components\IconPicker;
+use App\Filament\Forms\Components\Money;
 use App\Filament\Resources\CategoriaLancamentoResource\Pages;
 use App\Filament\Tables\Columns\ColoredIconColumn;
 use App\Models\CategoriaLancamento;
@@ -29,7 +30,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Leandrocfe\FilamentPtbrFormFields\Money;
 
 class CategoriaLancamentoResource extends Resource implements HasShieldPermissions
 {

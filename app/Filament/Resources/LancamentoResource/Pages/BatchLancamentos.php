@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\LancamentoResource\Pages;
 
 use App\Enums\TipoLacamento;
+use App\Filament\Forms\Components\Money;
 use App\Filament\Resources\LancamentoResource;
 use App\Filament\Resources\LancamentoResource\Forms\LancamentoForm;
 use App\Filament\Resources\LancamentoResource\Tables\LancamentoBatchCampistasTable;
@@ -35,7 +36,6 @@ use Filament\Support\RawJs;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
-use Leandrocfe\FilamentPtbrFormFields\Money;
 
 class BatchLancamentos extends Page
 {
