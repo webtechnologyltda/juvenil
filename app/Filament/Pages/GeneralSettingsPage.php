@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Enums\LiberacaoInscricoesEquipeTrabalhoStatusEnum;
 use App\Enums\LiberacaoInscricoesStatusEnum;
+use App\Filament\Forms\Components\Money;
 use App\Settings\GeneralSettings;
 use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
@@ -20,7 +21,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
 use Illuminate\Support\Carbon;
-use Leandrocfe\FilamentPtbrFormFields\Money;
 use Leandrocfe\FilamentPtbrFormFields\PhoneNumber;
 
 class GeneralSettingsPage extends SettingsPage
