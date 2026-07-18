@@ -31,6 +31,82 @@ it('does not expose a manual mark as paid action on campista registrations', fun
         ->assertTableActionDoesNotExist('Pago');
 });
 
+it('forbids marking a registration as paid without permission to edit financial entries', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Administrador');
+    $user->givePermissionTo('view_sensitive_health_campista');
+    $this->actingAs($user);
+
+    $campista = Campista::factory()->create([
+        'form_data' => campistaActionsValidFormData(),
+        'status' => StatusInscricao::Pendente,
+        'tribo_id' => null,
+        'user_id' => null,
+    ]);
+
+    Livewire::test(EditCampista::class, ['record' => $campista->getKey()])
+        ->fillForm(['status' => StatusInscricao::Pago->value])
+        ->call('save')
+        ->assertHasFormErrors(['status']);
+
+    expect($user->can('markAsPaid', $campista))->toBeFalse()
+        ->and($campista->fresh()->status)->toBe(StatusInscricao::Pendente);
+});
+
+it('allows marking a registration as paid with permission to edit financial entries', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Administrador');
+    $user->givePermissionTo([
+        'update_lancamento',
+        'view_sensitive_health_campista',
+    ]);
+    $this->actingAs($user);
+
+    $campista = Campista::factory()->create([
+        'form_data' => campistaActionsValidFormData(),
+        'status' => StatusInscricao::Pendente,
+        'tribo_id' => null,
+        'user_id' => null,
+    ]);
+
+    Livewire::test(EditCampista::class, ['record' => $campista->getKey()])
+        ->fillForm(['status' => StatusInscricao::Pago->value])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($campista->fresh()->status)->toBe(StatusInscricao::Pago);
+});
+
+it('allows editing a registration that is already paid without financial permission', function () {
+    $this->seed(ShieldSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Administrador');
+    $user->givePermissionTo('view_sensitive_health_campista');
+    $this->actingAs($user);
+
+    $campista = Campista::factory()->create([
+        'form_data' => campistaActionsValidFormData(),
+        'status' => StatusInscricao::Pago,
+        'observacoes' => 'Observação anterior',
+        'tribo_id' => null,
+        'user_id' => null,
+    ]);
+
+    Livewire::test(EditCampista::class, ['record' => $campista->getKey()])
+        ->fillForm(['observacoes' => 'Observação atualizada'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($campista->fresh())
+        ->status->toBe(StatusInscricao::Pago)
+        ->observacoes->toBe('Observação atualizada');
+});
+
 it('removes direct payment and proof fields from the campista form', function () {
     $form = file_get_contents(app_path('Filament/Resources/CampistaResource/CampistaForm.php'));
 
@@ -329,6 +405,19 @@ function campistaActionsInscricaoCategory(): CategoriaLancamento
     return CategoriaLancamento::query()
         ->where('system_key', CategoriaLancamento::SYSTEM_CATEGORY_INSCRICAO)
         ->firstOrFail();
+}
+
+function campistaActionsValidFormData(): array
+{
+    return [
+        ...Campista::factory()->make()->form_data,
+        'toma_remedio' => true,
+        'tem_recomendacao' => true,
+        'ja_participou_retiro' => true,
+        'retiro_que_participou' => ['Acampamento Juvenil 2024'],
+        'algum_parente' => true,
+        'algum_parente_participante' => ['Parente Campista'],
+    ];
 }
 
 function campistaActionsPaidLaunch(
