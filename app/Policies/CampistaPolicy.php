@@ -32,6 +32,11 @@ class CampistaPolicy
         return $authUser->can('update_campista');
     }
 
+    public function markAsPaid(AuthUser $authUser, Campista $campista): bool
+    {
+        return $authUser->can('update_lancamento');
+    }
+
     public function delete(AuthUser $authUser, Campista $campista): bool
     {
         return $authUser->can('delete_campista');

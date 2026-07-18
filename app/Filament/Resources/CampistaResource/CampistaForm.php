@@ -664,7 +664,10 @@ abstract class CampistaForm
                                 ->label('Status da Inscrição')
                                 ->live()
                                 ->preload()
-                                ->options(StatusInscricao::class),
+                                ->options(StatusInscricao::class)
+                                ->disableOptionWhen(fn (int|string $value, ?Campista $record): bool => (int) $value === StatusInscricao::Pago->value
+                                    && $record?->status !== StatusInscricao::Pago
+                                    && ! ($record && auth()->user()?->can('markAsPaid', $record))),
 
                             ...self::getFormTribo(),
 
