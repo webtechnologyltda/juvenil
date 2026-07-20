@@ -32,6 +32,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\HtmlString;
 
 class LancamentoResource extends Resource
@@ -56,7 +58,7 @@ class LancamentoResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['items.categoria', 'items.registration']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => self::withCompactItemRelations($query))
             ->recordUrl(fn (Lancamento $record): string => static::getUrl('view', ['record' => $record]))
             ->extraAttributes(['class' => 'juvenil-lancamento-table'], merge: true)
             ->columns([
@@ -299,7 +301,7 @@ class LancamentoResource extends Resource
             ->toolbarActions([
                 ExportBulkAction::make()
                     ->exporter(LancamentoExporter::class)
-                    ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['items.categoria', 'items.registration']))
+                    ->modifyQueryUsing(fn (Builder $query): Builder => self::withCompactItemRelations($query, includeDescription: true))
                     ->fileName(fn (Export $export): string => 'lancamento-financeiro-'.Carbon::now()->format('YmdHis').'-'.$export->getKey())
                     ->label('Exportar'),
             ]);
@@ -354,6 +356,35 @@ class LancamentoResource extends Resource
     private static function categoryFilterOptions(): array
     {
         return FinancialFilterOptions::categories();
+    }
+
+    private static function withCompactItemRelations(Builder $query, bool $includeDescription = false): Builder
+    {
+        $itemColumns = [
+            'id',
+            'lancamento_id',
+            'nome',
+            'valor',
+            'categoria_lancamento_id',
+            'registration_type',
+            'registration_id',
+        ];
+
+        if ($includeDescription) {
+            $itemColumns[] = 'descricao';
+        }
+
+        return $query->with([
+            'items' => fn (HasMany $query): HasMany => $query
+                ->select($itemColumns)
+                ->with([
+                    'categoria:id,nome,cor,icone',
+                    'registration' => fn (MorphTo $morphTo): MorphTo => $morphTo->constrain([
+                        Campista::class => fn (Builder $query): Builder => $query->select(['id', 'nome']),
+                        EquipeTrabalho::class => fn (Builder $query): Builder => $query->select(['id', 'nome']),
+                    ]),
+                ]),
+        ]);
     }
 
     private static function categoryBadges(Lancamento $record): HtmlString

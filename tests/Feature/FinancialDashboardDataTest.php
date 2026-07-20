@@ -7,6 +7,7 @@ use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
 use App\Support\Dashboard\FinancialDashboardData;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -87,6 +88,87 @@ it('summarizes paid financial entries as revenue donations expenses and balance 
         'expenses' => 5000,
         'balance' => 27500,
     ]);
+});
+
+it('defers financial queries and summarizes entries with one aggregate query', function () {
+    makeFinancialDashboardEntry([
+        'valor' => 25000,
+        'tipo' => TipoLacamento::Receita->value,
+    ]);
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $data = app(FinancialDashboardData::class)->forFilters([]);
+
+    expect(DB::getQueryLog())->toHaveCount(0);
+
+    $data->summary();
+
+    expect(DB::getQueryLog())->toHaveCount(1)
+        ->and(strtolower(DB::getQueryLog()[0]['query']))
+        ->toContain('sum(abs(lancamentos.valor))')
+        ->not->toContain('select *');
+
+    DB::disableQueryLog();
+});
+
+it('uses only selected category items without duplicating the financial entry count', function () {
+    $selectedCategory = makeFinancialDashboardCategory('Inscrição', TipoLacamento::Receita);
+    $otherCategory = makeFinancialDashboardCategory('Outros', TipoLacamento::Receita);
+    $entry = makeFinancialDashboardEntry([
+        'nome' => 'Receita com itens',
+        'valor' => 40000,
+        'tipo' => TipoLacamento::Receita->value,
+        'forma_pagamento' => FormaPagamento::Pix->value,
+    ]);
+
+    $entry->items()->createMany([
+        [
+            'nome' => 'Inscrição 1',
+            'valor' => 10000,
+            'categoria_lancamento_id' => $selectedCategory->id,
+        ],
+        [
+            'nome' => 'Inscrição 2',
+            'valor' => 15000,
+            'categoria_lancamento_id' => $selectedCategory->id,
+        ],
+        [
+            'nome' => 'Outro item',
+            'valor' => 15000,
+            'categoria_lancamento_id' => $otherCategory->id,
+        ],
+    ]);
+
+    $data = app(FinancialDashboardData::class)->forFilters([
+        'categoria_lancamento_id' => [$selectedCategory->id],
+    ]);
+
+    expect($data->summary())->toBe([
+        'entries' => 1,
+        'revenue' => 25000,
+        'donations' => 0,
+        'expenses' => 0,
+        'balance' => 25000,
+    ])
+        ->and($data->dailyFlow())->toBe([
+            '07/06' => [
+                'revenue' => 25000,
+                'donations' => 0,
+                'expenses' => 0,
+                'balance' => 25000,
+            ],
+        ])
+        ->and($data->categoryTotals())->toBe([
+            'Inscrição' => 25000,
+        ])
+        ->and($data->paymentMethodBalances())->toBe([
+            'Pix' => 25000,
+        ])
+        ->and($data->recentEntries()->pluck('nome')->all())->toBe([
+            'Receita com itens',
+        ]);
 });
 
 it('applies financial dashboard filters to totals charts and recent entries', function () {

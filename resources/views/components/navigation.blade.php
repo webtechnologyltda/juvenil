@@ -1,7 +1,7 @@
 <section
     id="top"
     class="juvenil-hero-shell relative isolate min-h-[100dvh] w-full overflow-hidden bg-[#052f35] text-white"
-    style="--juvenil-hero-mobile: url('{{ asset('img/hero-mobile.png') }}'); --juvenil-hero-desktop: url('{{ asset('img/hero-desktop.png') }}');"
+    style="--juvenil-hero-mobile: url('{{ asset('img/hero-mobile.webp') }}'); --juvenil-hero-desktop: url('{{ asset('img/hero-desktop.webp') }}');"
 >
     <div class="juvenil-hero-backdrop absolute inset-0 -z-30" aria-hidden="true"></div>
     <div
@@ -14,7 +14,7 @@
     <header class="relative z-20 mx-auto mt-6 hidden w-[calc(100%-2rem)] max-w-7xl items-center justify-between border border-white/15 bg-[#052f35]/85 px-6 py-3 shadow-[0_24px_80px_rgba(0,0,0,0.25)] backdrop-blur lg:flex">
         <a href="{{ route('campista') }}" class="inline-flex min-w-0 items-center gap-3">
             <img
-                src="{{ asset('img/logo.png') }}"
+                src="{{ asset('img/logo.webp') }}"
                 alt="Logo do Acampamento Juvenil"
                 width="56"
                 height="56"

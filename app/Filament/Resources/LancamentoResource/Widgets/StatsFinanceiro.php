@@ -20,22 +20,27 @@ class StatsFinanceiro extends BaseWidget
 
     protected function getStats(): array
     {
-        $receita = Lancamento::query()
+        $totals = Lancamento::query()
             ->where('status', StatusLacamento::Pago->value)
-            ->where('tipo', TipoLacamento::Receita->value)
-            ->sum('valor') / 100;
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN tipo = ? THEN valor ELSE 0 END), 0) AS receita,
+                COALESCE(SUM(CASE WHEN tipo = ? THEN valor ELSE 0 END), 0) AS despesas,
+                COALESCE(SUM(CASE WHEN tipo = ? THEN valor ELSE 0 END), 0) AS doacoes',
+                [
+                    TipoLacamento::Receita->value,
+                    TipoLacamento::Despesa->value,
+                    TipoLacamento::Doacao->value,
+                ],
+            )
+            ->firstOrFail();
+
+        $receita = (int) $totals->receita / 100;
         $receitaFormatted = number_format($receita, 2, ',', '.');
 
-        $despesas = Lancamento::query()
-            ->where('status', StatusLacamento::Pago->value)
-            ->where('tipo', TipoLacamento::Despesa->value)
-            ->sum('valor') / -100;
+        $despesas = (int) $totals->despesas / -100;
         $despesasFormatted = number_format($despesas, 2, ',', '.');
 
-        $doacoes = Lancamento::query()
-            ->where('status', StatusLacamento::Pago->value)
-            ->where('tipo', TipoLacamento::Doacao->value)
-            ->sum('valor') / 100;
+        $doacoes = (int) $totals->doacoes / 100;
         $doacoesFormatted = number_format($doacoes, 2, ',', '.');
 
         $total = $receita + $doacoes - $despesas;

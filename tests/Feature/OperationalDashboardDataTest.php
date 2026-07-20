@@ -5,6 +5,7 @@ use App\Models\Campista;
 use App\Models\Tribo;
 use App\Support\Dashboard\OperationalDashboardData;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -49,6 +50,32 @@ it('calculates the operational pipeline excluding cancelled records by default',
         'present' => 1,
         'cancelled' => 1,
     ]);
+});
+
+it('defers operational queries and uses grouped queries for dashboard metrics', function () {
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value]);
+    makeOperationalDashboardCampista(['status' => StatusInscricao::Pago->value]);
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $data = app(OperationalDashboardData::class)->forFilters([]);
+
+    expect(DB::getQueryLog())->toHaveCount(0);
+
+    $data->pipeline();
+
+    expect(DB::getQueryLog())->toHaveCount(1)
+        ->and(strtolower(DB::getQueryLog()[0]['query']))
+        ->toContain('count(*) as aggregate')
+        ->not->toContain('select *');
+
+    $data->tribes();
+    $data->tribeColors();
+
+    expect(DB::getQueryLog())->toHaveCount(2);
+
+    DB::disableQueryLog();
 });
 
 it('applies status tribe parish community and presence filters to operational metrics', function () {

@@ -14,9 +14,9 @@
 <main class="mx-auto">
     <section
         class="relative w-full h-[100vh] overflow-hidden bg-gray-900  bg-blend-multiply bg-opacity-25  ">
-        <video autoplay="autoplay" autoplay="autoplay" loop muted playsinline preload="auto"
+        <video loop muted playsinline preload="none" poster="{{ asset('img/hero-desktop.webp') }}" data-lazy-video
                class="absolute inset-0 w-full h-full object-cover opacity-80 -z-10 bg-center">
-            <source src="{{asset('img/barraca.mp4')}}" type="video/mp4"/>
+            <source data-src="{{ asset('img/barraca-720p.mp4') }}" type="video/mp4"/>
             Seu navegador não suporta reprodução de videos, tente atualizar para a versão mais recente ou usar
             outro.
         </video>
@@ -84,7 +84,5 @@
 
 @filamentScripts
 @livewireScripts
-<script src="{{asset('js/jquery-min.js')}}"></script>
-<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 </body>
 </html>

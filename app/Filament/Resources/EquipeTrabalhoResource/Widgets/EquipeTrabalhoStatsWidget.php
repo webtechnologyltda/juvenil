@@ -19,37 +19,28 @@ class EquipeTrabalhoStatsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $data = EquipeTrabalho::query()
-            ->where('status', '!=', StatusInscricaoEquipeTrabalho::Cancelado)
-            ->get();
-
-        $sexo = [
-            'F' => 0,
-            'M' => 0,
-        ];
-
-        foreach ($data as $registration) {
-            $sex = data_get($registration->data_form, 'sexo');
-
-            if (array_key_exists($sex, $sexo)) {
-                $sexo[$sex]++;
-            }
-        }
+        $totals = EquipeTrabalho::query()
+            ->where('status', '!=', StatusInscricaoEquipeTrabalho::Cancelado->value)
+            ->selectRaw(
+                'COUNT(*) AS total,
+                COALESCE(SUM(CASE WHEN data_form->>"$.sexo" = ? THEN 1 ELSE 0 END), 0) AS mulheres,
+                COALESCE(SUM(CASE WHEN data_form->>"$.sexo" = ? THEN 1 ELSE 0 END), 0) AS homens',
+                ['F', 'M'],
+            )
+            ->firstOrFail();
 
         return [
-            Stat::make('', EquipeTrabalho::query()
-                ->where('status', '!=', StatusInscricaoEquipeTrabalho::Cancelado)
-                ->count())
+            Stat::make('', (int) $totals->total)
                 ->description('Qtd de Inscrições')
                 ->descriptionIcon('heroicon-m-users')
                 ->color(Color::Orange),
 
-            Stat::make('', $sexo['F'])
+            Stat::make('', (int) $totals->mulheres)
                 ->description('Qtd Mulheres')
                 ->descriptionIcon('eos-female')
                 ->color(Color::Pink),
 
-            Stat::make('', $sexo['M'])
+            Stat::make('', (int) $totals->homens)
                 ->description('Qtd Homens')
                 ->descriptionIcon('eos-male')
                 ->color(Color::Blue),

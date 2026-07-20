@@ -213,6 +213,7 @@ class AutomaticRegistrationLaunchService
             : null;
 
         $this->registrationsByStatus($registrationType, $this->pendingStatusFor($registrationType))
+            ->select('id')
             ->chunkById(100, function (Collection $registrations) use (&$summary, $registrationType, $batchCode): void {
                 foreach ($registrations as $registration) {
                     try {
@@ -231,6 +232,7 @@ class AutomaticRegistrationLaunchService
             });
 
         $this->registrationsByStatus($registrationType, $this->cancelledStatusFor($registrationType))
+            ->select('id')
             ->chunkById(100, function (Collection $registrations) use (&$summary, $registrationType): void {
                 foreach ($registrations as $registration) {
                     try {
@@ -256,7 +258,7 @@ class AutomaticRegistrationLaunchService
     {
         $summary = $this->emptySummary();
 
-        $this->registrationsByStatus($registrationType, $this->pendingStatusFor($registrationType))
+        $this->previewRegistrationsByStatus($registrationType, $this->pendingStatusFor($registrationType))
             ->chunkById(100, function (Collection $registrations) use (&$summary): void {
                 foreach ($registrations as $registration) {
                     $linkedItems = $this->linkedItemsFor($registration, lock: false);
@@ -285,7 +287,7 @@ class AutomaticRegistrationLaunchService
                 }
             });
 
-        $this->registrationsByStatus($registrationType, $this->cancelledStatusFor($registrationType))
+        $this->previewRegistrationsByStatus($registrationType, $this->cancelledStatusFor($registrationType))
             ->chunkById(100, function (Collection $registrations) use (&$summary): void {
                 foreach ($registrations as $registration) {
                     if (! $this->singleAutomaticLaunch($this->linkedItemsFor($registration, lock: false), StatusLacamento::Pendente)) {
@@ -321,6 +323,21 @@ class AutomaticRegistrationLaunchService
         return $registrationType::query()
             ->where('status', $status)
             ->orderBy('id');
+    }
+
+    /**
+     * @param  class-string<Model>  $registrationType
+     * @return Builder<Model>
+     */
+    private function previewRegistrationsByStatus(string $registrationType, int $status): Builder
+    {
+        $columns = $registrationType === EquipeTrabalho::class
+            ? ['id', 'tipo_equipe']
+            : ['id'];
+
+        return $this->registrationsByStatus($registrationType, $status)
+            ->select($columns)
+            ->with('lancamentoItems.lancamento.items');
     }
 
     /**
@@ -368,6 +385,10 @@ class AutomaticRegistrationLaunchService
      */
     private function linkedItemsFor(Model $registration, bool $lock = true): Collection
     {
+        if (! $lock && $registration->relationLoaded('lancamentoItems')) {
+            return $registration->getRelation('lancamentoItems');
+        }
+
         $query = LancamentoItem::query()
             ->where('registration_type', $registration::class)
             ->where('registration_id', $registration->getKey())
@@ -395,10 +416,14 @@ class AutomaticRegistrationLaunchService
             return null;
         }
 
+        $launchItemCount = $lancamento->relationLoaded('items')
+            ? $lancamento->items->count()
+            : $lancamento->items()->count();
+
         if (
             $lancamento->origin !== Lancamento::ORIGIN_AUTO_REGISTRATION
             || $lancamento->status !== $status
-            || $lancamento->items()->count() !== 1
+            || $launchItemCount !== 1
         ) {
             return null;
         }

@@ -10,15 +10,16 @@
         <figure class="juvenil-experience-video relative min-h-[31rem] overflow-hidden border border-[#9ddbef]/25 bg-[#03181c] sm:min-h-[36rem] lg:min-h-[38rem]" data-gsap-image data-motion-card>
             <video
                 class="juvenil-site-video"
-                autoplay
                 muted
                 loop
                 playsinline
-                preload="auto"
+                preload="none"
+                poster="{{ asset('img/hero-desktop.webp') }}"
+                data-lazy-video
                 disablepictureinpicture
                 aria-label="Vídeo ambiente do Acampamento Juvenil"
             >
-                <source src="{{ asset('img/barraca.mp4') }}" type="video/mp4">
+                <source data-src="{{ asset('img/barraca-720p.mp4') }}" type="video/mp4">
                 Seu navegador não suporta reprodução de vídeos.
             </video>
 

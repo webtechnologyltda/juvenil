@@ -5,7 +5,6 @@ namespace App\Support\Dashboard;
 use App\Enums\FormaPagamento;
 use App\Enums\TipoLacamento;
 use App\Models\Lancamento;
-use App\Models\LancamentoItem;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -15,54 +14,77 @@ class FinancialDashboardData
     public function forFilters(array $filters): FinancialDashboardDataSet
     {
         return new FinancialDashboardDataSet(
-            records: $this->records($filters),
+            baseQuery: $this->baseQuery($filters),
             categoryIds: FinancialDashboardFilters::categoryIds($filters),
         );
     }
 
     public function queryForFilters(array $filters): Builder
     {
+        $categoryIds = FinancialDashboardFilters::categoryIds($filters);
+
+        return $this->baseQuery($filters)
+            ->when(
+                $categoryIds !== [],
+                fn (Builder $query): Builder => $query->whereHas(
+                    'items',
+                    fn (Builder $query): Builder => $query->whereIn('categoria_lancamento_id', $categoryIds),
+                ),
+            )
+            ->with('items.categoria');
+    }
+
+    protected function baseQuery(array $filters): Builder
+    {
         $startDate = FinancialDashboardFilters::startDate($filters);
         $endDate = FinancialDashboardFilters::endDate($filters);
         $statuses = FinancialDashboardFilters::statusValues($filters);
         $types = FinancialDashboardFilters::typeValues($filters);
-        $categoryIds = FinancialDashboardFilters::categoryIds($filters);
         $paymentMethods = FinancialDashboardFilters::paymentMethodValues($filters);
 
         return Lancamento::query()
-            ->with('items.categoria')
-            ->when($startDate !== null, fn (Builder $query): Builder => $query->where('data', '>=', $startDate))
-            ->when($endDate !== null, fn (Builder $query): Builder => $query->where('data', '<=', $endDate))
-            ->when($statuses !== [], fn (Builder $query): Builder => $query->whereIn('status', $statuses))
-            ->when($types !== [], fn (Builder $query): Builder => $query->whereIn('tipo', $types))
-            ->when($categoryIds !== [], fn (Builder $query): Builder => $query->whereHas('items', fn (Builder $query): Builder => $query->whereIn('categoria_lancamento_id', $categoryIds)))
-            ->when($paymentMethods !== [], fn (Builder $query): Builder => $query->whereIn('forma_pagamento', $paymentMethods));
-    }
-
-    protected function records(array $filters): Collection
-    {
-        return $this->queryForFilters($filters)
-            ->orderByDesc('data')
-            ->orderByDesc('id')
-            ->get();
+            ->when($startDate !== null, fn (Builder $query): Builder => $query->where('lancamentos.data', '>=', $startDate))
+            ->when($endDate !== null, fn (Builder $query): Builder => $query->where('lancamentos.data', '<=', $endDate))
+            ->when($statuses !== [], fn (Builder $query): Builder => $query->whereIn('lancamentos.status', $statuses))
+            ->when($types !== [], fn (Builder $query): Builder => $query->whereIn('lancamentos.tipo', $types))
+            ->when($paymentMethods !== [], fn (Builder $query): Builder => $query->whereIn('lancamentos.forma_pagamento', $paymentMethods));
     }
 }
 
 class FinancialDashboardDataSet
 {
     public function __construct(
-        private readonly Collection $records,
+        private readonly Builder $baseQuery,
         private readonly array $categoryIds = [],
     ) {}
 
     public function summary(): array
     {
-        $revenue = $this->totalFor(TipoLacamento::Receita);
-        $donations = $this->totalFor(TipoLacamento::Doacao);
-        $expenses = $this->totalFor(TipoLacamento::Despesa);
+        $query = $this->query();
+
+        if ($this->categoryIds === []) {
+            $rows = $query
+                ->select('lancamentos.tipo')
+                ->selectRaw('COUNT(*) as entries, COALESCE(SUM(ABS(lancamentos.valor)), 0) as amount')
+                ->groupBy('lancamentos.tipo')
+                ->toBase()
+                ->get();
+        } else {
+            $rows = $this->joinSelectedCategoryItems($query)
+                ->select('lancamentos.tipo')
+                ->selectRaw('COUNT(DISTINCT lancamentos.id) as entries, COALESCE(SUM(ABS(dashboard_items.valor)), 0) as amount')
+                ->groupBy('lancamentos.tipo')
+                ->toBase()
+                ->get();
+        }
+
+        $totals = $this->totalsByType($rows);
+        $revenue = $totals[TipoLacamento::Receita->value] ?? 0;
+        $donations = $totals[TipoLacamento::Doacao->value] ?? 0;
+        $expenses = $totals[TipoLacamento::Despesa->value] ?? 0;
 
         return [
-            'entries' => $this->records->count(),
+            'entries' => $rows->sum(fn (object $row): int => (int) $row->entries),
             'revenue' => $revenue,
             'donations' => $donations,
             'expenses' => $expenses,
@@ -72,31 +94,122 @@ class FinancialDashboardDataSet
 
     public function dailyFlow(): array
     {
-        return $this->records
-            ->sortBy(fn (Lancamento $lancamento): string => $this->dateKey($lancamento))
-            ->groupBy(fn (Lancamento $lancamento): string => $this->dateKey($lancamento))
-            ->mapWithKeys(fn (Collection $records, string $date): array => [
-                Carbon::parse($date)->format('d/m') => $this->flowFor($records),
+        $query = $this->query();
+
+        if ($this->categoryIds === []) {
+            $rows = $query
+                ->select('lancamentos.tipo')
+                ->selectRaw('DATE(lancamentos.data) as flow_date, COALESCE(SUM(ABS(lancamentos.valor)), 0) as amount')
+                ->groupByRaw('DATE(lancamentos.data), lancamentos.tipo')
+                ->orderBy('flow_date')
+                ->toBase()
+                ->get();
+        } else {
+            $rows = $this->joinSelectedCategoryItems($query)
+                ->select('lancamentos.tipo')
+                ->selectRaw('DATE(lancamentos.data) as flow_date, COALESCE(SUM(ABS(dashboard_items.valor)), 0) as amount')
+                ->groupByRaw('DATE(lancamentos.data), lancamentos.tipo')
+                ->orderBy('flow_date')
+                ->toBase()
+                ->get();
+        }
+
+        $flowByDate = [];
+
+        foreach ($rows as $row) {
+            $date = (string) $row->flow_date;
+
+            $flowByDate[$date] ??= [
+                'revenue' => 0,
+                'donations' => 0,
+                'expenses' => 0,
+                'balance' => 0,
+            ];
+
+            $amount = (int) $row->amount;
+
+            match ((int) $row->tipo) {
+                TipoLacamento::Receita->value => $flowByDate[$date]['revenue'] += $amount,
+                TipoLacamento::Doacao->value => $flowByDate[$date]['donations'] += $amount,
+                TipoLacamento::Despesa->value => $flowByDate[$date]['expenses'] += $amount,
+                default => null,
+            };
+
+            $flowByDate[$date]['balance'] = $flowByDate[$date]['revenue']
+                + $flowByDate[$date]['donations']
+                - $flowByDate[$date]['expenses'];
+        }
+
+        return collect($flowByDate)
+            ->mapWithKeys(fn (array $dailyFlow, string $date): array => [
+                Carbon::parse($date)->format('d/m') => $dailyFlow,
             ])
             ->all();
     }
 
     public function categoryTotals(int $limit = 10): array
     {
-        return $this->records
-            ->flatMap(fn (Lancamento $lancamento): Collection => $this->categoryItems($lancamento))
-            ->groupBy(fn (LancamentoItem $item): string => $item->categoria?->nome ?: 'Sem categoria')
-            ->map(fn (Collection $items): int => $items->sum(fn (LancamentoItem $item): int => abs((int) $item->valor)))
-            ->sortDesc()
-            ->take($limit)
+        return $this->query()
+            ->join('lancamento_items as dashboard_items', 'dashboard_items.lancamento_id', '=', 'lancamentos.id')
+            ->leftJoin('categorias_lancamento as dashboard_categories', 'dashboard_categories.id', '=', 'dashboard_items.categoria_lancamento_id')
+            ->when(
+                $this->categoryIds !== [],
+                fn (Builder $query): Builder => $query->whereIn('dashboard_items.categoria_lancamento_id', $this->categoryIds),
+            )
+            ->selectRaw("COALESCE(dashboard_categories.nome, 'Sem categoria') as category_name")
+            ->selectRaw('COALESCE(SUM(ABS(dashboard_items.valor)), 0) as amount')
+            ->groupByRaw("COALESCE(dashboard_categories.nome, 'Sem categoria')")
+            ->orderByDesc('amount')
+            ->limit($limit)
+            ->toBase()
+            ->get()
+            ->mapWithKeys(fn (object $row): array => [(string) $row->category_name => (int) $row->amount])
             ->all();
     }
 
     public function paymentMethodBalances(): array
     {
-        return $this->records
-            ->groupBy(fn (Lancamento $lancamento): string => $this->paymentMethodLabel($lancamento))
-            ->map(fn (Collection $records): int => $this->flowFor($records)['balance'])
+        $query = $this->query();
+
+        if ($this->categoryIds === []) {
+            $rows = $query
+                ->select(['lancamentos.forma_pagamento', 'lancamentos.tipo'])
+                ->selectRaw('COALESCE(SUM(ABS(lancamentos.valor)), 0) as amount')
+                ->selectRaw('MAX(lancamentos.data) as latest_date, MAX(lancamentos.id) as latest_id')
+                ->groupBy('lancamentos.forma_pagamento', 'lancamentos.tipo')
+                ->orderByDesc('latest_date')
+                ->orderByDesc('latest_id')
+                ->toBase()
+                ->get();
+        } else {
+            $rows = $this->joinSelectedCategoryItems($query)
+                ->select(['lancamentos.forma_pagamento', 'lancamentos.tipo'])
+                ->selectRaw('COALESCE(SUM(ABS(dashboard_items.valor)), 0) as amount')
+                ->selectRaw('MAX(lancamentos.data) as latest_date, MAX(lancamentos.id) as latest_id')
+                ->groupBy('lancamentos.forma_pagamento', 'lancamentos.tipo')
+                ->orderByDesc('latest_date')
+                ->orderByDesc('latest_id')
+                ->toBase()
+                ->get();
+        }
+
+        $balances = collect();
+
+        foreach ($rows as $row) {
+            $label = $this->paymentMethodLabel($row->forma_pagamento);
+            $balance = (int) $balances->get($label, 0);
+            $amount = (int) $row->amount;
+
+            $balance += match ((int) $row->tipo) {
+                TipoLacamento::Receita->value, TipoLacamento::Doacao->value => $amount,
+                TipoLacamento::Despesa->value => -$amount,
+                default => 0,
+            };
+
+            $balances->put($label, $balance);
+        }
+
+        return $balances
             ->filter(fn (int $balance): bool => $balance !== 0)
             ->sortDesc()
             ->all();
@@ -104,75 +217,42 @@ class FinancialDashboardDataSet
 
     public function recentEntries(int $limit = 8): Collection
     {
-        return $this->records->take($limit)->values();
+        return $this->query()
+            ->when(
+                $this->categoryIds !== [],
+                fn (Builder $query): Builder => $query->whereHas(
+                    'items',
+                    fn (Builder $query): Builder => $query->whereIn('categoria_lancamento_id', $this->categoryIds),
+                ),
+            )
+            ->with('items.categoria')
+            ->orderByDesc('data')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
     }
 
-    private function flowFor(Collection $records): array
+    private function query(): Builder
     {
-        $revenue = $this->totalFor(TipoLacamento::Receita, $records);
-        $donations = $this->totalFor(TipoLacamento::Doacao, $records);
-        $expenses = $this->totalFor(TipoLacamento::Despesa, $records);
-
-        return [
-            'revenue' => $revenue,
-            'donations' => $donations,
-            'expenses' => $expenses,
-            'balance' => $revenue + $donations - $expenses,
-        ];
+        return clone $this->baseQuery;
     }
 
-    private function totalFor(TipoLacamento $type, ?Collection $records = null): int
+    private function joinSelectedCategoryItems(Builder $query): Builder
     {
-        return ($records ?? $this->records)
-            ->filter(fn (Lancamento $lancamento): bool => $this->typeIs($lancamento, $type))
-            ->sum(fn (Lancamento $lancamento): int => $this->amount($lancamento));
+        return $query
+            ->join('lancamento_items as dashboard_items', 'dashboard_items.lancamento_id', '=', 'lancamentos.id')
+            ->whereIn('dashboard_items.categoria_lancamento_id', $this->categoryIds);
     }
 
-    private function typeIs(Lancamento $lancamento, TipoLacamento $type): bool
+    private function totalsByType(Collection $rows): array
     {
-        return $lancamento->tipo instanceof TipoLacamento
-            ? $lancamento->tipo === $type
-            : (int) $lancamento->tipo === $type->value;
+        return $rows
+            ->mapWithKeys(fn (object $row): array => [(int) $row->tipo => (int) $row->amount])
+            ->all();
     }
 
-    private function amount(Lancamento $lancamento): int
+    private function paymentMethodLabel(mixed $paymentMethod): string
     {
-        if ($this->categoryIds !== []) {
-            return $this->categoryItems($lancamento)
-                ->sum(fn (LancamentoItem $item): int => abs((int) $item->valor));
-        }
-
-        return abs((int) $lancamento->valor);
-    }
-
-    private function paymentMethodLabel(Lancamento $lancamento): string
-    {
-        if ($lancamento->forma_pagamento instanceof FormaPagamento) {
-            return $lancamento->forma_pagamento->getLabel() ?? 'Não informado';
-        }
-
-        $paymentMethod = FormaPagamento::tryFrom((int) $lancamento->forma_pagamento);
-
-        return $paymentMethod?->getLabel() ?? 'Não informado';
-    }
-
-    private function categoryItems(Lancamento $lancamento): Collection
-    {
-        $items = $lancamento->relationLoaded('items')
-            ? $lancamento->items
-            : $lancamento->items()->with('categoria')->get();
-
-        if ($this->categoryIds === []) {
-            return $items;
-        }
-
-        return $items
-            ->filter(fn (LancamentoItem $item): bool => in_array((int) $item->categoria_lancamento_id, $this->categoryIds, true))
-            ->values();
-    }
-
-    private function dateKey(Lancamento $lancamento): string
-    {
-        return Carbon::parse($lancamento->data)->format('Y-m-d');
+        return FormaPagamento::tryFrom((int) $paymentMethod)?->getLabel() ?? 'Não informado';
     }
 }

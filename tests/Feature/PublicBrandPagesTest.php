@@ -10,9 +10,9 @@ it('renders the themed legal pages with the custom cookie consent banner', funct
         ->assertOk()
         ->assertSee($heading)
         ->assertSee('juvenil-legal-page')
-        ->assertSee('img/logo.png')
-        ->assertSee('hero-mobile.png')
-        ->assertSee('hero-desktop.png')
+        ->assertSee('img/logo.webp')
+        ->assertSee('hero-mobile.webp')
+        ->assertSee('hero-desktop.webp')
         ->assertSee('js-cookie-consent')
         ->assertSee('juvenil_cookie_consent')
         ->assertSee('Cookies do Juvenil')
@@ -36,7 +36,7 @@ it('renders the custom Filament login page for the admin panel', function () {
         ->assertSee('Operação do evento')
         ->assertSee('Inscrições organizadas')
         ->assertSee('Pagamentos acompanhados')
-        ->assertSee('hero-desktop.png')
+        ->assertSee('hero-desktop.webp')
         ->assertSee('js-cookie-consent')
         ->assertDontSee('Acompanhe inscrições, pagamentos e dados dos campistas em um painel alinhado ao tema do acampamento.')
         ->assertDontSee('Faça login');
@@ -221,7 +221,8 @@ it('renders branded error pages', function () {
             ->toContain((string) $status)
             ->toContain($heading)
             ->toContain('juvenil-poster-title')
-            ->toContain('img/logo.png')
+            ->toContain('img/logo.webp')
+            ->toContain("img/errors/{$status}.webp")
             ->not->toContain('bg-color1');
     }
 

@@ -16,6 +16,7 @@ use Filament\Actions\Exports\Models\Export;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class EquipeTrabalhoResource extends Resource implements HasShieldPermissions
 {
@@ -41,6 +42,17 @@ class EquipeTrabalhoResource extends Resource implements HasShieldPermissions
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->select([
+                'id',
+                'nome',
+                'avatar_url',
+                'data_form',
+                'status',
+                'tribo_id',
+                'descricao',
+                'tipo_equipe',
+                'created_at',
+            ]))
             ->columns(
                 EquipeTrabalhoTable::getColumns()
             )

@@ -9,6 +9,7 @@ use App\Livewire\CampistaWaitlistForm;
 use App\Models\Campista;
 use App\Models\User;
 use App\Models\WaitlistEntry;
+use App\Support\CampistaRegistrationAvailability;
 use App\Support\Campistas\WaitlistManager;
 use Database\Seeders\CampistaSeeder;
 use Database\Seeders\ShieldSeeder;
@@ -181,6 +182,33 @@ it('keeps public registration closed for a sex that has people waiting after a c
         ->set('data.form_data.sexo', 'F')
         ->assertSee('Não há vagas disponíveis para o sexo feminino.')
         ->assertSee('campista-waitlist-form');
+});
+
+it('memoizes capacity queries and counts registrations by sex in the database', function () {
+    createWaitlistCampistaForSex('F', StatusInscricao::Pago);
+
+    WaitlistEntry::factory()->create([
+        'sexo' => 'F',
+        'status' => WaitlistEntryStatus::Aguardando,
+    ]);
+
+    $queries = collect();
+
+    DB::listen(fn ($query) => $queries->push($query->sql));
+
+    $availability = CampistaRegistrationAvailability::fromSettings([
+        'qtd_max_vagas_feminino' => 2,
+    ]);
+
+    expect($availability->sexHasVacancy('F'))->toBeFalse()
+        ->and($availability->sexHasVacancy('F'))->toBeFalse()
+        ->and($availability->sexHasVacancy('F'))->toBeFalse();
+
+    expect($queries->filter(fn (string $sql): bool => str_contains($sql, 'from "campistas"')))
+        ->toHaveCount(1)
+        ->each(fn ($sql) => $sql->toContain('count(*)'))
+        ->and($queries->filter(fn (string $sql): bool => str_contains($sql, 'from "waitlist_entries"')))
+        ->toHaveCount(2);
 });
 
 it('generates a signed invitation link and completes a campista registration from it', function () {

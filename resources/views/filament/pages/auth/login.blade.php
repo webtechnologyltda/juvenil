@@ -1,5 +1,5 @@
 <div class="juvenil-admin-login relative isolate min-h-[100dvh] overflow-hidden bg-[#03181c] px-4 py-8 text-white sm:px-6 lg:px-8">
-    <div class="absolute inset-0 -z-30 bg-[url('/img/hero-mobile.png')] bg-cover bg-center opacity-42 lg:bg-[url('/img/hero-desktop.png')]" aria-hidden="true"></div>
+    <div class="absolute inset-0 -z-30 bg-[url('/img/hero-mobile.webp')] bg-cover bg-center opacity-42 lg:bg-[url('/img/hero-desktop.webp')]" aria-hidden="true"></div>
     <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_22%_16%,rgba(157,219,239,0.24),transparent_32rem),linear-gradient(90deg,rgba(3,24,28,0.94)_0%,rgba(5,47,53,0.88)_48%,rgba(3,24,28,0.98)_100%)]" aria-hidden="true"></div>
     <div class="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-[#03181c] to-transparent" aria-hidden="true"></div>
 
@@ -7,7 +7,7 @@
         <section class="hidden lg:block">
             <a href="{{ route('campista') }}" class="inline-flex items-center gap-4 border border-[#9ddbef]/20 bg-[#052f35]/78 px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur-xl">
                 <img
-                    src="{{ asset('img/logo.png') }}"
+                    src="{{ asset('img/logo.webp') }}"
                     alt="Logo do Acampamento Juvenil"
                     width="72"
                     height="72"
@@ -80,7 +80,7 @@
             <div class="mb-8 text-center">
                 <a href="{{ route('campista') }}" class="mx-auto inline-flex items-center justify-center">
                     <img
-                        src="{{ asset('img/logo.png') }}"
+                        src="{{ asset('img/logo.webp') }}"
                         alt="Logo do Acampamento Juvenil"
                         width="112"
                         height="112"

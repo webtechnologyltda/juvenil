@@ -28,10 +28,17 @@ class CampistaRegistrationAvailability
 
     private ?int $activeReservations = null;
 
+    private ?int $activeWaitlistDemand = null;
+
     /**
      * @var array<string, int>
      */
     private array $activeSexReservations = [];
+
+    /**
+     * @var array<string, int>
+     */
+    private array $activeSexWaitlistDemand = [];
 
     /**
      * @param  array<string, mixed>  $settings
@@ -244,7 +251,7 @@ class CampistaRegistrationAvailability
         $limit = $this->totalLimit();
 
         return ($limit !== null && ($this->activeCount() + $this->activeReservationCount()) >= $limit)
-            || app(WaitlistManager::class)->activeDemand() > 0;
+            || $this->activeDemand() > 0;
     }
 
     public function sexLimitReached(string $sex): bool
@@ -252,7 +259,7 @@ class CampistaRegistrationAvailability
         $limit = $this->sexLimit($sex);
 
         return ($limit !== null && ($this->activeCountForSex($sex) + $this->activeReservationCountForSex($sex)) >= $limit)
-            || app(WaitlistManager::class)->activeDemandForSex($sex) > 0;
+            || $this->activeDemandForSex($sex) > 0;
     }
 
     private function activeCount(): int
@@ -270,8 +277,7 @@ class CampistaRegistrationAvailability
 
         return $this->activeSexCounts[$sex] = Campista::query()
             ->where('status', '<>', StatusInscricao::Cancelado->value)
-            ->get(['form_data'])
-            ->filter(fn (Campista $campista): bool => data_get($campista->form_data, 'sexo') === $sex)
+            ->where('form_data->sexo', $sex)
             ->count();
     }
 
@@ -287,6 +293,20 @@ class CampistaRegistrationAvailability
         }
 
         return $this->activeSexReservations[$sex] = app(WaitlistManager::class)->activeReservationsForSex($sex);
+    }
+
+    private function activeDemand(): int
+    {
+        return $this->activeWaitlistDemand ??= app(WaitlistManager::class)->activeDemand();
+    }
+
+    private function activeDemandForSex(string $sex): int
+    {
+        if (array_key_exists($sex, $this->activeSexWaitlistDemand)) {
+            return $this->activeSexWaitlistDemand[$sex];
+        }
+
+        return $this->activeSexWaitlistDemand[$sex] = app(WaitlistManager::class)->activeDemandForSex($sex);
     }
 
     private function manualStatus(): LiberacaoInscricoesStatusEnum

@@ -10,20 +10,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title }} - {{ config('app.name') }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
-    <link rel="preload" as="image" href="{{ asset('img/hero-mobile.png') }}" media="(max-width: 1023px)">
-    <link rel="preload" as="image" href="{{ asset('img/hero-desktop.png') }}" media="(min-width: 1024px)">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" type="image/webp" href="{{ asset('img/logo.webp') }}">
+    <link rel="preload" as="image" href="{{ asset('img/hero-mobile.webp') }}" type="image/webp" media="(max-width: 1023px)">
+    <link rel="preload" as="image" href="{{ asset('img/hero-desktop.webp') }}" type="image/webp" media="(min-width: 1024px)">
+    @vite('resources/css/app.css')
 </head>
 <body class="bg-[#052f35] font-primary text-white scrollbar-thin scrollbar-track-[#052f35] scrollbar-thumb-[#f46b12] scrollbar-thumb-rounded-full">
     <main class="juvenil-legal-page relative isolate min-h-[100dvh] overflow-x-clip">
-        <div class="absolute inset-0 -z-30 bg-[url('/img/hero-mobile.png')] bg-cover bg-center opacity-50 lg:bg-[url('/img/hero-desktop.png')]" aria-hidden="true"></div>
+        <div class="absolute inset-0 -z-30 bg-[url('/img/hero-mobile.webp')] bg-cover bg-center opacity-50 lg:bg-[url('/img/hero-desktop.webp')]" aria-hidden="true"></div>
         <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_50%_8%,rgba(157,219,239,0.28),transparent_30rem),linear-gradient(180deg,rgba(5,47,53,0.76)_0%,#052f35_46%,#03181c_100%)]" aria-hidden="true"></div>
 
         <header class="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
             <a href="{{ route('campista') }}" class="inline-flex min-w-0 items-center gap-3 border border-[#9ddbef]/20 bg-[#052f35]/82 px-3 py-2 backdrop-blur-xl">
                 <img
-                    src="{{ asset('img/logo.png') }}"
+                    src="{{ asset('img/logo.webp') }}"
                     alt="Logo do Acampamento Juvenil"
                     width="48"
                     height="48"

@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Financial\Concerns;
 
 use App\Support\Dashboard\FinancialDashboardData;
+use App\Support\Dashboard\FinancialDashboardDataSet;
 use Filament\Support\RawJs;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,7 +12,7 @@ trait UsesFinancialDashboardData
 {
     use InteractsWithPageFilters;
 
-    protected function financialData(): object
+    protected function financialData(): FinancialDashboardDataSet
     {
         return app(FinancialDashboardData::class)->forFilters($this->pageFilters ?? []);
     }

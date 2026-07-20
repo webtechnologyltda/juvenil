@@ -1,9 +1,7 @@
-import './bootstrap';
-import './particles.js';
-import './countdown.js';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
+import { initRegistrationCountdowns } from './registration-countdown';
 
 localStorage.theme = 'dark';
 
@@ -104,8 +102,9 @@ document.addEventListener('livewire:init', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    initLazyVideos();
     initCampfireLoader(initPageMotion);
-    initCountdown();
+    initRegistrationCountdowns();
     initSmoothScroll();
 });
 
@@ -199,68 +198,53 @@ function initCampfireLoader(onReady = () => {}) {
     }
 }
 
-function initCountdown() {
-    const registrationCountdowns = document.querySelectorAll('[data-registration-countdown]');
+function initLazyVideos() {
+    const videos = document.querySelectorAll('video[data-lazy-video]');
+    const shouldAvoidAutoplay = prefersReducedMotion() || navigator.connection?.saveData;
 
-    registrationCountdowns.forEach((countdown) => {
-        const target = Date.parse(countdown.dataset.target || '');
-
-        if (Number.isNaN(target)) {
-            return;
-        }
-
-        const parts = {
-            days: countdown.querySelector('[data-countdown-days]'),
-            hours: countdown.querySelector('[data-countdown-hours]'),
-            minutes: countdown.querySelector('[data-countdown-minutes]'),
-            seconds: countdown.querySelector('[data-countdown-seconds]'),
-        };
-
-        const render = () => {
-            const distance = Math.max(0, target - Date.now());
-            const seconds = Math.floor(distance / 1000);
-            const days = Math.floor(seconds / 86400);
-            const hours = Math.floor((seconds % 86400) / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const remainingSeconds = seconds % 60;
-
-            if (parts.days) {
-                parts.days.textContent = String(days);
-            }
-
-            if (parts.hours) {
-                parts.hours.textContent = String(hours).padStart(2, '0');
-            }
-
-            if (parts.minutes) {
-                parts.minutes.textContent = String(minutes).padStart(2, '0');
-            }
-
-            if (parts.seconds) {
-                parts.seconds.textContent = String(remainingSeconds).padStart(2, '0');
-            }
-
-            if (distance === 0 && countdown.dataset.finished !== 'true') {
-                countdown.dataset.finished = 'true';
-                window.setTimeout(() => window.location.reload(), 900);
-            }
-        };
-
-        render();
-        window.setInterval(render, 1000);
-    });
-
-    if (!window.jQuery || !document.getElementById('clockForm')) {
+    if (!videos.length || shouldAvoidAutoplay) {
         return;
     }
 
-    window.jQuery('#clockForm').countdown('2024/08/23 19:00', function (event) {
-        window.jQuery(this).html(event.strftime('' +
-            '<div style="margin: 0px; padding: 0px; width: 85px;" class="time-entry days"><span>%-D</span> Dia(s)</div> ' +
-            '<div style="margin-top: 50px; padding: 0px; width: 85px;" class="time-entry hours"><span>%H</span> Hora(s)</div> ' +
-            '<div style="margin-top: 50px; padding: 0px; width: 85px;" class="time-entry minutes"><span>%M</span> Minuto(s)</div> ' +
-            '<div style="margin-top: 50px; padding: 0px; width: 85px;" class="time-entry seconds"><span>%S</span> Segundo(s)</div> '));
-    });
+    const loadVideo = (video) => {
+        if (video.dataset.loaded === 'true') {
+            return;
+        }
+
+        video.querySelectorAll('source[data-src]').forEach((source) => {
+            source.src = source.dataset.src;
+            source.removeAttribute('data-src');
+        });
+
+        video.dataset.loaded = 'true';
+        video.load();
+    };
+
+    if (!('IntersectionObserver' in window)) {
+        videos.forEach((video) => {
+            loadVideo(video);
+            video.play().catch(() => {});
+        });
+
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            const video = entry.target;
+
+            if (entry.isIntersecting) {
+                loadVideo(video);
+                video.play().catch(() => {});
+
+                return;
+            }
+
+            video.pause();
+        });
+    }, { rootMargin: '240px 0px', threshold: 0.01 });
+
+    videos.forEach((video) => observer.observe(video));
 }
 
 function initSmoothScroll() {
