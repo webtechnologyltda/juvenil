@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{config('app.name')}}</title>
-    <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
-    <link rel="preload" as="image" href="{{ asset('img/hero-mobile.png') }}" media="(max-width: 1023px)">
-    <link rel="preload" as="image" href="{{ asset('img/hero-desktop.png') }}" media="(min-width: 1024px)">
+    <link rel="icon" type="image/webp" href="{{ asset('img/logo.webp') }}">
+    <link rel="preload" as="image" href="{{ asset('img/hero-mobile.webp') }}" type="image/webp" media="(max-width: 1023px)">
+    <link rel="preload" as="image" href="{{ asset('img/hero-desktop.webp') }}" type="image/webp" media="(min-width: 1024px)">
     @filamentStyles
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -42,7 +42,5 @@
         @include('components.mobile-bottom-nav')
         @filamentScripts
         @livewireScripts
-        <script src="{{asset('js/jquery-min.js')}}"></script>
-        <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     </body>
 </html>

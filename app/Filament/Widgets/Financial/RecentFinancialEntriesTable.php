@@ -27,6 +27,7 @@ class RecentFinancialEntriesTable extends TableWidget
                 $this->financialQuery()
                     ->limit(8)
             )
+            ->paginated(false)
             ->defaultSort('data', 'desc')
             ->actions([
                 EditAction::make()

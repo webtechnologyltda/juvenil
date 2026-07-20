@@ -2,8 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Jobs\SendNewRegistrationNotification;
 use App\Models\EquipeTrabalho;
-use App\Models\User;
 use App\Settings\GeneralSettings;
 use App\Support\FilamentUploadState;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -14,10 +14,10 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Concerns\RestrictsFileUploadsToSchemaComponents;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Arr;
-use Illuminate\Support\HtmlString;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Session;
 use Livewire\Component;
+use Throwable;
 
 class EquipeTrabalhoForm extends Component implements HasActions, HasForms
 {
@@ -74,14 +74,7 @@ class EquipeTrabalhoForm extends Component implements HasActions, HasForms
                 ->send();
             $this->reset(['data']);
 
-            $recipient = User::all();
-
-            Notification::make()
-                ->info()
-                ->title('Nova inscrição')
-                ->body(new HtmlString('Uma nova inscrição para equipe de trabalho foi enviada, para o(a) voluntário:
-                    <strong>'.strtoupper($voluntario->nome).'</strong> acesse as inscrições da equipe de trabalho para mais detalhes.'))
-                ->sendToDatabase($recipient);
+            $this->dispatchNewRegistrationNotification($voluntario);
 
         } catch (\Exception $exception) {
             Notification::make()
@@ -97,5 +90,15 @@ class EquipeTrabalhoForm extends Component implements HasActions, HasForms
     {
         $this->inscrito = false;
         $this->reset(['data']);
+    }
+
+    private function dispatchNewRegistrationNotification(EquipeTrabalho $voluntario): void
+    {
+        try {
+            SendNewRegistrationNotification::dispatch(EquipeTrabalho::class, $voluntario->id, $voluntario->nome)
+                ->afterCommit();
+        } catch (Throwable $exception) {
+            rescue(fn () => report($exception), report: false);
+        }
     }
 }

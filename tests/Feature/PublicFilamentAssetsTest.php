@@ -99,12 +99,12 @@ it('uses toggle buttons and simple photo uploads for campista registration photo
         ->not->toContain('->imageEditor()')
         ->not->toContain('->imageEditorAspectRatioOptions')
         ->not->toContain('->automaticallyOpenImageEditorForAspectRatio()')
-        ->not->toContain("->imageAspectRatio('1:1')")
-        ->not->toContain('->automaticallyCropImagesToAspectRatio()')
-        ->not->toContain("->automaticallyResizeImagesMode('cover')")
-        ->not->toContain("->automaticallyResizeImagesToWidth('500')")
-        ->not->toContain("->automaticallyResizeImagesToHeight('500')")
-        ->not->toContain('->automaticallyUpscaleImagesWhenResizing(false)');
+        ->toContain("->imageAspectRatio('1:1')")
+        ->toContain('->automaticallyCropImagesToAspectRatio()')
+        ->toContain("->automaticallyResizeImagesMode('cover')")
+        ->toContain("->automaticallyResizeImagesToWidth('500')")
+        ->toContain("->automaticallyResizeImagesToHeight('500')")
+        ->toContain('->automaticallyUpscaleImagesWhenResizing(false)');
 
     foreach (array_slice($forms, 1) as $form) {
         expect($form)
@@ -278,8 +278,9 @@ it('ships the public GSAP motion layer and custom loader asset', function () {
         ->toContain('data-mobile-nav-item')
         ->toContain('gsap-scrolling')
         ->toContain('scrollToTarget')
-        ->toContain('window.jQuery')
-        ->not->toContain("\n    jQuery(")
+        ->toContain('initLazyVideos')
+        ->toContain('navigator.connection?.saveData')
+        ->not->toContain('window.jQuery')
         ->and($css)
         ->toContain('.juvenil-page-loader')
         ->toContain('.juvenil-mobile-bottom-nav')
@@ -299,7 +300,7 @@ it('ships the public GSAP motion layer and custom loader asset', function () {
     imagedestroy($loader);
 });
 
-it('uses responsive hero artwork and the unified autoplay camp experience section', function () {
+it('uses responsive hero artwork and the lazy camp experience section', function () {
     $navigation = file_get_contents(resource_path('views/components/navigation.blade.php'));
     $banner = file_get_contents(resource_path('views/components/home-banner.blade.php'));
     $details = file_get_contents(resource_path('views/components/content-about-details.blade.php'));
@@ -308,8 +309,8 @@ it('uses responsive hero artwork and the unified autoplay camp experience sectio
 
     expect($navigation)
         ->toContain('juvenil-hero-backdrop')
-        ->toContain('hero-mobile.png')
-        ->toContain('hero-desktop.png')
+        ->toContain('hero-mobile.webp')
+        ->toContain('hero-desktop.webp')
         ->toContain('hidden w-[calc(100%-2rem)]')
         ->toContain('lg:flex')
         ->not->toContain('acampamento-juvenil-divulgacao')
@@ -326,8 +327,10 @@ it('uses responsive hero artwork and the unified autoplay camp experience sectio
         ->toContain('juvenil-experience-video')
         ->toContain('juvenil-experience-copy')
         ->toContain('lg:pr-20')
-        ->toContain('barraca.mp4')
-        ->toContain('autoplay')
+        ->toContain('barraca-720p.mp4')
+        ->toContain('preload="none"')
+        ->toContain("poster=\"{{ asset('img/hero-desktop.webp') }}\"")
+        ->toContain('data-lazy-video')
         ->toContain('muted')
         ->toContain('loop')
         ->toContain('playsinline')
@@ -344,10 +347,48 @@ it('uses responsive hero artwork and the unified autoplay camp experience sectio
         ->and($js)
         ->toContain('initExperienceParallax')
         ->not->toContain('juvenil-bento-grid')
-        ->and(public_path('img/hero-mobile.png'))
+        ->and(public_path('img/hero-mobile.webp'))
         ->toBeFile()
-        ->and(public_path('img/hero-desktop.png'))
+        ->and(public_path('img/hero-desktop.webp'))
         ->toBeFile()
-        ->and(public_path('img/barraca.mp4'))
+        ->and(public_path('img/barraca-720p.mp4'))
         ->toBeFile();
+});
+
+it('loads optimized frontend bundles and image formats only where needed', function () {
+    $app = file_get_contents(resource_path('js/app.js'));
+    $registration = file_get_contents(resource_path('js/registration.js'));
+    $waitlist = file_get_contents(resource_path('views/waitlist-invitation.blade.php'));
+    $legalLayout = file_get_contents(resource_path('views/components/legal-page-layout.blade.php'));
+    $errorLayout = file_get_contents(resource_path('views/components/juvenil-error-page.blade.php'));
+    $viteConfig = file_get_contents(base_path('vite.config.js'));
+
+    expect($app)
+        ->not->toContain("import './bootstrap'")
+        ->not->toContain('window.jQuery')
+        ->not->toContain("import './particles.js'")
+        ->not->toContain("import './countdown.js'")
+        ->toContain('initRegistrationCountdowns')
+        ->and($registration)
+        ->toContain('initRegistrationCountdowns')
+        ->not->toContain('gsap')
+        ->and($waitlist)
+        ->toContain('resources/js/registration.js')
+        ->not->toContain('resources/js/app.js')
+        ->toContain('img/logo.webp')
+        ->and($legalLayout)
+        ->toContain("@vite('resources/css/app.css')")
+        ->not->toContain('resources/js/app.js')
+        ->toContain('img/logo.webp')
+        ->and($errorLayout)
+        ->toContain("@vite('resources/css/app.css')")
+        ->not->toContain('resources/js/app.js')
+        ->toContain('img/logo.webp')
+        ->and($viteConfig)
+        ->toContain('resources/js/registration.js');
+
+    expect(public_path('img/logo.webp'))->toBeFile()
+        ->and(filesize(public_path('img/logo.webp')))->toBeLessThan(filesize(public_path('img/logo.png')))
+        ->and(public_path('img/errors/419.webp'))->toBeFile()
+        ->and(filesize(public_path('img/errors/419.webp')))->toBeLessThan(filesize(public_path('img/errors/419.jpg')));
 });

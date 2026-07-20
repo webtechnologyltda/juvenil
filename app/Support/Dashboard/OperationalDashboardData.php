@@ -15,8 +15,8 @@ class OperationalDashboardData
     public function forFilters(array $filters): OperationalDashboardDataSet
     {
         return new OperationalDashboardDataSet(
-            records: $this->records($filters),
-            allRecords: $this->allRecords($filters),
+            baseQuery: $this->baseQuery($filters),
+            validStatuses: OperationalDashboardFilters::validStatuses($filters),
         );
     }
 
@@ -27,17 +27,8 @@ class OperationalDashboardData
                 $validOnly,
                 fn (Builder $query): Builder => $query->whereIn('status', OperationalDashboardFilters::validStatuses($filters)),
             )
-            ->with('tribo');
-    }
-
-    protected function records(array $filters): Collection
-    {
-        return $this->queryForFilters($filters)->get();
-    }
-
-    protected function allRecords(array $filters): Collection
-    {
-        return $this->queryForFilters($filters, validOnly: false)->get();
+            ->with('tribo')
+            ->oldest('id');
     }
 
     protected function baseQuery(array $filters): Builder
@@ -54,8 +45,7 @@ class OperationalDashboardData
             ->when($paroquia !== null, fn (Builder $query): Builder => $query->where('form_data->paroquia', $paroquia))
             ->when($communityValues !== [], fn (Builder $query): Builder => $this->whereFormDataValueIn($query, 'form_data->comunidade', $communityValues))
             ->when($communityText !== null, fn (Builder $query): Builder => $query->where('form_data->comunidade', 'like', '%'.$communityText.'%'))
-            ->when($presenca !== null, fn (Builder $query): Builder => $query->where('presenca', $presenca))
-            ->orderBy('id');
+            ->when($presenca !== null, fn (Builder $query): Builder => $query->where('presenca', $presenca));
     }
 
     private function whereFormDataValueIn(Builder $query, string $path, array $values): Builder
@@ -70,68 +60,157 @@ class OperationalDashboardData
 
 class OperationalDashboardDataSet
 {
+    private ?Collection $tribeDistributionRows = null;
+
     public function __construct(
-        private readonly Collection $records,
-        private readonly Collection $allRecords,
+        private readonly Builder $baseQuery,
+        private readonly array $validStatuses,
     ) {}
 
     public function pipeline(): array
     {
+        $rows = $this->query()
+            ->select(['status', 'presenca'])
+            ->selectRaw('COUNT(*) as aggregate')
+            ->groupBy('status', 'presenca')
+            ->toBase()
+            ->get();
+
+        $valid = 0;
+        $pendingPayment = 0;
+        $paid = 0;
+        $awaitingCheckIn = 0;
+        $present = 0;
+        $cancelled = 0;
+
+        foreach ($rows as $row) {
+            $status = (int) $row->status;
+            $presence = (bool) $row->presenca;
+            $count = (int) $row->aggregate;
+
+            if ($status === StatusInscricao::Cancelado->value) {
+                $cancelled += $count;
+            }
+
+            if (! in_array($status, $this->validStatuses, true)) {
+                continue;
+            }
+
+            $valid += $count;
+
+            if ($status === StatusInscricao::Pendente->value) {
+                $pendingPayment += $count;
+            }
+
+            if ($status !== StatusInscricao::Pago->value) {
+                continue;
+            }
+
+            $paid += $count;
+
+            if ($presence) {
+                $present += $count;
+            } else {
+                $awaitingCheckIn += $count;
+            }
+        }
+
         return [
-            'valid' => $this->records->count(),
-            'pending_payment' => $this->records->filter(fn (Campista $campista): bool => $this->statusIs($campista, StatusInscricao::Pendente))->count(),
-            'paid' => $this->records->filter(fn (Campista $campista): bool => $this->statusIs($campista, StatusInscricao::Pago))->count(),
-            'awaiting_check_in' => $this->records
-                ->filter(fn (Campista $campista): bool => $this->statusIs($campista, StatusInscricao::Pago) && $campista->presenca === false)
-                ->count(),
-            'present' => $this->records
-                ->filter(fn (Campista $campista): bool => $this->statusIs($campista, StatusInscricao::Pago) && $campista->presenca === true)
-                ->count(),
-            'cancelled' => $this->allRecords->filter(fn (Campista $campista): bool => $this->statusIs($campista, StatusInscricao::Cancelado))->count(),
+            'valid' => $valid,
+            'pending_payment' => $pendingPayment,
+            'paid' => $paid,
+            'awaiting_check_in' => $awaitingCheckIn,
+            'present' => $present,
+            'cancelled' => $cancelled,
         ];
     }
 
     public function tribes(): array
     {
-        return $this->records
-            ->groupBy(fn (Campista $campista): string => $campista->tribo?->cor ?: 'Sem tribo')
-            ->map->count()
-            ->sortDesc()
-            ->all();
+        $counts = collect();
+
+        foreach ($this->getTribeDistributionRows() as $row) {
+            $label = filled($row->cor) ? (string) $row->cor : 'Sem tribo';
+            $counts->put($label, (int) $counts->get($label, 0) + (int) $row->aggregate);
+        }
+
+        return $counts->sortDesc()->all();
     }
 
     public function tribeColors(): array
     {
-        return $this->records
-            ->groupBy(fn (Campista $campista): string => $campista->tribo?->cor ?: 'Sem tribo')
-            ->map(fn (Collection $campistas): string => TribeColor::forTribe($campistas->first()?->tribo))
-            ->all();
+        $colors = [];
+
+        foreach ($this->getTribeDistributionRows() as $row) {
+            $label = filled($row->cor) ? (string) $row->cor : 'Sem tribo';
+
+            $colors[$label] ??= TribeColor::resolve($row->cor_hex, $row->cor);
+        }
+
+        return $colors;
     }
 
     public function shirts(): array
     {
-        return $this->records
-            ->groupBy(fn (Campista $campista): string => $this->shirtLabel($campista))
-            ->map->count()
-            ->sortDesc()
-            ->all();
+        $rows = $this->validQuery()
+            ->select([
+                'form_data->tamanho_camiseta as shirt_size',
+                'form_data->tamanho_camiseta_outro as other_shirt_size',
+            ])
+            ->selectRaw('COUNT(*) as aggregate, MIN(id) as first_id')
+            ->groupBy('form_data->tamanho_camiseta', 'form_data->tamanho_camiseta_outro')
+            ->orderBy('first_id')
+            ->toBase()
+            ->get();
+
+        $counts = collect();
+
+        foreach ($rows as $row) {
+            $label = $this->shirtLabel($row->shirt_size, $row->other_shirt_size);
+            $counts->put($label, (int) $counts->get($label, 0) + (int) $row->aggregate);
+        }
+
+        return $counts->sortDesc()->all();
     }
 
     public function communities(): array
     {
-        return $this->records
-            ->groupBy(fn (Campista $campista): string => $this->communityLabel($campista))
-            ->map->count()
-            ->sortDesc()
-            ->all();
+        $rows = $this->validQuery()
+            ->select([
+                'form_data->paroquia as parish',
+                'form_data->comunidade as community',
+            ])
+            ->selectRaw('COUNT(*) as aggregate, MIN(id) as first_id')
+            ->groupBy('form_data->paroquia', 'form_data->comunidade')
+            ->orderBy('first_id')
+            ->toBase()
+            ->get();
+
+        $counts = collect();
+
+        foreach ($rows as $row) {
+            $label = $this->communityLabel($row->parish, $row->community);
+            $counts->put($label, (int) $counts->get($label, 0) + (int) $row->aggregate);
+        }
+
+        return $counts->sortDesc()->all();
     }
 
     public function ages(): array
     {
-        $counts = $this->records
-            ->groupBy(fn (Campista $campista): string => $this->ageBucket($campista))
-            ->map->count()
-            ->all();
+        $rows = $this->validQuery()
+            ->select('form_data->data_nacimento as birth_date')
+            ->selectRaw('COUNT(*) as aggregate')
+            ->groupBy('form_data->data_nacimento')
+            ->toBase()
+            ->get();
+
+        $counts = collect();
+
+        foreach ($rows as $row) {
+            $bucket = $this->ageBucket($row->birth_date);
+            $counts->put($bucket, (int) $counts->get($bucket, 0) + (int) $row->aggregate);
+        }
 
         return collect([
             'Ate 29',
@@ -144,55 +223,113 @@ class OperationalDashboardDataSet
             '60+',
             'Sem data',
         ])
-            ->mapWithKeys(fn (string $bucket): array => [$bucket => $counts[$bucket] ?? 0])
+            ->mapWithKeys(fn (string $bucket): array => [$bucket => (int) $counts->get($bucket, 0)])
             ->filter(fn (int $count): bool => $count > 0)
             ->all();
     }
 
     public function sexes(): array
     {
-        $counts = $this->records
-            ->groupBy(fn (Campista $campista): string => match ($this->formValue($campista, 'sexo')) {
+        $rows = $this->validQuery()
+            ->select('form_data->sexo as sex')
+            ->selectRaw('COUNT(*) as aggregate')
+            ->groupBy('form_data->sexo')
+            ->toBase()
+            ->get();
+
+        $counts = collect();
+
+        foreach ($rows as $row) {
+            $label = match ($row->sex) {
                 'M' => 'Masculino',
                 'F' => 'Feminino',
                 default => 'Sem sexo',
-            })
-            ->map->count()
-            ->all();
+            };
+
+            $counts->put($label, (int) $counts->get($label, 0) + (int) $row->aggregate);
+        }
 
         return collect([
             'Masculino',
             'Feminino',
             'Sem sexo',
         ])
-            ->mapWithKeys(fn (string $sex): array => [$sex => $counts[$sex] ?? 0])
+            ->mapWithKeys(fn (string $sex): array => [$sex => (int) $counts->get($sex, 0)])
             ->filter(fn (int $count): bool => $count > 0)
             ->all();
     }
 
     public function healthSummary(): array
     {
-        $medicine = $this->records->filter(fn (Campista $campista): bool => $this->truthy($this->formValue($campista, 'toma_remedio')));
-        $recommendation = $this->records->filter(fn (Campista $campista): bool => $this->truthy($this->formValue($campista, 'tem_recomendacao')));
+        $rows = $this->validQuery()
+            ->select([
+                'form_data->toma_remedio as medicine_value',
+                'form_data->tem_recomendacao as recommendation_value',
+            ])
+            ->selectRaw('COUNT(*) as aggregate')
+            ->groupBy('form_data->toma_remedio', 'form_data->tem_recomendacao')
+            ->toBase()
+            ->get();
+
+        $medicine = 0;
+        $recommendation = 0;
+        $both = 0;
+
+        foreach ($rows as $row) {
+            $count = (int) $row->aggregate;
+            $usesMedicine = $this->truthy($row->medicine_value);
+            $hasRecommendation = $this->truthy($row->recommendation_value);
+
+            if ($usesMedicine) {
+                $medicine += $count;
+            }
+
+            if ($hasRecommendation) {
+                $recommendation += $count;
+            }
+
+            if ($usesMedicine && $hasRecommendation) {
+                $both += $count;
+            }
+        }
 
         return [
-            'medicine' => $medicine->count(),
-            'recommendation' => $recommendation->count(),
-            'both' => $medicine->intersect($recommendation)->count(),
+            'medicine' => $medicine,
+            'recommendation' => $recommendation,
+            'both' => $both,
         ];
     }
 
     public function sensitiveHealthRecords(): Collection
     {
-        return $this->records
-            ->filter(fn (Campista $campista): bool => $this->truthy($this->formValue($campista, 'toma_remedio'))
-                || $this->truthy($this->formValue($campista, 'tem_recomendacao')))
-            ->values();
+        return $this->validQuery()
+            ->where(function (Builder $query): void {
+                $this->applyTruthyConditions($query, [
+                    'form_data->toma_remedio',
+                    'form_data->tem_recomendacao',
+                ]);
+            })
+            ->with('tribo')
+            ->oldest('id')
+            ->get();
     }
 
     public function pendingTasks(): Collection
     {
-        return $this->records
+        return $this->validQuery()
+            ->where(function (Builder $query): void {
+                $this->applyBlankConditions($query, [
+                    'avatar_url',
+                    'form_data->telefone_campista',
+                    'form_data->telefone_reponsavel_1',
+                    'form_data->telefone_reponsavel_nome_1',
+                    'form_data->paroquia',
+                    'form_data->comunidade',
+                    'form_data->tamanho_camiseta',
+                ]);
+            })
+            ->oldest('id')
+            ->get()
             ->map(function (Campista $campista): array {
                 $issues = collect([
                     $this->isBlank($this->formValue($campista, 'telefone_campista')) ? 'Sem telefone do campista' : null,
@@ -214,17 +351,76 @@ class OperationalDashboardDataSet
 
     public function registrationsByDay(): array
     {
-        return $this->records
-            ->groupBy(fn (Campista $campista): string => $campista->created_at?->format('d/m') ?? 'Sem data')
-            ->map->count()
-            ->all();
+        $rows = $this->validQuery()
+            ->selectRaw('DATE(created_at) as registration_date, COUNT(*) as aggregate, MIN(id) as first_id')
+            ->groupByRaw('DATE(created_at)')
+            ->orderBy('first_id')
+            ->toBase()
+            ->get();
+
+        $registrations = [];
+
+        foreach ($rows as $row) {
+            $label = $row->registration_date === null
+                ? 'Sem data'
+                : Carbon::parse($row->registration_date)->format('d/m');
+
+            $registrations[$label] = ($registrations[$label] ?? 0) + (int) $row->aggregate;
+        }
+
+        return $registrations;
     }
 
-    private function statusIs(Campista $campista, StatusInscricao $status): bool
+    private function query(): Builder
     {
-        return $campista->status instanceof StatusInscricao
-            ? $campista->status === $status
-            : (int) $campista->status === $status->value;
+        return clone $this->baseQuery;
+    }
+
+    private function validQuery(): Builder
+    {
+        return $this->query()->whereIn('status', $this->validStatuses);
+    }
+
+    private function getTribeDistributionRows(): Collection
+    {
+        return $this->tribeDistributionRows ??= $this->validQuery()
+            ->leftJoin('tribos', 'campistas.tribo_id', '=', 'tribos.id')
+            ->select([
+                'campistas.tribo_id',
+                'tribos.cor',
+                'tribos.cor_hex',
+            ])
+            ->selectRaw('COUNT(*) as aggregate, MIN(campistas.id) as first_id')
+            ->groupBy('campistas.tribo_id', 'tribos.cor', 'tribos.cor_hex')
+            ->orderBy('first_id')
+            ->toBase()
+            ->get();
+    }
+
+    private function applyTruthyConditions(Builder $query, array $columns): void
+    {
+        $first = true;
+
+        foreach ($columns as $column) {
+            foreach ([true, 1, '1', 'true', 'sim', 'yes', 'on'] as $value) {
+                $method = $first ? 'where' : 'orWhere';
+                $query->{$method}($column, $value);
+                $first = false;
+            }
+        }
+    }
+
+    private function applyBlankConditions(Builder $query, array $columns): void
+    {
+        $first = true;
+
+        foreach ($columns as $column) {
+            $method = $first ? 'whereNull' : 'orWhereNull';
+            $query->{$method}($column);
+            $query->orWhere($column, '');
+
+            $first = false;
+        }
     }
 
     private function formValue(Campista $campista, string $key): mixed
@@ -232,10 +428,8 @@ class OperationalDashboardDataSet
         return data_get($campista->form_data ?? [], $key);
     }
 
-    private function shirtLabel(Campista $campista): string
+    private function shirtLabel(mixed $size, mixed $otherSize): string
     {
-        $size = $this->formValue($campista, 'tamanho_camiseta');
-
         if ($this->isBlank($size)) {
             return 'Sem tamanho';
         }
@@ -244,18 +438,13 @@ class OperationalDashboardDataSet
             return (string) $size;
         }
 
-        $otherSize = $this->formValue($campista, 'tamanho_camiseta_outro');
-
         return $this->isBlank($otherSize)
             ? 'Outros'
             : 'Outros: '.$otherSize;
     }
 
-    private function communityLabel(Campista $campista): string
+    private function communityLabel(mixed $paroquia, mixed $comunidade): string
     {
-        $paroquia = $this->formValue($campista, 'paroquia');
-        $comunidade = $this->formValue($campista, 'comunidade');
-
         if ($this->isBlank($paroquia) || $this->isBlank($comunidade)) {
             return 'Sem comunidade';
         }
@@ -263,10 +452,8 @@ class OperationalDashboardDataSet
         return ParishCommunityLabels::combinedLabel($paroquia, $comunidade, short: true);
     }
 
-    private function ageBucket(Campista $campista): string
+    private function ageBucket(mixed $date): string
     {
-        $date = $this->formValue($campista, 'data_nacimento');
-
         if ($this->isBlank($date)) {
             return 'Sem data';
         }

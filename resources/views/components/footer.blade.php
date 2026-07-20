@@ -3,7 +3,7 @@
         <div class="grid gap-6 text-center sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:text-left">
             <span class="mx-auto flex size-36 shrink-0 items-center justify-center rounded-full bg-[#d8f2fa] p-3 shadow-[0_24px_70px_rgba(157,219,239,0.14)] ring-1 ring-white/40 sm:mx-0 lg:size-40">
                 <img
-                    src="{{ asset('img/logo.png') }}"
+                    src="{{ asset('img/logo.webp') }}"
                     alt="Logo do Acampamento Juvenil"
                     width="160"
                     height="160"

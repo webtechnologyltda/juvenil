@@ -12,21 +12,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $code }} - {{ config('app.name') }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" type="image/webp" href="{{ asset('img/logo.webp') }}">
+    @vite('resources/css/app.css')
 </head>
 <body class="bg-[#03181c] font-primary text-white">
     <main class="relative isolate grid min-h-[100dvh] overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-        <div class="absolute inset-0 -z-30 bg-[url('/img/hero-mobile.png')] bg-cover bg-center opacity-45 lg:bg-[url('/img/hero-desktop.png')]" aria-hidden="true"></div>
+        <div class="absolute inset-0 -z-30 bg-[url('/img/hero-mobile.webp')] bg-cover bg-center opacity-45 lg:bg-[url('/img/hero-desktop.webp')]" aria-hidden="true"></div>
         @if ($image)
-            <img src="{{ asset($image) }}" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover opacity-18 mix-blend-screen">
+            <img src="{{ asset($image) }}" alt="" loading="eager" decoding="async" fetchpriority="low" class="absolute inset-0 -z-20 h-full w-full object-cover opacity-18 mix-blend-screen">
         @endif
         <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(244,107,18,0.20),transparent_28rem),linear-gradient(180deg,rgba(5,47,53,0.84)_0%,#03181c_74%)]" aria-hidden="true"></div>
 
         <section class="mx-auto grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[minmax(0,0.84fr)_minmax(0,1fr)]">
             <div class="hidden lg:block">
                 <img
-                    src="{{ asset('img/logo.png') }}"
+                    src="{{ asset('img/logo.webp') }}"
                     alt="Logo do Acampamento Juvenil"
                     width="320"
                     height="320"

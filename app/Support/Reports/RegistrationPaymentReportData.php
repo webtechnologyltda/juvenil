@@ -8,6 +8,7 @@ use App\Models\EquipeTrabalho;
 use App\Models\LancamentoItem;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class RegistrationPaymentReportData
 {
@@ -28,10 +29,22 @@ class RegistrationPaymentReportData
         $search = trim((string) ($filters['search'] ?? ''));
 
         return LancamentoItem::query()
+            ->select([
+                'id',
+                'lancamento_id',
+                'nome',
+                'valor',
+                'categoria_lancamento_id',
+                'registration_type',
+                'registration_id',
+            ])
             ->with([
                 'categoria:id,nome',
                 'lancamento:id,nome,data,status,forma_pagamento',
-                'registration',
+                'registration' => fn (MorphTo $morphTo): MorphTo => $morphTo->constrain([
+                    Campista::class => fn (Builder $query): Builder => $query->select(['id', 'nome']),
+                    EquipeTrabalho::class => fn (Builder $query): Builder => $query->select(['id', 'nome']),
+                ]),
             ])
             ->whereIn('registration_type', [Campista::class, EquipeTrabalho::class])
             ->whereHas('lancamento', fn (Builder $query): Builder => $query->whereIn('status', $this->statusValues($filters)))

@@ -47,7 +47,6 @@ class ReconcileRegistrationLaunchesCommand extends Command
         }
 
         $this->info('Job de regularização automática despachado.');
-        $this->renderSummary($service->preview($type));
 
         return self::SUCCESS;
     }

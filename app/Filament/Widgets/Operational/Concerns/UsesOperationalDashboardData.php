@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Operational\Concerns;
 
 use App\Support\Dashboard\OperationalDashboardData;
+use App\Support\Dashboard\OperationalDashboardDataSet;
 use Filament\Support\RawJs;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,7 +12,7 @@ trait UsesOperationalDashboardData
 {
     use InteractsWithPageFilters;
 
-    protected function operationalData(): object
+    protected function operationalData(): OperationalDashboardDataSet
     {
         return app(OperationalDashboardData::class)->forFilters($this->pageFilters ?? []);
     }

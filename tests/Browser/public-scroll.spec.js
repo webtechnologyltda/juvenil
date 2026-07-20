@@ -1,13 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
+const publicSiteUrl = process.env.PUBLIC_SITE_URL ?? 'http://juvenil.test';
+
 test.use({
     channel: 'chrome',
     viewport: { width: 1440, height: 900 },
 });
 
 test('desktop uses a single document scrollbar and GSAP anchor scrolling reaches sections', async ({ page }) => {
-    await page.goto('http://juvenil.test');
+    await page.goto(publicSiteUrl);
     await page.waitForSelector('.juvenil-hero-shell');
     await page.waitForTimeout(2500);
 
@@ -83,7 +85,7 @@ test('mobile uses stable native anchor scrolling without GSAP layout overlap', a
     await mkdir('storage/app/screenshots', { recursive: true });
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 920 }, isMobile: true });
-    await mobile.goto('http://juvenil.test');
+    await mobile.goto(publicSiteUrl);
     await mobile.waitForSelector('.juvenil-hero-shell');
     await mobile.waitForTimeout(3000);
 
@@ -188,7 +190,7 @@ test('experience section has distinct desktop and mobile video layouts', async (
     await mkdir('storage/app/screenshots', { recursive: true });
 
     const desktop = await browser.newPage({ viewport: { width: 1440, height: 980 } });
-    await desktop.goto('http://juvenil.test');
+    await desktop.goto(publicSiteUrl);
     await desktop.waitForSelector('.juvenil-experience-section');
     await desktop.waitForTimeout(2500);
     await desktop.locator('#juvenil-details').scrollIntoViewIfNeeded();
@@ -196,7 +198,10 @@ test('experience section has distinct desktop and mobile video layouts', async (
 
     const desktopVideo = desktop.locator('.juvenil-experience-video');
     const desktopCopy = desktop.locator('.juvenil-experience-copy');
-    await expect(desktop.locator('.juvenil-site-video')).toHaveAttribute('autoplay', '');
+    await expect(desktop.locator('.juvenil-site-video')).toHaveAttribute('data-lazy-video', '');
+    await expect(desktop.locator('.juvenil-site-video')).toHaveAttribute('preload', 'none');
+    await expect(desktop.locator('.juvenil-site-video')).toHaveAttribute('poster', /\/img\/hero-desktop\.webp$/);
+    await expect(desktop.locator('.juvenil-site-video source')).toHaveAttribute('src', /\/img\/barraca-720p\.mp4$/);
     await expect(desktop.locator('.juvenil-site-video')).toHaveAttribute('muted', '');
     await expect(desktop.locator('.juvenil-site-video')).toHaveAttribute('loop', '');
     await expect(desktop.locator('.juvenil-site-video')).toHaveAttribute('playsinline', '');
@@ -215,7 +220,7 @@ test('experience section has distinct desktop and mobile video layouts', async (
     await desktop.close();
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 920 }, isMobile: true });
-    await mobile.goto('http://juvenil.test');
+    await mobile.goto(publicSiteUrl);
     await mobile.waitForSelector('.juvenil-experience-section');
     await mobile.waitForTimeout(2500);
     await mobile.locator('#juvenil-details').scrollIntoViewIfNeeded();
@@ -235,12 +240,12 @@ test('footer uses the correct Juvenil logo and stays responsive', async ({ brows
     await mkdir('storage/app/screenshots', { recursive: true });
 
     const desktop = await browser.newPage({ viewport: { width: 1440, height: 920 } });
-    await desktop.goto('http://juvenil.test');
+    await desktop.goto(publicSiteUrl);
     await desktop.waitForSelector('.juvenil-footer');
     await desktop.locator('.juvenil-footer').scrollIntoViewIfNeeded();
     await desktop.waitForTimeout(900);
 
-    await expect(desktop.locator('.juvenil-footer img[alt="Logo do Acampamento Juvenil"]')).toHaveAttribute('src', /\/img\/logo\.png$/);
+    await expect(desktop.locator('.juvenil-footer img[alt="Logo do Acampamento Juvenil"]')).toHaveAttribute('src', /\/img\/logo\.webp$/);
 
     const desktopFooterState = await desktop.evaluate(() => {
         const footer = document.querySelector('.juvenil-footer').getBoundingClientRect();
@@ -263,7 +268,7 @@ test('footer uses the correct Juvenil logo and stays responsive', async ({ brows
     await desktop.close();
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 920 }, isMobile: true });
-    await mobile.goto('http://juvenil.test');
+    await mobile.goto(publicSiteUrl);
     await mobile.waitForSelector('.juvenil-footer');
     await mobile.locator('.juvenil-footer').scrollIntoViewIfNeeded();
     await mobile.waitForTimeout(900);
@@ -294,7 +299,7 @@ test('footer uses the correct Juvenil logo and stays responsive', async ({ brows
 test('public Filament form uses the orange primary theme', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
-    await page.goto('http://juvenil.test');
+    await page.goto(publicSiteUrl);
     await page.waitForSelector('.filament-registration-shell');
     await page.waitForTimeout(2500);
     await page.locator('#registration').scrollIntoViewIfNeeded();
@@ -315,7 +320,7 @@ test('public Filament form uses the orange primary theme', async ({ page }) => {
         };
     });
 
-    expect(colors.primary500).toBe('oklch(0.68270588235294 0.17009090909091 45.756)');
+    expect(colors.primary500).toBe('oklch(68.2706% .170091 45.756)');
     expect(colors.submitBackground).toBe('rgb(244, 107, 18)');
     expect(colors.nativeChoiceColor).toBe('rgb(244, 107, 18)');
     expect(colors.toggleButtonCount).toBeGreaterThan(0);
@@ -375,7 +380,7 @@ test('public Filament form uses the orange primary theme', async ({ page }) => {
 test('public Filament photo upload keeps the square preview and editor inside the viewport', async ({ page }) => {
     await mkdir('storage/app/screenshots', { recursive: true });
 
-    await page.goto('http://juvenil.test');
+    await page.goto(publicSiteUrl);
     await page.waitForSelector('.filament-registration-shell');
     await page.locator('#registration').scrollIntoViewIfNeeded();
     await page.waitForTimeout(2500);
@@ -440,7 +445,7 @@ test('admin login, legal pages, and public errors use the Juvenil theme', async 
     const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 920 } });
     const desktop = await desktopContext.newPage();
 
-    await desktop.goto('http://juvenil.test/admin/login');
+    await desktop.goto(`${publicSiteUrl}/admin/login`);
     await desktop.waitForSelector('.juvenil-admin-login-card');
     await expect(desktop.locator('.juvenil-admin-login')).toBeVisible();
     await expect(desktop.locator('.juvenil-admin-ops-panel')).toBeVisible();
@@ -486,7 +491,7 @@ test('admin login, legal pages, and public errors use the Juvenil theme', async 
         fullPage: false,
     });
 
-    await desktop.goto('http://juvenil.test/termos-inscricao');
+    await desktop.goto(`${publicSiteUrl}/termos-inscricao`);
     await desktop.waitForSelector('.juvenil-legal-content');
     await expect(desktop.locator('.juvenil-legal-page')).toBeVisible();
     await expect(desktop.locator('h1')).toContainText('Termos de Inscrição');
@@ -496,7 +501,7 @@ test('admin login, legal pages, and public errors use the Juvenil theme', async 
         fullPage: false,
     });
 
-    const response = await desktop.goto('http://juvenil.test/pagina-inexistente-playwright');
+    const response = await desktop.goto(`${publicSiteUrl}/pagina-inexistente-playwright`);
     expect(response.status()).toBe(404);
     await desktop.waitForSelector('text=Página fora da trilha');
     await expect(desktop.locator('.juvenil-poster-title')).toContainText('404');
@@ -509,7 +514,7 @@ test('admin login, legal pages, and public errors use the Juvenil theme', async 
 
     const mobileContext = await browser.newContext({ viewport: { width: 390, height: 920 }, isMobile: true });
     const mobile = await mobileContext.newPage();
-    await mobile.goto('http://juvenil.test/politica-privacidade');
+    await mobile.goto(`${publicSiteUrl}/politica-privacidade`);
     await mobile.waitForSelector('.juvenil-legal-content');
     await expect(mobile.locator('h1')).toContainText('Política de Privacidade');
     await expect(mobile.locator('.js-cookie-consent')).toBeVisible();

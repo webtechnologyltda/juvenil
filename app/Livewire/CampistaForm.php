@@ -2,8 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Jobs\SendNewRegistrationNotification;
 use App\Models\Campista;
-use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Settings\GeneralSettings;
 use App\Support\CampistaRegistrationAvailability;
@@ -37,6 +37,7 @@ use JeffersonGoncalves\Filament\CepField\Forms\Components\CepInput;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Session;
 use Livewire\Component;
+use Throwable;
 
 class CampistaForm extends Component implements HasActions, HasForms
 {
@@ -745,13 +746,7 @@ class CampistaForm extends Component implements HasActions, HasForms
                 ->send();
             $this->reset(['data']);
 
-            $recipient = User::all();
-
-            Notification::make()
-                ->info()
-                ->title('Nova inscrição')
-                ->body(new HtmlString('Uma nova inscrição foi enviada, para o(a) campista: <strong>'.strtoupper($campista->nome).'</strong> acesse as inscrições para mais detalhes.'))
-                ->sendToDatabase($recipient);
+            $this->dispatchNewRegistrationNotification($campista);
 
         } catch (\Exception $exception) {
             report($exception);
@@ -769,6 +764,16 @@ class CampistaForm extends Component implements HasActions, HasForms
     {
         $this->comprado = false;
         $this->reset(['data']);
+    }
+
+    private function dispatchNewRegistrationNotification(Campista $campista): void
+    {
+        try {
+            SendNewRegistrationNotification::dispatch(Campista::class, $campista->id, $campista->nome)
+                ->afterCommit();
+        } catch (Throwable $exception) {
+            rescue(fn () => report($exception), report: false);
+        }
     }
 
     public function hasWaitlistInvitation(): bool

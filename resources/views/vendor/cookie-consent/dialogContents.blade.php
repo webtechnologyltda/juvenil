@@ -6,7 +6,7 @@
 >
     <div class="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
         <img
-            src="{{ asset('img/logo.png') }}"
+            src="{{ asset('img/logo.webp') }}"
             alt=""
             width="56"
             height="56"
