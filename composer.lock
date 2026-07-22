@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b96285a9e611d963023446fb6febc310",
+    "content-hash": "35881a4213a2de5054708d1098bd754d",
     "packages": [
         {
             "name": "afatmustafa/blade-hugeicons",
@@ -11837,87 +11837,6 @@
                 "source": "https://github.com/webmozarts/assert/tree/2.4.1"
             },
             "time": "2026-06-15T15:31:57+00:00"
-        },
-        {
-            "name": "webtechnologyltda/tracefy-sdk",
-            "version": "v2.0.3",
-            "source": {
-                "type": "git",
-                "url": "git@github.com:webtechnologyltda/tracefy-sdk.git",
-                "reference": "cafd612db70e6ac4da15c2a339706b05835027af"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/webtechnologyltda/tracefy-sdk/zipball/cafd612db70e6ac4da15c2a339706b05835027af",
-                "reference": "cafd612db70e6ac4da15c2a339706b05835027af",
-                "shasum": ""
-            },
-            "require": {
-                "guzzlehttp/guzzle": "^7.9",
-                "illuminate/console": "^10.0|^11.0|^12.0|^13.0",
-                "illuminate/queue": "^10.0|^11.0|^12.0|^13.0",
-                "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
-                "laravel/framework": "^10.0|^11.0|^12.0|^13.0",
-                "monolog/monolog": "^3.6",
-                "php": "^8.2",
-                "ramsey/uuid": "^4.0"
-            },
-            "require-dev": {
-                "laravel/pint": "^1.29",
-                "pestphp/pest": "^3.7",
-                "phpstan/phpstan": "^2.1"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "Webtechnologyltda\\TracefySdk\\TracefySdkServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Webtechnologyltda\\TracefySdk\\": "src/"
-                }
-            },
-            "autoload-dev": {
-                "psr-4": {
-                    "Tests\\": "tests/"
-                }
-            },
-            "scripts": {
-                "build:frontend": [
-                    "@php scripts/build-js-tracker.php"
-                ],
-                "test": [
-                    "@test:php",
-                    "@test:frontend"
-                ],
-                "test:frontend": [
-                    "node --test tests/Frontend/tracefy-js-tracker.test.cjs"
-                ],
-                "test:php": [
-                    "pest"
-                ],
-                "analyse": [
-                    "phpstan analyse --configuration=phpstan.neon --no-progress --debug"
-                ]
-            },
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Web Technology",
-                    "email": "plugins@webtechnology.com.br"
-                }
-            ],
-            "description": "Tracefy SDK package for sending application errors to the central error monitoring service.",
-            "support": {
-                "source": "https://github.com/webtechnologyltda/tracefy-sdk/tree/v2.0.3",
-                "issues": "https://github.com/webtechnologyltda/tracefy-sdk/issues"
-            },
-            "time": "2026-07-18T01:21:22+00:00"
         }
     ],
     "packages-dev": [

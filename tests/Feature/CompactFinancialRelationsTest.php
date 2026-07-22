@@ -1,5 +1,6 @@
 <?php
 
+use AnourValar\EloquentSerialize\Service;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
@@ -16,6 +17,25 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
+
+it('serializes compact financial relations for queued exports', function () {
+    [$lancamento] = financialRelationRecords();
+    $method = new ReflectionMethod(LancamentoResource::class, 'withCompactItemRelations');
+    $query = $method->invoke(null, Lancamento::query()->whereKey($lancamento), true);
+    $serializer = app(Service::class);
+
+    $serializedQuery = $serializer->serialize($query);
+    $restoredItem = $serializer->unserialize($serializedQuery)
+        ->firstOrFail()
+        ->items
+        ->firstOrFail();
+
+    expect($serializedQuery)->toBeString()->not->toBeEmpty()
+        ->and(array_keys($restoredItem->registration->getAttributes()))->toEqualCanonicalizing([
+            'id',
+            'nome',
+        ]);
+});
 
 it('loads only the columns used by financial entry badges', function () {
     [$lancamento] = financialRelationRecords();
