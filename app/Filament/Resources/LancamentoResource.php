@@ -14,6 +14,7 @@ use App\Models\Lancamento;
 use App\Models\LancamentoItem;
 use App\Support\EnumOptionBadge;
 use App\Support\Financeiro\FinancialFilterOptions;
+use App\Support\Financeiro\SelectRegistrationIdentityColumns;
 use App\Support\IconBadge;
 use Carbon\Carbon;
 use Filament\Actions\EditAction;
@@ -380,8 +381,8 @@ class LancamentoResource extends Resource
                 ->with([
                     'categoria:id,nome,cor,icone',
                     'registration' => fn (MorphTo $morphTo): MorphTo => $morphTo->constrain([
-                        Campista::class => fn (Builder $query): Builder => $query->select(['id', 'nome']),
-                        EquipeTrabalho::class => fn (Builder $query): Builder => $query->select(['id', 'nome']),
+                        Campista::class => new SelectRegistrationIdentityColumns,
+                        EquipeTrabalho::class => new SelectRegistrationIdentityColumns,
                     ]),
                 ]),
         ]);
