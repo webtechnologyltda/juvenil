@@ -31,6 +31,7 @@ it('serializes compact financial relations for queued exports', function () {
         ->firstOrFail();
 
     expect($serializedQuery)->toBeString()->not->toBeEmpty()
+        ->and($restoredItem->descricao)->toBe('Descrição exportável')
         ->and(array_keys($restoredItem->registration->getAttributes()))->toEqualCanonicalizing([
             'id',
             'nome',
@@ -112,6 +113,7 @@ function financialRelationRecords(): array
 
     $lancamento->items()->create([
         'nome' => 'Inscrição de campista',
+        'descricao' => 'Descrição exportável',
         'valor' => 25000,
         'categoria_lancamento_id' => $category->id,
         'registration_type' => Campista::class,

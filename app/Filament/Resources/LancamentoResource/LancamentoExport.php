@@ -142,7 +142,7 @@ abstract class LancamentoExport
 
     public static function itemDescriptionsSummary(Lancamento $record): string
     {
-        return self::items($record)
+        return self::itemsWithDescriptions($record)
             ->map(fn (LancamentoItem $item): ?string => filled(self::plainText($item->descricao))
                 ? sprintf('%s: %s', self::plainText($item->nome) ?: 'Item sem nome', self::plainText($item->descricao))
                 : null)
@@ -222,6 +222,22 @@ abstract class LancamentoExport
         return $record->relationLoaded('items')
             ? $record->items
             : $record->items()->with(['categoria', 'registration'])->get();
+    }
+
+    /**
+     * @return Collection<int, LancamentoItem>
+     */
+    private static function itemsWithDescriptions(Lancamento $record): Collection
+    {
+        $items = self::items($record);
+
+        if ($items->every(fn (LancamentoItem $item): bool => $item->hasAttribute('descricao'))) {
+            return $items;
+        }
+
+        return $record->items()
+            ->select(['id', 'lancamento_id', 'nome', 'descricao'])
+            ->get();
     }
 
     private static function registrationTypeLabel(?string $registrationType): string

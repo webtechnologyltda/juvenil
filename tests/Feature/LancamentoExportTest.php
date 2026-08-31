@@ -4,10 +4,14 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusInscricao;
 use App\Enums\StatusLacamento;
 use App\Enums\TipoLacamento;
+use App\Filament\Exports\LancamentoExporter;
 use App\Filament\Resources\LancamentoResource\LancamentoExport;
 use App\Models\Campista;
 use App\Models\CategoriaLancamento;
 use App\Models\Lancamento;
+use App\Models\User;
+use Filament\Actions\Exports\Models\Export;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -87,11 +91,46 @@ it('exports launch rich text and item summaries as plain text', function () {
 
     $lancamento->load(['items.categoria', 'items.registration']);
 
+    $exporter = new LancamentoExporter(new Export, [
+        'descricao' => 'Descrição',
+        'item_descriptions_summary' => 'Descrições dos itens',
+    ], []);
+
     expect(LancamentoExport::plainText($lancamento->descricao))->toBe("Pagamento confirmado\nSem HTML")
         ->and(LancamentoExport::itemsSummary($lancamento))->toBe('Parcela inscrição (Inscrição)')
         ->and(LancamentoExport::itemValuesSummary($lancamento))->toBe('Parcela inscrição: R$ 250,00')
         ->and(LancamentoExport::itemDescriptionsSummary($lancamento))->toBe('Parcela inscrição: Item principal')
         ->and(LancamentoExport::registrationsSummary($lancamento))->toBe('Campista #'.$campista->id.' - João Exportação (R$ 250,00)')
         ->and(LancamentoExport::comprovantesSummary($lancamento))->toBe('pix-exportacao.pdf')
-        ->and(LancamentoExport::comprovanteObservationsSummary($lancamento))->toBe('Recebido via Pix');
+        ->and(LancamentoExport::comprovanteObservationsSummary($lancamento))->toBe('Recebido via Pix')
+        ->and($exporter($lancamento))->toBe([
+            "Pagamento confirmado\nSem HTML",
+            'Parcela inscrição: Item principal',
+        ]);
+});
+
+it('exports item descriptions when the preloaded relation omits that column', function () {
+    $category = lancamentoExportCategory('Inscrição', TipoLacamento::Receita);
+    $lancamento = Lancamento::factory()->create([
+        'user_id' => User::factory(),
+    ]);
+
+    $lancamento->items()->create([
+        'nome' => 'Parcela com observação',
+        'descricao' => '<p>Descrição preenchida no item</p>',
+        'valor' => 15000,
+        'categoria_lancamento_id' => $category->id,
+    ]);
+
+    $lancamento->load([
+        'items' => fn (HasMany $query): HasMany => $query->select([
+            'id',
+            'lancamento_id',
+            'nome',
+        ]),
+    ]);
+
+    expect($lancamento->items->firstOrFail()->hasAttribute('descricao'))->toBeFalse()
+        ->and(LancamentoExport::itemDescriptionsSummary($lancamento))
+        ->toBe('Parcela com observação: Descrição preenchida no item');
 });
